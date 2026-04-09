@@ -49,5 +49,7 @@ The project is divided into 6 main phases, starting from initial environment set
 * **Resource:** Yossef Errazik (Individual Group)
 * **Tracking:** The "Real Hours" column and "Status" checkboxes will be updated during the **Daily Sessions (Diari de sessions)** to reflect real progress.
 
----
 *Note: This planning is subject to adjustments based on technical challenges encountered during the development phases.*
+
+---
+*Updated: April 9, 2026*
