@@ -14,7 +14,7 @@ This document details the technologies selected for the Hospital Management Syst
     * **Compliance:** Built-in features for Data Masking and encryption to meet GDPR standards.
 
 ### 🐍 Programming: Python 3.12+
-* **Role:** Backend logic, Database connectivity, and CLI Interface.
+* **Role:** Backend logic, Database connectivity, and App Interface.
 * **Justification:**
     * **Libraries:** Vast ecosystem for database interaction (`psycopg2`) and data generation (`Faker`).
     * **Portability:** Easy deployment using Virtual Environments (`venv`).
