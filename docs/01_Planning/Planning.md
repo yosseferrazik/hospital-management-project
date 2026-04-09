@@ -1,19 +1,19 @@
 # 📅 Project Planning & Methodology
 > This document outlines the strategy, task distribution, and timeline for the Hospital Management System project.
 
-## 1. Solution Proposal
+## Solution Proposal
 The objective is to develop a robust, secure, and scalable system for managing hospital data. The solution will be built upon three main pillars:
 * **Database:** A PostgreSQL 18 cluster with Master-Slave replication to ensure High Availability (HA) and SSL encryption for secure communications.
 * **Security:** Implementation of a strict Role-Based Access Control (RBAC) matrix and Dynamic Data Masking to protect sensitive patient information (GDPR compliance).
 * **Software:** A Python-based application using a modular architecture, managed through a Virtual Environment (`venv`) for portability and ease of deployment.
 
-## 2. Technical Stack
+## Technical Stack
 * **Database Engine:** PostgreSQL 18
 * **Programming Language:** Python 3.12+
 * **Documentation:** Markdown & PDF
 * **Version Control:** Git & GitHub
 
-## 3. Work Breakdown Structure (WBS)
+## Work Breakdown Structure (WBS)
 The project is divided into 6 main phases, starting from initial environment setup to the final handover and documentation. Each task has been assigned an estimated duration based on the complexity of the Hospital requirements.
 
 ### Detailed Planning Table
@@ -43,7 +43,7 @@ The project is divided into 6 main phases, starting from initial environment set
 | | Creation of User Manual and Technical Installation Guide                            | 23/05     | 25/05     | 6h        |           | [ ]   |
 | | Final Bibliography audit, Git repo cleanup & submission                             | 25/05     | 27/05     | 6h        |           | [ ]   |
 
-## 4. Workload Summary
+## Workload Summary
 * **Total Hours Estimated:** 156 Hours
 * **Resource:** Yossef Errazik
 * **Tracking:** The "Real Hours" column and "Status" checkboxes will be updated during the **Daily Sessions (Diari de sessions)** to reflect real progress.

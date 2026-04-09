@@ -1,8 +1,7 @@
 # 🛠️ Technology Stack Suggestion
+> This document details the technologies and hardware specifications selected for the Hospital Management System, justifying their use based on the project requirements of security, scalability, high availability, and resource efficiency.
 
-This document details the technologies and hardware specifications selected for the Hospital Management System, justifying their use based on the project requirements of security, scalability, high availability, and resource efficiency.
-
-## 1. Core Technologies
+## Core Technologies
 
 ### 🐘 Database: PostgreSQL 18
 * **Role:** Primary Relational Database Management System (RDBMS).
@@ -17,7 +16,7 @@ This document details the technologies and hardware specifications selected for 
     * **Portability:** Easy deployment using Virtual Environments (`venv`) as required by project guidelines.
     * **Maintainability:** Facilitates clean, commented code for each function and procedure.
 
-## 2. Hardware Specifications (Optimized for Low Resources)
+## Hardware Specifications (Optimized for Low Resources)
 To comply with the hospital's requirement for a system that runs on limited resources, the following infrastructure is proposed:
 
 | Component | Specification | Purpose |
@@ -27,7 +26,7 @@ To comply with the hospital's requirement for a system that runs on limited reso
 | **Networking** | 1 Gbps LAN | Low-latency connection for real-time DB synchronization. |
 | **Virtualization** | **Docker Compose** | Used to orchestrate the nodes and ensure the environment is portable and reproducible on any hospital hardware. |
 
-## 3. Key Libraries & Dependencies
+## Key Libraries & Dependencies
 
 | Library | Purpose | Justification |
 |:---|:---|:---|
@@ -38,19 +37,19 @@ To comply with the hospital's requirement for a system that runs on limited reso
 | **`tkinter`** | **GUI (Desktop)** | **Efficiency:** Extremely lightweight library that consumes minimal RAM, ideal for the hospital's older hardware. No browser overhead required. |
 | `tkinter.ttk` | Modern UI | Provides a structured and tabulated look for medical reports and patient lists. |
 
-## 4. Infrastructure & DevOps
+## Infrastructure & DevOps
 
 * **Version Control:** **Git & GitHub**. Essential for tracking progress through frequent commits.
 * **Environment Management:** **Python `venv`**. Ensures all dependencies are isolated and portable via `requirements.txt`.
 * **Data Visualization:** **PowerBI Desktop**. Connected via PostgreSQL ODBC for real-time hospital occupancy and daily visit dashboards.
 
-## 5. Development & Export Tools
+## Development & Export Tools
 
 * **IDE:** **Visual Studio Code (VS Code)** for development and debugging.
 * **DB Client:** **pgAdmin 4 / DBeaver** for schema management.
 * **Export Formats:** Native Python `json` and `xml.etree` modules will be used to generate the mandatory files for the Social Security API integration.
 
-## 6. Security Architecture Summary
+## Security Architecture Summary
 1. **Transport:** All DB traffic is encrypted via **SSL/TLS**.
 2. **Storage:** Credentials are stored in a **separate configuration file** (excluded from Git).
 3. **Anonymization:** Implementation of **Dynamic Data Masking** at the database level so administrative staff cannot view sensitive clinical diagnosis.
