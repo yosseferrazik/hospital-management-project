@@ -81,7 +81,7 @@ To ensure the project runs correctly, follow these steps to set up the **Virtual
 
 ## 🔒 Security Requirements
 According to the project specifications:
-* **Credentials:** Database login details are stored in a separate file (`src/access_config.txt`) and are not hardcoded.
+* **Credentials:** Database login details are stored in a separate file and are not hardcoded.
 * **SSL:** All database connections are encrypted.
 * **Masking:** Sensitive patient data is protected via Data Masking.
 
