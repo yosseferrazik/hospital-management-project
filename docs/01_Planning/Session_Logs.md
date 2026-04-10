@@ -12,6 +12,7 @@
 | **07/04/2026**    | 3h       | Developed the Work Breakdown Structure (WBS). Estimated hours for each phase and created the initial Gantt chart.                          |
 | **08/04/2026**    | 4h       | Configured the local development environment. Created `venv`, initialized `requirements.txt`, and set up `.gitignore`. Tested Git commits. |
 | **09/04/2026**    | 2h       | Final review of Phase 1 documentation. Exported Planning and Tech Stack documents to MD. Prepared the repository for the first delivery.   |
+| **10/04/2026**    | 4h       | Correct the documentation format and started with the [Database design](../02_Database_Design/) phase by sketching the ER diagram.         |
 
 ---
 *Updated: April 9, 2026*
