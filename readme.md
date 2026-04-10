@@ -1,3 +1,4 @@
+![Hospital](https://imagenes.elpais.com/resizer/v2/AFAITZ3H6DI4FMKGYEDGKNPBNM.jpg?auth=bf9cdc39c32a763812ec3172ab6d8ca422787358ebb01637b93f2f17246b4b51&width=1960&height=1103&smart=true "Hospital")
 # 🏥 Hospital Management System | ASIX Intermodular Project
 > This repository contains the complete intermodular project for the **ASIX program (Institut Sa Palomera)**. The project integrates Database Design (PostgreSQL), Programming (Python), and Infrastructure Management.
 
@@ -37,7 +38,6 @@ This repository is organized into specific modules to ensure clarity and profess
 
 
 ## 📄 Documentation Guide
-
 ```
 docs/
 ├── 01_Planning/
@@ -63,8 +63,6 @@ docs/
 │
 └── References.md                      # Bibliography and web resources (Mandatory)
 ```
-
----
 
 ## 👥 Authors
 * **Yossef Errazik** - [[Link to Profile](https://github.com/yosseferrazik)]

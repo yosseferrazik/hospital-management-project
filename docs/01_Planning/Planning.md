@@ -1,5 +1,5 @@
 # 📅 Project Planning & Methodology
-> This document outlines the strategy, task distribution, and timeline of the project.
+> This document outlines the strategy, task distribution, and timeline of the HMS.
 
 ## Solution Proposal
 The objective is to develop a robust, secure, and scalable system for managing hospital data. The solution will be built upon three main pillars:

@@ -1,5 +1,5 @@
 # 🛠️ Technology Stack Suggestion
-> This document details the technologies and hardware specifications selected for the Hospital Management System, justifying their use based on the project requirements of security, scalability, high availability, and resource efficiency.
+> This document details the technologies and hardware specifications selected for the HMS, justifying their use based on the project requirements of security, scalability, high availability, and resource efficiency.
 
 ## Core Technologies
 
