@@ -1,5 +1,5 @@
 # 📅 Project Planning & Methodology
-> This document outlines the strategy, task distribution, and timeline for the Hospital Management System project.
+> This document outlines the strategy, task distribution, and timeline of the project.
 
 ## Solution Proposal
 The objective is to develop a robust, secure, and scalable system for managing hospital data. The solution will be built upon three main pillars:
@@ -51,4 +51,4 @@ The project is divided into 6 main phases, starting from initial environment set
 *Note: This planning is subject to adjustments based on technical challenges encountered during the development phases.*
 
 ---
-*Updated: April 9, 2026*
+*Updated: April 10, 2026*
