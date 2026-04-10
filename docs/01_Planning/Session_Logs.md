@@ -1,6 +1,11 @@
 # 📓 Project Session Log (Diari de Sessions)
 > This is my personal session log for the project. Each entry summarizes the work I completed, the time I spent, and the key activities I focused on during that day. It’s written in first person to reflect my own workflow and progress.
 
+```
+IMPORTANT: This is the GDocs version for correction:
+> https://docs.google.com/spreadsheets/d/1XevOfI67dhMT-aF1FtFv5GNPwBQ1OvUz/edit?usp=sharing&ouid=110769648596550007199&rtpof=true&sd=true
+```
+
 ## Session Table: April
 
 | Date              | Duration | Description of Activities                                                                 |
