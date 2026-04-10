@@ -15,4 +15,4 @@
 | **10/04/2026**    | 4h       | Correct the documentation format and started with the [Database design](../02_Database_Design/) phase by sketching the ER diagram.         |
 
 ---
-*Updated: April 9, 2026*
+*Updated: April 10, 2026*
