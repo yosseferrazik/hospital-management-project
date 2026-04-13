@@ -46,7 +46,7 @@ docs/
 │   └── Session_Log.md                 # The daily log of hours and activities
 │
 ├── 02_Database_Design/
-│   ├── ER_Diagram.pdf                 # Entity-Relationship diagram
+│   ├── ER_Diagram.png                 # Entity-Relationship diagram
 │   ├── Relational_Model.pdf           # Table schemas and normalization 
 │   ├── Data_Dictionary.pdf            # Details on fields, types, and constraints 
 │   └── Security_Matrix.pdf            # RBAC Roles and Permissions table 
