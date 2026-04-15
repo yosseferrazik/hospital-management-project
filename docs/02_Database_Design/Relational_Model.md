@@ -3,190 +3,206 @@
 
 ## Tables
 ### FLOORS
-- `Floor_id` (PK)
-- `Floor_number`
+- `floor_id` (PK)
+- `floor_number`
 
 ### ROOMS
-- `Room_id` (PK)
-- `Room_number`
-- `Floor_id`
-  - `ON Floor_id REFERENCES FLOORS(Floor_id)`
+- `room_id` (PK)
+- `room_number`
+- `floor_id`
+  - `ON floor_id REFERENCES FLOORS(floor_id)`
 
 ### OPERATING_THEATERS
-- `Theater_id` (PK)
-- `Theater_code`
-- `Floor_id`
-  - `ON Floor_id REFERENCES FLOORS(Floor_id)`
+- `theater_id` (PK)
+- `theater_code`
+- `floor_id`
+  - `ON floor_id REFERENCES FLOORS(floor_id)`
 
 ### MEDICAL_DEVICES
-- `Device_id` (PK)
-- `Device_type`
-- `Theater_id`
-- `Quantity`
-  - `ON Theater_id REFERENCES OPERATING_THEATERS(Theater_id)`
+- `device_id` (PK)
+- `device_type`
+- `theater_id`
+- `quantity`
+  - `ON theater_id REFERENCES OPERATING_THEATERS(theater_id)`
 
 ### MEDICAL_SPECIALTIES
-- `Specialty_id` (PK)
-- `Name`
-- `Description`
+- `specialty_id` (PK)
+- `name`
+- `description`
+
+### MEDICAL_STAFF_SPECIALTIES
+- `medical_staff_specialty_id` (PK)
+- `staff_id`
+- `specialty_id`
+  - `ON staff_id REFERENCES STAFF(staff_id)`
+  - `ON specialty_id REFERENCES MEDICAL_SPECIALTIES(specialty_id)`
 
 ### STAFF
-- `Staff_id` (PK)
-- `National_id`
-- `First_name`
-- `Last_name`
-- `Birth_date`
-- `Phone`
-- `Email`
-- `Address`
-- `Hire_date`
-- `Staff_type`
+- `staff_id` (PK)
+- `national_id`
+- `first_name`
+- `last_name`
+- `birth_date`
+- `phone`
+- `ssn`
+- `email`
+- `address`
+- `hire_date`
+- `staff_type`
 
 ### MEDICAL_STAFF
-- `Staff_id` (PK)
-- `Specialty_id`
-- `License_number`
-- `Curriculum`
-  - `ON Staff_id REFERENCES STAFF(Staff_id)`
-  - `ON Specialty_id REFERENCES MEDICAL_SPECIALTIES(Specialty_id)`
+- `staff_id` (PK)
+- `specialty_id`
+- `license_number`
+- `curriculum`
+  - `ON staff_id REFERENCES STAFF(staff_id)`
+  - `ON specialty_id REFERENCES MEDICAL_SPECIALTIES(specialty_id)`
 
 ### NURSING_STAFF
-- `Staff_id` (PK)
-- `Nursing_license`
-- `Assigned_doctor_id`
-- `Is_floor_nurse`
-- `Certifications`
-  - `ON Staff_id REFERENCES STAFF(Staff_id)`
-  - `ON Assigned_doctor_id REFERENCES MEDICAL_STAFF(Staff_id)`
+- `staff_id` (PK)
+- `nursing_license`
+- `assigned_doctor_id`
+- `assigned_floor_id`
+- `certifications`
+  - `ON staff_id REFERENCES STAFF(staff_id)`
+  - `ON assigned_doctor_id REFERENCES MEDICAL_STAFF(staff_id)`
+  - `ON assigned_floor_id REFERENCES FLOORS(floor_id)`
 
 ### GENERAL_STAFF
-- `Staff_id` (PK)
-- `Job_type`
-  - `ON Staff_id REFERENCES STAFF(Staff_id)`
+- `staff_id` (PK)
+- `job_type`
+  - `ON staff_id REFERENCES STAFF(staff_id)`
 
 ### PATIENTS
-- `Patient_id` (PK)
-- `National_id`
-- `First_name`
-- `Last_name`
-- `Birth_date`
-- `Gender`
-- `Phone`
-- `Email`
-- `Address`
-- `Emergency_contact_name`
-- `Emergency_contact_phone`
-- `Blood_type`
-- `Allergies`
+- `patient_id` (PK)
+- `national_id`
+- `first_name`
+- `last_name`
+- `birth_date`
+- `gender`
+- `phone`
+- `email`
+- `address`
+- `emergency_contact_name`
+- `emergency_contact_phone`
+- `blood_type`
+- `allergies`
 
 ### VISITS
-- `Visit_id` (PK)
-- `Patient_id`
-- `Doctor_id`
-- `Visit_timestamp`
-- `Diagnosis`
-- `Notes`
-  - `ON Patient_id REFERENCES PATIENTS(Patient_id)`
-  - `ON Doctor_id REFERENCES MEDICAL_STAFF(Staff_id)`
+- `visit_id` (PK)
+- `patient_id`
+- `doctor_id`
+- `visit_timestamp`
+- `diagnosis`
+- `notes`
+  - `ON patient_id REFERENCES PATIENTS(patient_id)`
+  - `ON doctor_id REFERENCES MEDICAL_STAFF(staff_id)`
 
 ### SCHEDULED_APPOINTMENTS
-- `Appointment_id` (PK)
-- `Visit_id`
-- `Appointment_date`
-- `Appointment_time`
-- `Status`
-  - `ON Visit_id REFERENCES VISITS(Visit_id)`
+- `appointment_id` (PK)
+- `visit_id`
+- `appointment_date`
+- `appointment_time`
+- `status`
+  - `ON visit_id REFERENCES VISITS(visit_id)`
+
+### MEDICATIONS
+- `medication_id` (PK)
+- `medication_name`
+- `description`
 
 ### PRESCRIPTIONS
-- `Prescription_id` (PK)
-- `Visit_id`
-- `Medication_name`
-- `Dosage`
-- `Frequency`
-- `Duration_days`
-- `Start_date`
-  - `ON Visit_id REFERENCES VISITS(Visit_id)`
+- `prescription_id` (PK)
+- `visit_id`
+- `medication_id`
+- `dosage`
+- `frequency`
+- `duration_days`
+- `start_date`
+  - `ON visit_id REFERENCES VISITS(visit_id)`
+  - `ON medication_id REFERENCES MEDICATIONS(medication_id)`
 
 ### ADMISSIONS
-- `Admission_id` (PK)
-- `Patient_id`
-- `Room_id`
-- `Admission_date`
-- `Expected_discharge_date`
-- `Actual_discharge_date`
-  - `ON Patient_id REFERENCES PATIENTS(Patient_id)`
-  - `ON Room_id REFERENCES ROOMS(Room_id)`
+- `admission_id` (PK)
+- `patient_id`
+- `room_id`
+- `admission_date`
+- `expected_discharge_date`
+- `actual_discharge_date`
+  - `ON patient_id REFERENCES PATIENTS(patient_id)`
+  - `ON room_id REFERENCES ROOMS(room_id)`
 
 ### SURGERIES
-- `Surgery_id` (PK)
-- `Patient_id`
-- `Theater_id`
-- `Primary_surgeon_id`
-- `Surgery_date`
-- `Start_time`
-- `End_time`
-- `Procedure_type`
-- `Notes`
-  - `ON Patient_id REFERENCES PATIENTS(Patient_id)`
-  - `ON Theater_id REFERENCES OPERATING_THEATERS(Theater_id)`
-  - `ON Primary_surgeon_id REFERENCES MEDICAL_STAFF(Staff_id)`
+- `surgery_id` (PK)
+- `patient_id`
+- `theater_id`
+- `primary_surgeon_id`
+- `surgery_date`
+- `start_time`
+- `end_time`
+- `procedure_type`
+- `notes`
+  - `ON patient_id REFERENCES PATIENTS(patient_id)`
+  - `ON theater_id REFERENCES OPERATING_THEATERS(theater_id)`
+  - `ON primary_surgeon_id REFERENCES MEDICAL_STAFF(staff_id)`
 
 ### SURGERY_ASSISTANTS
-- `Surgery_id` (PK)
-- `Nurse_id` (PK)
-- `Role`
-  - `ON Surgery_id REFERENCES SURGERIES(Surgery_id)`
-  - `ON Nurse_id REFERENCES NURSING_STAFF(Staff_id)`
+- `surgery_id` (PK)
+- `nurse_id` (PK)
+- `role`
+  - `ON surgery_id REFERENCES SURGERIES(surgery_id)`
+  - `ON nurse_id REFERENCES NURSING_STAFF(staff_id)`
 
 ### PHARMACY_DISPENSATIONS
-- `Dispensation_id` (PK)
-- `Admission_id`
-- `Dispensed_at`
-- `Total_cost`
-- `Notes`
-  - `ON Admission_id REFERENCES ADMISSIONS(Admission_id)`
+- `dispensation_id` (PK)
+- `admission_id`
+- `dispensed_at`
+- `total_cost`
+- `notes`
+  - `ON admission_id REFERENCES ADMISSIONS(admission_id)`
 
 ### DISPENSATION_ITEMS
-- `Item_id` (PK)
-- `Dispensation_id`
-- `Medication_name`
-- `Quantity`
-- `Unit_price`
-  - `ON Dispensation_id REFERENCES PHARMACY_DISPENSATIONS(Dispensation_id)`
+- `item_id` (PK)
+- `dispensation_id`
+- `medication_id`
+- `quantity`
+- `unit_price`
+  - `ON dispensation_id REFERENCES PHARMACY_DISPENSATIONS(dispensation_id)`
+  - `ON medication_id REFERENCES MEDICATIONS(medication_id)`
 
 ### RADIOLOGY_EXAMS
-- `Exam_id` (PK)
-- `Patient_id`
-- `Requesting_doctor_id`
-- `Exam_type`
-- `Requested_at`
-- `Performed_at`
-- `Result_image_url`
-- `Radiologist_report`
-- `Status`
-  - `ON Patient_id REFERENCES PATIENTS(Patient_id)`
-  - `ON Requesting_doctor_id REFERENCES MEDICAL_STAFF(Staff_id)`
+- `exam_id` (PK)
+- `patient_id`
+- `requesting_doctor_id`
+- `exam_type`
+- `requested_at`
+- `performed_at`
+- `result_image_url`
+- `radiologist_report`
+- `status`
+  - `ON patient_id REFERENCES PATIENTS(patient_id)`
+  - `ON requesting_doctor_id REFERENCES MEDICAL_STAFF(staff_id)`
 
 ### APP_USERS
-- `User_id` (PK)
-- `Username`
-- `Password_hash`
-- `Staff_id`
-- `Role`
-- `Is_active`
-- `Last_login`
-- `Created_at`
-  - `ON Staff_id REFERENCES STAFF(Staff_id)`
+- `user_id` (PK)
+- `username`
+- `password_hash`
+- `staff_id`
+- `role`
+- `is_active`
+- `last_login`
+- `created_at`
+  - `ON staff_id REFERENCES STAFF(staff_id)`
 
 ### AUDIT_LOGS
-- `Log_id` (PK)
-- `User_id`
-- `Action_timestamp`
-- `Action_type`
-- `Table_name`
-- `Record_id`
-- `Old_data`
-- `New_data`
-- `Ip_address`
-- `Notes`
-  - `ON User_id REFERENCES APP_USERS(User_id)`
+- `log_id` (PK)
+- `user_id`
+- `action_timestamp`
+- `action_type`
+- `table_name`
+- `record_id`
+- `old_data`
+- `new_data`
+- `ip_address`
+- `notes`
+- `ON user_id REFERENCES APP_USERS(user_id)`

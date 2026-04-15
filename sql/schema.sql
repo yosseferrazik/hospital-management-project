@@ -1,330 +1,390 @@
--- =======================================================
--- HOSPITAL MANAGEMENT SYSTEM - POSTGRESQL SCHEMA
--- Includes: Core medical entities, simple user auth, audit logs
--- =======================================================
+-- Hospital Management Database Schema 
 
--- -------------------------------------------------------
--- 1. HOSPITAL INFRASTRUCTURE
--- -------------------------------------------------------
+-- =====================================================
+-- TABLE DEFINITIONS
+-- =====================================================
 
--- Floors (Plantes)
-CREATE TABLE floors (
-    id SERIAL PRIMARY KEY,
-    floor_number INT UNIQUE NOT NULL CHECK (floor_number BETWEEN 1 AND 4)
+-- FLOORS table
+CREATE TABLE FLOORS (
+    floor_id SERIAL PRIMARY KEY,
+    floor_number INTEGER NOT NULL UNIQUE
 );
-COMMENT ON TABLE floors IS 'Hospital floors, identified by number (1st, 2nd, 3rd, 4th).';
 
--- Rooms for patient admission
-CREATE TABLE rooms (
-    id SERIAL PRIMARY KEY,
-    room_number VARCHAR(10) NOT NULL,
-    floor_id INT NOT NULL REFERENCES floors(id),
-    UNIQUE(floor_id, room_number)
+-- ROOMS table
+CREATE TABLE ROOMS (
+    room_id SERIAL PRIMARY KEY,
+    room_number VARCHAR(20) NOT NULL,
+    floor_id INTEGER NOT NULL,
+    FOREIGN KEY (floor_id) REFERENCES FLOORS(floor_id) ON DELETE RESTRICT
 );
-COMMENT ON TABLE rooms IS 'Patient rooms on each floor. Room number is unique per floor.';
 
--- Operating theaters (Quiròfans)
-CREATE TABLE operating_theaters (
-    id SERIAL PRIMARY KEY,
-    theater_code VARCHAR(10) NOT NULL, -- Q1, Q2...
-    floor_id INT NOT NULL REFERENCES floors(id),
-    UNIQUE(floor_id, theater_code)
+-- OPERATING_THEATERS table
+CREATE TABLE OPERATING_THEATERS (
+    theater_id SERIAL PRIMARY KEY,
+    theater_code VARCHAR(20) NOT NULL UNIQUE,
+    floor_id INTEGER NOT NULL,
+    FOREIGN KEY (floor_id) REFERENCES FLOORS(floor_id) ON DELETE RESTRICT
 );
-COMMENT ON TABLE operating_theaters IS 'Surgical theaters identified by code Q1, Q2... per floor.';
 
--- Medical devices in operating theaters
-CREATE TABLE medical_devices (
-    id SERIAL PRIMARY KEY,
+-- MEDICAL_DEVICES table
+CREATE TABLE MEDICAL_DEVICES (
+    device_id SERIAL PRIMARY KEY,
     device_type VARCHAR(100) NOT NULL,
-    theater_id INT NOT NULL REFERENCES operating_theaters(id),
-    quantity INT DEFAULT 1 CHECK (quantity >= 0),
-    UNIQUE(theater_id, device_type)
+    theater_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+    FOREIGN KEY (theater_id) REFERENCES OPERATING_THEATERS(theater_id) ON DELETE CASCADE
 );
-COMMENT ON TABLE medical_devices IS 'Medical apparatus assigned to a specific theater. Tracks count per type.';
 
--- -------------------------------------------------------
--- 2. STAFF (Medical, Nursing, General)
--- -------------------------------------------------------
-
--- Medical specialties
-CREATE TABLE medical_specialties (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) UNIQUE NOT NULL
+-- MEDICAL_SPECIALTIES table
+CREATE TABLE MEDICAL_SPECIALTIES (
+    specialty_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT
 );
-COMMENT ON TABLE medical_specialties IS 'Medical specialties (e.g., Cardiology, Pediatrics).';
 
--- Base staff table
-CREATE TABLE staff (
-    id SERIAL PRIMARY KEY,
-    national_id VARCHAR(20) UNIQUE NOT NULL,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
-    birth_date DATE,
+-- STAFF table (base table for all staff types)
+CREATE TABLE STAFF (
+    staff_id SERIAL PRIMARY KEY,
+    national_id VARCHAR(50) NOT NULL UNIQUE,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    birth_date DATE NOT NULL,
     phone VARCHAR(20),
-    email VARCHAR(100),
+    ssn VARCHAR(20) UNIQUE,
+    email VARCHAR(255) UNIQUE,
     address TEXT,
-    staff_type VARCHAR(20) NOT NULL CHECK (staff_type IN ('MEDICAL', 'NURSING', 'GENERAL'))
+    hire_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    staff_type VARCHAR(50) NOT NULL CHECK (staff_type IN ('MEDICAL', 'NURSING', 'GENERAL'))
 );
-COMMENT ON TABLE staff IS 'Base table for all hospital personnel.';
 
--- Doctors
-CREATE TABLE medical_staff (
-    staff_id INT PRIMARY KEY REFERENCES staff(id),
-    specialty_id INT NOT NULL REFERENCES medical_specialties(id),
-    license_number VARCHAR(50) UNIQUE NOT NULL,
-    curriculum TEXT
-    );
-COMMENT ON TABLE medical_staff IS 'Doctors with unique specialty and extensive CV data.';
-
--- Nursing staff
-CREATE TABLE nursing_staff (
-    staff_id INT PRIMARY KEY REFERENCES staff(id),
-    nursing_license VARCHAR(50) UNIQUE NOT NULL,
-    assigned_doctor_id INT REFERENCES medical_staff(staff_id),
-    is_floor_nurse BOOLEAN DEFAULT FALSE,
-    certifications TEXT
+-- MEDICAL_STAFF table
+CREATE TABLE MEDICAL_STAFF (
+    staff_id INTEGER PRIMARY KEY,
+    specialty_id INTEGER NOT NULL,
+    license_number VARCHAR(50) NOT NULL UNIQUE,
+    curriculum TEXT,
+    FOREIGN KEY (staff_id) REFERENCES STAFF(staff_id) ON DELETE CASCADE,
+    FOREIGN KEY (specialty_id) REFERENCES MEDICAL_SPECIALTIES(specialty_id) ON DELETE RESTRICT
 );
-COMMENT ON TABLE nursing_staff IS 'Nurses. May be assigned to a single doctor or work as floor nurses.';
 
--- General staff
-CREATE TABLE general_staff (
-    staff_id INT PRIMARY KEY REFERENCES staff(id),
-    job_type VARCHAR(50) NOT NULL
+-- NURSING_STAFF table
+CREATE TABLE NURSING_STAFF (
+    staff_id INTEGER PRIMARY KEY,
+    nursing_license VARCHAR(50) NOT NULL UNIQUE,
+    assigned_doctor_id INTEGER,
+    assigned_floor_id INTEGER,
+    certifications TEXT,
+    FOREIGN KEY (staff_id) REFERENCES STAFF(staff_id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_doctor_id) REFERENCES MEDICAL_STAFF(staff_id) ON DELETE SET NULL,
+    FOREIGN KEY (assigned_floor_id) REFERENCES FLOORS(floor_id) ON DELETE SET NULL
 );
-COMMENT ON TABLE general_staff IS 'Miscellaneous staff (zeladors, administratius, conductors).';
 
--- -------------------------------------------------------
--- 3. PATIENTS AND CLINICAL ENCOUNTERS
--- -------------------------------------------------------
+-- GENERAL_STAFF table
+CREATE TABLE GENERAL_STAFF (
+    staff_id INTEGER PRIMARY KEY,
+    job_type VARCHAR(100) NOT NULL,
+    FOREIGN KEY (staff_id) REFERENCES STAFF(staff_id) ON DELETE CASCADE
+);
 
--- Patients
-CREATE TABLE patients (
-    id SERIAL PRIMARY KEY,
-    national_id VARCHAR(20) UNIQUE,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
-    birth_date DATE,
-    gender CHAR(1) CHECK (gender IN ('M', 'F', 'O')),
+-- MEDICAL_STAFF_SPECIALTIES (junction table for many-to-many relationship)
+CREATE TABLE MEDICAL_STAFF_SPECIALTIES (
+    medical_staff_specialty_id SERIAL PRIMARY KEY,
+    staff_id INTEGER NOT NULL,
+    specialty_id INTEGER NOT NULL,
+    FOREIGN KEY (staff_id) REFERENCES STAFF(staff_id) ON DELETE CASCADE,
+    FOREIGN KEY (specialty_id) REFERENCES MEDICAL_SPECIALTIES(specialty_id) ON DELETE CASCADE,
+    UNIQUE(staff_id, specialty_id)
+);
+
+-- PATIENTS table
+CREATE TABLE PATIENTS (
+    patient_id SERIAL PRIMARY KEY,
+    national_id VARCHAR(50) NOT NULL UNIQUE,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    birth_date DATE NOT NULL,
+    gender VARCHAR(10) CHECK (gender IN ('MALE', 'FEMALE', 'OTHER')),
     phone VARCHAR(20),
-    email VARCHAR(100),
+    email VARCHAR(255),
     address TEXT,
-    emergency_contact_name VARCHAR(100),
+    emergency_contact_name VARCHAR(200),
     emergency_contact_phone VARCHAR(20),
-    blood_type VARCHAR(5),
+    blood_type VARCHAR(5) CHECK (blood_type IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
     allergies TEXT
 );
-COMMENT ON TABLE patients IS 'Patients treated at the hospital.';
 
--- Visits
-CREATE TABLE visits (
-    id SERIAL PRIMARY KEY,
-    patient_id INT NOT NULL REFERENCES patients(id),
-    doctor_id INT NOT NULL REFERENCES medical_staff(staff_id),
-    visit_timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+-- VISITS table
+CREATE TABLE VISITS (
+    visit_id SERIAL PRIMARY KEY,
+    patient_id INTEGER NOT NULL,
+    doctor_id INTEGER NOT NULL,
+    visit_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     diagnosis TEXT,
-    notes TEXT
+    notes TEXT,
+    FOREIGN KEY (patient_id) REFERENCES PATIENTS(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id) REFERENCES MEDICAL_STAFF(staff_id) ON DELETE RESTRICT
 );
-COMMENT ON TABLE visits IS 'Record of patient consultations with a doctor.';
 
--- Scheduled appointment times
-CREATE TABLE scheduled_appointments (
-    id SERIAL PRIMARY KEY,
-    visit_id INT NOT NULL REFERENCES visits(id),
+-- SCHEDULED_APPOINTMENTS table
+CREATE TABLE SCHEDULED_APPOINTMENTS (
+    appointment_id SERIAL PRIMARY KEY,
+    visit_id INTEGER NOT NULL UNIQUE,
     appointment_date DATE NOT NULL,
     appointment_time TIME NOT NULL,
-    status VARCHAR(20) DEFAULT 'SCHEDULED'
+    status VARCHAR(50) NOT NULL DEFAULT 'SCHEDULED' CHECK (status IN ('SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW')),
+    FOREIGN KEY (visit_id) REFERENCES VISITS(visit_id) ON DELETE CASCADE
 );
-COMMENT ON TABLE scheduled_appointments IS 'Specific day and hour of a patient visit for each doctor.';
 
--- Prescriptions
-CREATE TABLE prescriptions (
-    id SERIAL PRIMARY KEY,
-    visit_id INT NOT NULL REFERENCES visits(id),
-    medication_name VARCHAR(100) NOT NULL,
-    dosage VARCHAR(50),
-    frequency VARCHAR(50),
-    duration_days INT,
-    start_date DATE DEFAULT CURRENT_DATE
+-- MEDICATIONS table
+CREATE TABLE MEDICATIONS (
+    medication_id SERIAL PRIMARY KEY,
+    medication_name VARCHAR(200) NOT NULL UNIQUE,
+    description TEXT
 );
-COMMENT ON TABLE prescriptions IS 'Medications prescribed during a visit.';
 
--- Admissions
-CREATE TABLE admissions (
-    id SERIAL PRIMARY KEY,
-    patient_id INT NOT NULL REFERENCES patients(id),
-    room_id INT NOT NULL REFERENCES rooms(id),
-    admission_date DATE NOT NULL,
-    expected_discharge_date DATE NOT NULL,
+-- PRESCRIPTIONS table
+CREATE TABLE PRESCRIPTIONS (
+    prescription_id SERIAL PRIMARY KEY,
+    visit_id INTEGER NOT NULL,
+    medication_id INTEGER NOT NULL,
+    dosage VARCHAR(100) NOT NULL,
+    frequency VARCHAR(100) NOT NULL,
+    duration_days INTEGER,
+    start_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    FOREIGN KEY (visit_id) REFERENCES VISITS(visit_id) ON DELETE CASCADE,
+    FOREIGN KEY (medication_id) REFERENCES MEDICATIONS(medication_id) ON DELETE RESTRICT
+);
+
+-- ADMISSIONS table
+CREATE TABLE ADMISSIONS (
+    admission_id SERIAL PRIMARY KEY,
+    patient_id INTEGER NOT NULL,
+    room_id INTEGER NOT NULL,
+    admission_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expected_discharge_date DATE,
     actual_discharge_date DATE,
-    CONSTRAINT valid_dates CHECK (expected_discharge_date >= admission_date)
+    FOREIGN KEY (patient_id) REFERENCES PATIENTS(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (room_id) REFERENCES ROOMS(room_id) ON DELETE RESTRICT,
+    CHECK (actual_discharge_date >= DATE(admission_date) OR actual_discharge_date IS NULL)
 );
-COMMENT ON TABLE admissions IS 'Room reservations and actual inpatient stays.';
 
--- Surgeries
-CREATE TABLE surgeries (
-    id SERIAL PRIMARY KEY,
-    patient_id INT NOT NULL REFERENCES patients(id),
-    theater_id INT NOT NULL REFERENCES operating_theaters(id),
-    primary_surgeon_id INT NOT NULL REFERENCES medical_staff(staff_id),
+-- SURGERIES table
+CREATE TABLE SURGERIES (
+    surgery_id SERIAL PRIMARY KEY,
+    patient_id INTEGER NOT NULL,
+    theater_id INTEGER NOT NULL,
+    primary_surgeon_id INTEGER NOT NULL,
     surgery_date DATE NOT NULL,
     start_time TIME NOT NULL,
-    end_time TIME,
-    procedure_type VARCHAR(100) NOT NULL,
+    end_time TIME NOT NULL,
+    procedure_type VARCHAR(200) NOT NULL,
     notes TEXT,
-    UNIQUE(theater_id, surgery_date, start_time)
+    FOREIGN KEY (patient_id) REFERENCES PATIENTS(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (theater_id) REFERENCES OPERATING_THEATERS(theater_id) ON DELETE RESTRICT,
+    FOREIGN KEY (primary_surgeon_id) REFERENCES MEDICAL_STAFF(staff_id) ON DELETE RESTRICT,
+    CHECK (end_time > start_time)
 );
-COMMENT ON TABLE surgeries IS 'Surgical procedures scheduled in operating theaters.';
 
--- Surgery assistants (nurses)
-CREATE TABLE surgery_assistants (
-    surgery_id INT NOT NULL REFERENCES surgeries(id),
-    nurse_id INT NOT NULL REFERENCES nursing_staff(staff_id),
-    role VARCHAR(50),
-    PRIMARY KEY (surgery_id, nurse_id)
+-- SURGERY_ASSISTANTS table (composite primary key)
+CREATE TABLE SURGERY_ASSISTANTS (
+    surgery_id INTEGER NOT NULL,
+    nurse_id INTEGER NOT NULL,
+    role VARCHAR(100) NOT NULL,
+    PRIMARY KEY (surgery_id, nurse_id),
+    FOREIGN KEY (surgery_id) REFERENCES SURGERIES(surgery_id) ON DELETE CASCADE,
+    FOREIGN KEY (nurse_id) REFERENCES NURSING_STAFF(staff_id) ON DELETE RESTRICT
 );
-COMMENT ON TABLE surgery_assistants IS 'Nurses assisting a surgeon during an operation.';
 
--- -------------------------------------------------------
--- 4. PHARMACY AND RADIOLOGY DEPARTMENTS
--- -------------------------------------------------------
-
--- Pharmacy dispensations
-CREATE TABLE pharmacy_dispensations (
-    id SERIAL PRIMARY KEY,
-    admission_id INT NOT NULL REFERENCES admissions(id),
-    dispensed_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    total_cost DECIMAL(10,2) NOT NULL CHECK (total_cost >= 0),
-    notes TEXT
+-- PHARMACY_DISPENSATIONS table
+CREATE TABLE PHARMACY_DISPENSATIONS (
+    dispensation_id SERIAL PRIMARY KEY,
+    admission_id INTEGER NOT NULL,
+    dispensed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    total_cost DECIMAL(10, 2) NOT NULL DEFAULT 0 CHECK (total_cost >= 0),
+    notes TEXT,
+    FOREIGN KEY (admission_id) REFERENCES ADMISSIONS(admission_id) ON DELETE CASCADE
 );
-COMMENT ON TABLE pharmacy_dispensations IS 'Tracks medication supplies given to an inpatient (linked to an admission).';
 
--- Radiology exams
-CREATE TABLE radiology_exams (
-    id SERIAL PRIMARY KEY,
-    patient_id INT NOT NULL REFERENCES patients(id),
-    requesting_doctor_id INT NOT NULL REFERENCES medical_staff(staff_id),
-    exam_type VARCHAR(20) NOT NULL CHECK (exam_type IN ('XRAY', 'ULTRASOUND', 'MRI')),
-    requested_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    performed_at TIMESTAMPTZ,
+-- DISPENSATION_ITEMS table
+CREATE TABLE DISPENSATION_ITEMS (
+    item_id SERIAL PRIMARY KEY,
+    dispensation_id INTEGER NOT NULL,
+    medication_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    unit_price DECIMAL(10, 2) NOT NULL CHECK (unit_price >= 0),
+    FOREIGN KEY (dispensation_id) REFERENCES PHARMACY_DISPENSATIONS(dispensation_id) ON DELETE CASCADE,
+    FOREIGN KEY (medication_id) REFERENCES MEDICATIONS(medication_id) ON DELETE RESTRICT
+);
+
+-- RADIOLOGY_EXAMS table
+CREATE TABLE RADIOLOGY_EXAMS (
+    exam_id SERIAL PRIMARY KEY,
+    patient_id INTEGER NOT NULL,
+    requesting_doctor_id INTEGER NOT NULL,
+    exam_type VARCHAR(100) NOT NULL,
+    requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    performed_at TIMESTAMP,
     result_image_url TEXT,
     radiologist_report TEXT,
-    status VARCHAR(20) DEFAULT 'PENDING'
+    status VARCHAR(50) NOT NULL DEFAULT 'REQUESTED' CHECK (status IN ('REQUESTED', 'SCHEDULED', 'COMPLETED', 'CANCELLED')),
+    FOREIGN KEY (patient_id) REFERENCES PATIENTS(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (requesting_doctor_id) REFERENCES MEDICAL_STAFF(staff_id) ON DELETE RESTRICT
 );
-COMMENT ON TABLE radiology_exams IS 'Radiology/ultrasound/MRI exams ordered by doctors.';
 
--- -------------------------------------------------------
--- 5. SIMPLE USER AUTHENTICATION
--- -------------------------------------------------------
-
--- Application users (linked to staff)
-CREATE TABLE app_users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
+-- APP_USERS table
+CREATE TABLE APP_USERS (
+    user_id SERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    staff_id INT UNIQUE REFERENCES staff(id) ON DELETE CASCADE,
-    role VARCHAR(20) NOT NULL CHECK (role IN ('ADMIN', 'DOCTOR', 'NURSE', 'PHARMACY', 'RADIOLOGY', 'RECEPTION')),
-    is_active BOOLEAN DEFAULT TRUE,
-    last_login TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    staff_id INTEGER NOT NULL UNIQUE,
+    role VARCHAR(50) NOT NULL CHECK (role IN ('ADMIN', 'DOCTOR', 'NURSE', 'STAFF', 'RECEPTIONIST')),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    last_login TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (staff_id) REFERENCES STAFF(staff_id) ON DELETE CASCADE
 );
-COMMENT ON TABLE app_users IS 'User accounts for staff to log into the system.';
 
--- -------------------------------------------------------
--- 6. AUDIT LOGS (SIMPLE PERO SUFICIENTE)
--- -------------------------------------------------------
-
--- Audit log table to track user actions
-CREATE TABLE audit_logs (
-    id BIGSERIAL PRIMARY KEY,
-    user_id INT REFERENCES app_users(id) ON DELETE SET NULL,
-    action_timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    action_type VARCHAR(20) NOT NULL CHECK (action_type IN ('INSERT', 'UPDATE', 'DELETE', 'LOGIN', 'VIEW')),
-    table_name VARCHAR(50),
-    record_id INT,
-    old_data JSONB,
-    new_data JSONB,
+-- AUDIT_LOGS table
+CREATE TABLE AUDIT_LOGS (
+    log_id SERIAL PRIMARY KEY,
+    user_id INTEGER,
+    action_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    action_type VARCHAR(50) NOT NULL CHECK (action_type IN ('INSERT', 'UPDATE', 'DELETE', 'SELECT', 'LOGIN', 'LOGOUT')),
+    table_name VARCHAR(100),
+    record_id INTEGER,
+    old_data TEXT,
+    new_data TEXT,
     ip_address INET,
-    notes TEXT
+    notes TEXT,
+    FOREIGN KEY (user_id) REFERENCES APP_USERS(user_id) ON DELETE SET NULL
 );
-COMMENT ON TABLE audit_logs IS 'Tracks user actions for basic auditing.';
 
--- Index for performance
-CREATE INDEX idx_audit_timestamp ON audit_logs(action_timestamp DESC);
-CREATE INDEX idx_audit_user ON audit_logs(user_id);
-CREATE INDEX idx_audit_table ON audit_logs(table_name);
+-- =====================================================
+-- INDEXES FOR PERFORMANCE
+-- =====================================================
 
--- -------------------------------------------------------
--- 7. PATIENT MEDICAL HISTORY VIEW (Commented)
--- -------------------------------------------------------
+-- FLOORS indexes
+CREATE INDEX idx_floors_floor_number ON FLOORS(floor_number);
 
-/*
--- VIEW: patient_full_history
--- Purpose: Easy access to a patient's complete clinical record.
--- Usage: SELECT * FROM patient_full_history WHERE patient_id = ?;
+-- ROOMS indexes
+CREATE INDEX idx_rooms_floor_id ON ROOMS(floor_id);
+CREATE INDEX idx_rooms_room_number ON ROOMS(room_number);
 
-CREATE OR REPLACE VIEW patient_full_history AS
-SELECT 
-    p.id AS patient_id,
-    p.first_name || ' ' || p.last_name AS patient_name,
-    jsonb_agg(DISTINCT jsonb_build_object(
-        'type', 'visit',
-        'date', v.visit_timestamp,
-        'doctor', d.first_name || ' ' || d.last_name,
-        'specialty', s.name,
-        'diagnosis', v.diagnosis,
-        'prescriptions', (
-            SELECT jsonb_agg(jsonb_build_object(
-                'medication', pr.medication_name,
-                'dosage', pr.dosage,
-                'frequency', pr.frequency,
-                'start', pr.start_date,
-                'duration_days', pr.duration_days
-            ))
-            FROM prescriptions pr
-            WHERE pr.visit_id = v.id
-        )
-    )) FILTER (WHERE v.id IS NOT NULL) AS visits,
-    jsonb_agg(DISTINCT jsonb_build_object(
-        'type', 'surgery',
-        'date', su.surgery_date,
-        'procedure', su.procedure_type,
-        'surgeon', ds.first_name || ' ' || ds.last_name,
-        'theater', ot.theater_code,
-        'floor', f.floor_number
-    )) FILTER (WHERE su.id IS NOT NULL) AS surgeries,
-    jsonb_agg(DISTINCT jsonb_build_object(
-        'type', 'radiology',
-        'exam', re.exam_type,
-        'requested', re.requested_at,
-        'performed', re.performed_at,
-        'report', re.radiologist_report,
-        'image_url', re.result_image_url
-    )) FILTER (WHERE re.id IS NOT NULL) AS radiology_exams,
-    (
-        SELECT jsonb_agg(jsonb_build_object(
-            'medication', pr.medication_name,
-            'dosage', pr.dosage,
-            'frequency', pr.frequency,
-            'start_date', pr.start_date,
-            'end_date', pr.start_date + (pr.duration_days || ' days')::INTERVAL
-        ))
-        FROM prescriptions pr
-        JOIN visits v2 ON pr.visit_id = v2.id
-        WHERE v2.patient_id = p.id
-          AND pr.start_date + (pr.duration_days || ' days')::INTERVAL > CURRENT_DATE
-    ) AS current_medications
-FROM patients p
-LEFT JOIN visits v ON v.patient_id = p.id
-LEFT JOIN medical_staff md ON v.doctor_id = md.staff_id
-LEFT JOIN staff d ON md.staff_id = d.id
-LEFT JOIN medical_specialties s ON md.specialty_id = s.id
-LEFT JOIN surgeries su ON su.patient_id = p.id
-LEFT JOIN medical_staff ms ON su.primary_surgeon_id = ms.staff_id
-LEFT JOIN staff ds ON ms.staff_id = ds.id
-LEFT JOIN operating_theaters ot ON su.theater_id = ot.id
-LEFT JOIN floors f ON ot.floor_id = f.id
-LEFT JOIN radiology_exams re ON re.patient_id = p.id
-GROUP BY p.id;
+-- OPERATING_THEATERS indexes
+CREATE INDEX idx_op_theaters_floor_id ON OPERATING_THEATERS(floor_id);
+CREATE INDEX idx_op_theaters_code ON OPERATING_THEATERS(theater_code);
 
-COMMENT ON VIEW patient_full_history IS 'Aggregated clinical history including visits, diagnoses, surgeries, radiology and current medication plan.';
-*/
+-- MEDICAL_DEVICES indexes
+CREATE INDEX idx_medical_devices_theater_id ON MEDICAL_DEVICES(theater_id);
+CREATE INDEX idx_medical_devices_type ON MEDICAL_DEVICES(device_type);
+
+-- STAFF indexes
+CREATE INDEX idx_staff_national_id ON STAFF(national_id);
+CREATE INDEX idx_staff_last_name ON STAFF(last_name);
+CREATE INDEX idx_staff_email ON STAFF(email);
+CREATE INDEX idx_staff_hire_date ON STAFF(hire_date);
+CREATE INDEX idx_staff_staff_type ON STAFF(staff_type);
+
+-- MEDICAL_STAFF indexes
+CREATE INDEX idx_medical_staff_specialty ON MEDICAL_STAFF(specialty_id);
+CREATE INDEX idx_medical_staff_license ON MEDICAL_STAFF(license_number);
+
+-- NURSING_STAFF indexes
+CREATE INDEX idx_nursing_staff_assigned_doctor ON NURSING_STAFF(assigned_doctor_id);
+CREATE INDEX idx_nursing_staff_assigned_floor ON NURSING_STAFF(assigned_floor_id);
+CREATE INDEX idx_nursing_staff_license ON NURSING_STAFF(nursing_license);
+
+-- MEDICAL_STAFF_SPECIALTIES indexes
+CREATE INDEX idx_staff_specialties_staff_id ON MEDICAL_STAFF_SPECIALTIES(staff_id);
+CREATE INDEX idx_staff_specialties_specialty_id ON MEDICAL_STAFF_SPECIALTIES(specialty_id);
+
+-- PATIENTS indexes
+CREATE INDEX idx_patients_national_id ON PATIENTS(national_id);
+CREATE INDEX idx_patients_last_name ON PATIENTS(last_name);
+CREATE INDEX idx_patients_birth_date ON PATIENTS(birth_date);
+CREATE INDEX idx_patients_blood_type ON PATIENTS(blood_type);
+
+-- VISITS indexes
+CREATE INDEX idx_visits_patient_id ON VISITS(patient_id);
+CREATE INDEX idx_visits_doctor_id ON VISITS(doctor_id);
+CREATE INDEX idx_visits_timestamp ON VISITS(visit_timestamp);
+
+-- SCHEDULED_APPOINTMENTS indexes
+CREATE INDEX idx_appointments_visit_id ON SCHEDULED_APPOINTMENTS(visit_id);
+CREATE INDEX idx_appointments_date ON SCHEDULED_APPOINTMENTS(appointment_date);
+CREATE INDEX idx_appointments_status ON SCHEDULED_APPOINTMENTS(status);
+
+-- PRESCRIPTIONS indexes
+CREATE INDEX idx_prescriptions_visit_id ON PRESCRIPTIONS(visit_id);
+CREATE INDEX idx_prescriptions_medication_id ON PRESCRIPTIONS(medication_id);
+CREATE INDEX idx_prescriptions_start_date ON PRESCRIPTIONS(start_date);
+
+-- ADMISSIONS indexes
+CREATE INDEX idx_admissions_patient_id ON ADMISSIONS(patient_id);
+CREATE INDEX idx_admissions_room_id ON ADMISSIONS(room_id);
+CREATE INDEX idx_admissions_admission_date ON ADMISSIONS(admission_date);
+CREATE INDEX idx_admissions_discharge_date ON ADMISSIONS(actual_discharge_date);
+
+-- SURGERIES indexes
+CREATE INDEX idx_surgeries_patient_id ON SURGERIES(patient_id);
+CREATE INDEX idx_surgeries_theater_id ON SURGERIES(theater_id);
+CREATE INDEX idx_surgeries_surgeon_id ON SURGERIES(primary_surgeon_id);
+CREATE INDEX idx_surgeries_date ON SURGERIES(surgery_date);
+
+-- SURGERY_ASSISTANTS indexes
+CREATE INDEX idx_surgery_assistants_nurse_id ON SURGERY_ASSISTANTS(nurse_id);
+
+-- PHARMACY_DISPENSATIONS indexes
+CREATE INDEX idx_dispensations_admission_id ON PHARMACY_DISPENSATIONS(admission_id);
+CREATE INDEX idx_dispensations_dispensed_at ON PHARMACY_DISPENSATIONS(dispensed_at);
+
+-- DISPENSATION_ITEMS indexes
+CREATE INDEX idx_dispensation_items_dispensation_id ON DISPENSATION_ITEMS(dispensation_id);
+CREATE INDEX idx_dispensation_items_medication_id ON DISPENSATION_ITEMS(medication_id);
+
+-- RADIOLOGY_EXAMS indexes
+CREATE INDEX idx_radiology_patient_id ON RADIOLOGY_EXAMS(patient_id);
+CREATE INDEX idx_radiology_doctor_id ON RADIOLOGY_EXAMS(requesting_doctor_id);
+CREATE INDEX idx_radiology_status ON RADIOLOGY_EXAMS(status);
+CREATE INDEX idx_radiology_requested_at ON RADIOLOGY_EXAMS(requested_at);
+
+-- APP_USERS indexes
+CREATE INDEX idx_app_users_username ON APP_USERS(username);
+CREATE INDEX idx_app_users_staff_id ON APP_USERS(staff_id);
+CREATE INDEX idx_app_users_role ON APP_USERS(role);
+CREATE INDEX idx_app_users_active ON APP_USERS(is_active);
+
+-- AUDIT_LOGS indexes
+CREATE INDEX idx_audit_logs_user_id ON AUDIT_LOGS(user_id);
+CREATE INDEX idx_audit_logs_timestamp ON AUDIT_LOGS(action_timestamp);
+CREATE INDEX idx_audit_logs_action_type ON AUDIT_LOGS(action_type);
+CREATE INDEX idx_audit_logs_table_name ON AUDIT_LOGS(table_name);
+
+-- =====================================================
+-- COMMENTS FOR DOCUMENTATION
+-- =====================================================
+
+COMMENT ON DATABASE hospital_management IS 'Hospital Management System database';
+
+COMMENT ON TABLE FLOORS IS 'Building floor information';
+COMMENT ON TABLE ROOMS IS 'Patient rooms located on floors';
+COMMENT ON TABLE OPERATING_THEATERS IS 'Surgical operation theaters';
+COMMENT ON TABLE MEDICAL_DEVICES IS 'Medical devices assigned to operating theaters';
+COMMENT ON TABLE MEDICAL_SPECIALTIES IS 'Medical specialties definitions';
+COMMENT ON TABLE STAFF IS 'Base table for all hospital staff';
+COMMENT ON TABLE MEDICAL_STAFF IS 'Medical staff (doctors, surgeons) extending STAFF';
+COMMENT ON TABLE NURSING_STAFF IS 'Nursing staff extending STAFF';
+COMMENT ON TABLE GENERAL_STAFF IS 'General staff (administrative, support) extending STAFF';
+COMMENT ON TABLE PATIENTS IS 'Patient information';
+COMMENT ON TABLE VISITS IS 'Patient visits and consultations';
+COMMENT ON TABLE SCHEDULED_APPOINTMENTS IS 'Scheduled appointments for visits';
+COMMENT ON TABLE MEDICATIONS IS 'Medication catalog';
+COMMENT ON TABLE PRESCRIPTIONS IS 'Prescriptions issued during visits';
+COMMENT ON TABLE ADMISSIONS IS 'Patient hospital admissions';
+COMMENT ON TABLE SURGERIES IS 'Surgical procedures';
+COMMENT ON TABLE SURGERY_ASSISTANTS IS 'Nursing staff assisting in surgeries';
+COMMENT ON TABLE PHARMACY_DISPENSATIONS IS 'Pharmacy dispensations during admissions';
+COMMENT ON TABLE DISPENSATION_ITEMS IS 'Individual items in pharmacy dispensations';
+COMMENT ON TABLE RADIOLOGY_EXAMS IS 'Radiology examination records';
+COMMENT ON TABLE APP_USERS IS 'Application user accounts linked to staff';
+COMMENT ON TABLE AUDIT_LOGS IS 'System audit trail';

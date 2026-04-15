@@ -33,7 +33,7 @@ To comply with the hospital's requirement for a system that runs on limited reso
 | `psycopg2-binary` | DB Adapter | Standard PostgreSQL adapter; supports SSL and secure connections. |
 | `python-dotenv` | Configuration | Manages environment variables to keep credentials out of the source code. |
 | `Faker` | Data Generation | Generates 50k+ realistic records for testing (supports multiple locales for Cyrillic data). |
-| `cryptography` | Security | Used for managing secure access files and sensitive data hashing. |
+| `hashlib` | Security | Used for managing secure access files and sensitive data hashing. |
 | **`tkinter`** | **GUI (Desktop)** | **Efficiency:** Extremely lightweight library that consumes minimal RAM, ideal for the hospital's older hardware. No browser overhead required. |
 | `tkinter.ttk` | Modern UI | Provides a structured and tabulated look for medical reports and patient lists. |
 

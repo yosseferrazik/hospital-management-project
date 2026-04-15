@@ -23,8 +23,8 @@ The project is divided into 6 main phases, starting from initial environment set
 | | Tech stack research (PostgreSQL 18, Python libraries & PowerBI)                     | 02/04     | 06/04     | 6h        | 5h        | [x]   |
 | | Creation of detailed planning doc, WBS and Gantt chart (*No Gantt*)                 | 07/04     | 08/04     | 6h        | 7h        | [x]   |
 | | Local environment setup: Git repo, VS Code & Python Virtual Env (venv)              | 08/04     | 09/04     | 6h        | 2h        | [x]   |
-| **2. DB Design** | Entity-Relationship (ER) Diagram design based on Annex 1           | 10/04     | 13/04     | 6h        |           | [ ]   |
-| | Relational Model transformation, normalization (3NF) & mapping                      | 13/04     | 14/04     | 4h        |           | [ ]   |
+| **2. DB Design** | Entity-Relationship (ER) Diagram design based on Annex 1           | 10/04     | 13/04     | 6h        | 9h        | [x]   |
+| | Relational Model transformation, normalization (3NF) & mapping                      | 13/04     | 14/04     | 4h        | 2h        | [x]   |
 | | DDL Scripting: Table creation, Primary Keys, Foreign Keys & Constraints             | 14/04     | 15/04     | 8h        |           | [ ]   |
 | | Data Dictionary creation & Database indexing strategy                               | 15/04     | 18/04     | 6h        |           | [ ]   |
 | **3. Security** | RBAC definition: Security Matrix for Doctors, Admins & Patients     | 18/04     | 18/04     | 4h        |           | [ ]   |
