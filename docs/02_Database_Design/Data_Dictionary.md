@@ -1,4 +1,4 @@
-# 📊 Data Dictionary - Hospital Management System
+# 📊 Data Dictionary
 > This document provides a comprehensive description of all tables, columns, data types, constraints, and relationships within the Hospital Management database schema.
 
 ## Table of Contents
