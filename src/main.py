@@ -5,7 +5,7 @@ from modules import auth
 from db import postgres as db
 from db.cache import cache
 
-ctk.set_appearance_mode("light")
+ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
 class HospitalApp:
