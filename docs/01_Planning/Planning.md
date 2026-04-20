@@ -25,12 +25,12 @@ The project is divided into 6 main phases, starting from initial environment set
 | | Local environment setup: Git repo, VS Code & Python Virtual Env (venv)              | 08/04     | 09/04     | 6h        | 2h        | [x]   |
 | **2. DB Design** | Entity-Relationship (ER) Diagram design based on Annex 1           | 10/04     | 13/04     | 6h        | 9h        | [x]   |
 | | Relational Model transformation, normalization (3NF) & mapping                      | 13/04     | 14/04     | 4h        | 2h        | [x]   |
-| | DDL Scripting: Table creation, Primary Keys, Foreign Keys & Constraints             | 14/04     | 15/04     | 8h        |           | [ ]   |
-| | Data Dictionary creation & Database indexing strategy                               | 15/04     | 18/04     | 6h        |           | [ ]   |
-| **3. Security** | RBAC definition: Security Matrix for Doctors, Admins & Patients     | 18/04     | 18/04     | 4h        |           | [ ]   |
-| | SQL Scripting for Users, Roles, Privileges & RLS                                    | 18/04     | 20/04     | 6h        |           | [ ]   |
-| | Implementation of SSL/TLS encrypted connections                                     | 20/04     | 21/04     | 4h        |           | [ ]   |
-| | Dynamic Data Masking setup for sensitive information                                | 21/04     | 22/04     | 4h        |           | [ ]   |
+| | DDL Scripting: Table creation, Primary Keys, Foreign Keys & Constraints             | 14/04     | 15/04     | 8h        | 2h        | [x]   |
+| | Data Dictionary creation & Database indexing strategy                               | 15/04     | 18/04     | 6h        | 4h        | [x]   |
+| **3. Security** | RBAC definition: Security Matrix for Doctors, Admins & Patients     | 18/04     | 18/04     | 4h        | 3h        | [ ]   |
+| | SQL Scripting for Users, Roles, Privileges & RLS                                    | 18/04     | 20/04     | 6h        | 5h        | [ ]   |
+| | Implementation of SSL/TLS encrypted connections                                     | 20/04     | 21/04     | 4h        | 3h        | [ ]   |
+| | Dynamic Data Masking setup for sensitive information                                | 21/04     | 22/04     | 4h        | 3h        | [ ]   |
 | | Legal documentation for GDPR compliance & data privacy                              | 22/04     | 22/04     | 4h        |           | [ ]   |
 | **4. HA & Ops** | Master-Slave Replication architecture design and configuration      | 23/04     | 28/04     | 10h       |           | [ ]   |
 | | Automated Backup scripts development & Cloud synchronization                        | 30/04     | 04/05     | 12h       |           | [ ]   |
