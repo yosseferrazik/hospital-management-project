@@ -52,7 +52,7 @@ docs/
 │   └── Security_Matrix.pdf            # RBAC Roles and Permissions table 
 │
 ├── 03_Infrastructure/
-│   ├── SSL_Configuration.pdf          # Steps for PostgreSQL encryption 
+│   ├── TLS_Configuration.pdf          # Steps for PostgreSQL encryption 
 │   ├── Replication_Architecture.pdf   # Master-Slave diagram and logic 
 │   ├── Backup_Strategy.pdf            # Backup scripts and cloud sync guide 
 │   └── GDPR_Compliance.pdf            # Data privacy and masking documentation 

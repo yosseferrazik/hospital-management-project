@@ -51,4 +51,4 @@ The project is divided into 6 main phases, starting from initial environment set
 *Note: This planning is subject to adjustments based on technical challenges encountered during the development phases.*
 
 ---
-*Updated: April 10, 2026*
+*Updated: April 20, 2026*
