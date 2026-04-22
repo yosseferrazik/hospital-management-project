@@ -1,17 +1,5 @@
 # 📅 Project Planning & Methodology
-> This document outlines the strategy, task distribution, and timeline of the HMS.
-
-## Solution Proposal
-The objective is to develop a robust, secure, and scalable system for managing hospital data. The solution will be built upon three main pillars:
-* **Database:** A PostgreSQL 18 cluster with Master-Slave replication to ensure High Availability (HA) and SSL encryption for secure communications.
-* **Security:** Implementation of a strict Role-Based Access Control (RBAC) matrix and Dynamic Data Masking to protect sensitive patient information (GDPR compliance).
-* **Software:** A Python-based application using a modular architecture, managed through a Virtual Environment (`venv`) for portability and ease of deployment.
-
-## Technical Stack
-* **Database Engine:** PostgreSQL 18
-* **Programming Language:** Python 3.12+
-* **Documentation:** Markdown & PDF
-* **Version Control:** Git & GitHub
+> This document outlines the strategy, task distribution, and timeline of the HMS (Hospital Management System).
 
 ## Work Breakdown Structure (WBS)
 The project is divided into 6 main phases, starting from initial environment setup to the final handover and documentation. Each task has been assigned an estimated duration based on the complexity of the Hospital requirements.
@@ -27,17 +15,18 @@ The project is divided into 6 main phases, starting from initial environment set
 | | Relational Model transformation, normalization (3NF) & mapping                      | 13/04     | 14/04     | 4h        | 2h        | [x]   |
 | | DDL Scripting: Table creation, Primary Keys, Foreign Keys & Constraints             | 14/04     | 15/04     | 8h        | 2h        | [x]   |
 | | Data Dictionary creation & Database indexing strategy                               | 15/04     | 18/04     | 6h        | 4h        | [x]   |
-| **3. Security** | RBAC definition: Security Matrix for Doctors, Admins & Patients     | 18/04     | 18/04     | 4h        | 3h        | [ ]   |
-| | SQL Scripting for Users, Roles, Privileges & RLS                                    | 18/04     | 20/04     | 6h        | 5h        | [ ]   |
+| **3. Security** | RBAC definition: Security Matrix for Doctors, Admins & Patients     | 18/04     | 18/04     | 4h        | 3h        | [x]   |
+| | SQL Scripting for Users, Roles, Privileges & RLS                                    | 18/04     | 20/04     | 6h        | 5h        | [x]   |
 | | Implementation of SSL/TLS encrypted connections                                     | 20/04     | 21/04     | 4h        | 3h        | [ ]   |
 | | Dynamic Data Masking setup for sensitive information                                | 21/04     | 22/04     | 4h        | 3h        | [ ]   |
 | | Legal documentation for GDPR compliance & data privacy                              | 22/04     | 22/04     | 4h        |           | [ ]   |
 | **4. HA & Ops** | Master-Slave Replication architecture design and configuration      | 23/04     | 28/04     | 10h       |           | [ ]   |
 | | Automated Backup scripts development & Cloud synchronization                        | 30/04     | 04/05     | 12h       |           | [ ]   |
 | | Disaster Recovery testing: Simulation of node failure & Restoration                 | 04/05     | 06/05     | 8h        |           | [ ]   |
-| **5. Coding** | Secure Authentication module development (external config)            | 07/05     | 09/05     | 6h        |           | [ ]   |
-| | DB Connection handling & CRUD logic                                                 | 09/05     | 12/05     | 10h       |           | [ ]   |
-| | Main CLI Interface: Menus, navigation & input validation                            | 12/05     | 15/05     | 8h        |           | [ ]   |
+| **5. Coding** | Developing the Scaffolding and base documentation of Back-end            | 07/05     | 09/05     | 6h        |           | [ ]   |
+| | DB Connection handling                                                 | 09/05     | 12/05     | 5h       |           | [ ]   |
+| |                                           Connectivity block & CRUD logic                                           |      10/05     |      11/05     |      5h     |           |    [ ]   |
+| | Front-End Interface: Menus, navigation & input validation                            | 12/05     | 15/05     | 8h        |           | [ ]   |
 | | Dummy Data generator (50k+ patients) with Cyrillic support                          | 17/05     | 20/05     | 8h        |           | [ ]   |
 | **6. Handover** | Integration testing, bug fixing & code formatting                   | 21/05     | 23/05     | 6h        |           | [ ]   |
 | | Creation of User Manual and Technical Installation Guide                            | 23/05     | 25/05     | 6h        |           | [ ]   |
@@ -46,9 +35,4 @@ The project is divided into 6 main phases, starting from initial environment set
 ## Workload Summary
 * **Total Hours Estimated:** 156 Hours
 * **Resource:** Yossef Errazik
-* **Tracking:** The "Real Hours" column and "Status" checkboxes will be updated during the **Daily Sessions (Diari de sessions)** to reflect real progress.
-
-*Note: This planning is subject to adjustments based on technical challenges encountered during the development phases.*
-
----
-*Updated: April 20, 2026*
+* **Tracking:** The "Real Hours" column and "Status" checkboxes will be updated during the **[Session Logs](./Session_Logs.md)** to reflect real progress.

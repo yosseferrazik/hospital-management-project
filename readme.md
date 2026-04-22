@@ -1,9 +1,9 @@
 ![Hospital](https://imagenes.elpais.com/resizer/v2/AFAITZ3H6DI4FMKGYEDGKNPBNM.jpg?auth=bf9cdc39c32a763812ec3172ab6d8ca422787358ebb01637b93f2f17246b4b51&width=1960&height=1103&smart=true "Hospital")
-# 🏥 Hospital Management System | ASIX Intermodular Project
+# 🏥 Hospital Sa Palomera | ASIX Intermodular Project
 > This repository contains the complete intermodular project for the **ASIX program (Institut Sa Palomera)**. The project integrates Database Design (PostgreSQL), Programming (Python), and Infrastructure Management.
 
 ## 🔍 Project Overview & Objectives
-Due to significant population growth in the areas of Blanes and Lloret, the **Hospital de Blanes** is currently facing the challenge of transitioning from an obsolete paper-based management system to a modern digital infrastructure. This project aims to design and implement a comprehensive software solution to streamline medical, administrative, and logistical operations.
+Due to significant population growth in the areas of Blanes and Lloret, the **Hospital Sa Palomera** is currently facing the challenge of transitioning from an obsolete paper-based management system to a modern digital infrastructure. This project aims to design and implement a comprehensive software solution to streamline medical, administrative, and logistical operations.
 
 The primary mission of this system is to replace manual record-keeping with a secure, high-performance digital environment that ensures data integrity and improves healthcare delivery.
 
@@ -19,17 +19,15 @@ The primary mission of this system is to replace manual record-keeping with a se
 This repository is organized into specific modules to ensure clarity and professional standards. Click on the links to navigate:
 
 ### 📑 [Documentation](./docs/)
-* **[01_Planning](./docs/01_Planning/)**: Project proposal, Gantt charts, and daily session logs.
+* **[01_Planning](./docs/01_Planning/)**: Project proposal, technological stack, architecture, and daily session logs.
 * **[02_Database_Design](./docs/02_Database_Design/)**: ER diagrams, Relational model, and Security matrix.
 * **[03_Infrastructure](./docs/03_Infrastructure/)**: SSL setup, High Availability (Replication), and Backup strategy.
 * **[04_Manuals](./docs/04_Manuals/)**: Technical installation guide and User manual.
 * **[References](./docs/References.md)**: Bibliography and web resources used.
 
 ### 💻 [Source Code](./src/)
-* **[Code Documentation](./src/README.md)**: General documentation and features in the source code.
-* **[Main Entry](./src/main.py)**: Principal execution file.
-* **[Modules](./src/)**: Logic for authentication, database connection, and UI.
-* **[Requirements](./requirements.txt)**: List of Python dependencies for portability.
+* **[Server Code](./server/README.md)**: Server-side logic for database interactions and API endpoints.
+* **[Client Code](./client/README.md)**: Client-side desktop application for hospital staff to manage records and operations.
 
 ### 🗄️ [SQL Scripts](./sql/)
 * **[Schema](./sql/schema.sql)**: Database structure and tables.

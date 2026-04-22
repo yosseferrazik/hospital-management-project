@@ -1,59 +1,79 @@
-# 🛠️ Technology Stack Suggestion
-> This document details the technologies and hardware specifications selected for the HMS, justifying their use based on the project requirements of security, scalability, high availability, and resource efficiency.
+# 🛠️ Technology Stack
+> This document details the technologies selected for the HMS (Hospital Management System), justifying their use based on the project requirements of security, scalability, high availability, and resource efficiency.
 
-## Core Technologies
-
-### 🐘 Database: PostgreSQL 18
-* **Role:** Primary Relational Database Management System (RDBMS).
-* **Justification:** * **Robustness:** Provides enterprise-grade reliability for sensitive medical data.
-    * **High Availability:** Native streaming replication for Master-Slave setups to ensure 24/7 hospital operations.
-    * **Compliance:** Built-in features for Data Masking and encryption to meet GDPR standards.
-    * **Internationalization:** Configured with **UTF-8 Encoding** and specific `LC_COLLATE` to support **Cyrillic characters**, addressing the demographic needs of the region (Eastern European population).
-
-### 🐍 Programming: Python 3.12+
-* **Role:** Backend logic, Database connectivity, and Graphical User Interface (GUI).
+## Programming Languages
+### Python v3.12+
+* **Role:** Core backend logic and desktop application layer.
 * **Justification:**
-    * **Portability:** Easy deployment using Virtual Environments (`venv`) as required by project guidelines.
-    * **Maintainability:** Facilitates clean, commented code for each function and procedure.
+* * **Productivity:** Rapid development with a mature ecosystem for data-driven applications.
+  * **Maintainability:** Readable syntax that supports structured and scalable codebases.
+  * **Ecosystem:** Strong support for database connectivity, security libraries, and testing tools.
+  * **Deployment:** Easily containerized and managed via virtual environments (`venv`).
+    
+## Database
+### PostgreSQL v18.3
+* **Role:** Primary relational database system for all clinical and administrative data.
+* **Justification:**
+  * **Reliability:** Proven enterprise-grade stability for critical systems.
+  * **Scalability:** Supports replication and high-availability architectures.
+  * **Security:** Advanced features such as role-based access control, encryption, and auditing.
+  * **Compliance:** Compatible with GDPR requirements through secure configuration and data handling practices.
+  * **Internationalization:** UTF-8 encoding with appropriate locale configuration to support multilingual datasets, including Cyrillic characters.
 
-## Hardware Specifications (Optimized for Low Resources)
-To comply with the hospital's requirement for a system that runs on limited resources, the following infrastructure is proposed:
+## Application Frameworks & Libraries
+### Backend & Data Layer
+* **Flask**
+  Lightweight web framework used to expose internal APIs and service endpoints when required.
+* **psycopg2**
+  PostgreSQL adapter for Python enabling secure and efficient database communication.
+* **python-dotenv**
+  Manages environment variables and sensitive configuration outside source code.
 
-| Component | Specification | Purpose |
-|:---|:---|:---|
-| **Server Nodes (x2)** | 2 Cores CPU / 4GB RAM / 20GB SSD | Master and Slave nodes for DB Replication and Backend. |
-| **Client Stations** | 1 Core CPU / 2GB RAM | Thin clients running the Python Tkinter application. |
-| **Networking** | 1 Gbps LAN | Low-latency connection for real-time DB synchronization. |
-| **Virtualization** | **Docker Compose** | Used to orchestrate the nodes and ensure the environment is portable and reproducible on any hospital hardware. |
+### Utilities & Support Libraries
+* **Faker**
+  Generates synthetic datasets for testing and simulation purposes.
+* **hashlib**
+  Provides cryptographic hashing for secure handling of sensitive data (e.g., password hashing mechanisms).
+* **requests**
+  HTTP client library used for external API communication.
 
-## Key Libraries & Dependencies
-
-| Library | Purpose | Justification |
-|:---|:---|:---|
-| `psycopg2-binary` | DB Adapter | Standard PostgreSQL adapter; supports SSL and secure connections. |
-| `python-dotenv` | Configuration | Manages environment variables to keep credentials out of the source code. |
-| `Faker` | Data Generation | Generates 50k+ realistic records for testing (supports multiple locales for Cyrillic data). |
-| `hashlib` | Security | Used for managing secure access files and sensitive data hashing. |
-| **`tkinter`** | **GUI (Desktop)** | **Efficiency:** Extremely lightweight library that consumes minimal RAM, ideal for the hospital's older hardware. No browser overhead required. |
-| `tkinter.ttk` | Modern UI | Provides a structured and tabulated look for medical reports and patient lists. |
+### User Interface
+* **tkinter**
+  Standard Python GUI toolkit used for desktop interface development.
 
 ## Infrastructure & DevOps
-
-* **Version Control:** **Git & GitHub**. Essential for tracking progress through frequent commits.
-* **Environment Management:** **Python `venv`**. Ensures all dependencies are isolated and portable via `requirements.txt`.
-* **Data Visualization:** **PowerBI Desktop**. Connected via PostgreSQL ODBC for real-time hospital occupancy and daily visit dashboards.
+* **Git & GitHub**
+  Version control system used for collaboration, tracking changes, and project history.
+* **Docker**
+  Containerization platform used to ensure consistent environments across development and deployment, including database and application services.
+* **Python venv**
+  Isolated environment management to ensure dependency consistency.
+* **Power BI Desktop**
+  Business intelligence tool connected to PostgreSQL via ODBC for real-time analytics and reporting.
 
 ## Development & Export Tools
+* **Visual Studio Code (VS Code)**
+  Primary development environment for coding and debugging.
+* **pgAdmin / DBeaver**
+  Database administration and schema management tools.
+* **Data Export Modules**
+  Native Python libraries (`json`, `xml.etree.ElementTree`) used for structured data export and external system integration.
 
-* **IDE:** **Visual Studio Code (VS Code)** for development and debugging.
-* **DB Client:** **pgAdmin 4 / DBeaver** for schema management.
-* **Export Formats:** Native Python `json` and `xml.etree` modules will be used to generate the mandatory files for the Social Security API integration.
+## Architecture Overview
+The system follows a **layered architecture** model:
 
-## Security Architecture Summary
-1. **Transport:** All DB traffic is encrypted via **SSL/TLS**.
-2. **Storage:** Credentials are stored in a **separate configuration file** (excluded from Git).
-3. **Anonymization:** Implementation of **Dynamic Data Masking** at the database level so administrative staff cannot view sensitive clinical diagnosis.
-4. **Resilience:** Automatic failover capability through the configured **PostgreSQL Replica**.
+* **Presentation Layer:** Desktop GUI (tkinter)
+* **Application Layer:** Business logic (Python + Flask services)
+* **Data Layer:** PostgreSQL database
 
----
-*Updated: April 9, 2026 - Version 1.1 (Hardware & I18n Update)*
+This separation ensures maintainability, scalability, and clear responsibility distribution between components.
+
+## Security Architecture
+Security is implemented across all system layers:
+
+* **Transport Security:** All communications are encrypted using TLS/SSL.
+* **Authentication:** Role-based access control (RBAC) defines permissions for Doctors, Administrators, and Patients.
+* **Data Protection:** Sensitive information is protected through hashing and database-level masking mechanisms.
+* **Configuration Security:** Environment variables are stored outside the codebase and excluded from version control.
+* **Resilience:** PostgreSQL replication ensures high availability and fault tolerance.
+
