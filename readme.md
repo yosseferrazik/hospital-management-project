@@ -1,13 +1,13 @@
 ![Hospital](https://imagenes.elpais.com/resizer/v2/AFAITZ3H6DI4FMKGYEDGKNPBNM.jpg?auth=bf9cdc39c32a763812ec3172ab6d8ca422787358ebb01637b93f2f17246b4b51&width=1960&height=1103&smart=true "Hospital")
-# 🏥 Hospital Sa Palomera | ASIX Intermodular Project
+# 🏥 Hospital Sa Palomera 
 > This repository contains the complete intermodular project for the **ASIX program (Institut Sa Palomera)**. The project integrates Database Design (PostgreSQL), Programming (Python), and Infrastructure Management.
 
-## 🔍 Project Overview & Objectives
+## Project Overview & Objectives
 Due to significant population growth in the areas of Blanes and Lloret, the **Hospital Sa Palomera** is currently facing the challenge of transitioning from an obsolete paper-based management system to a modern digital infrastructure. This project aims to design and implement a comprehensive software solution to streamline medical, administrative, and logistical operations.
 
 The primary mission of this system is to replace manual record-keeping with a secure, high-performance digital environment that ensures data integrity and improves healthcare delivery.
 
-### 🔑 Key Strategic Goals:
+### Key Strategic Goals:
 * **Comprehensive Resource Management:** Digitalize the registration and oversight of all hospital staff (medical, nursing, administrative, and maintenance) and patient records to ensure seamless coordination.
 * **Operational Efficiency:** Optimize clinical workflows by automating surgical scheduling, managing operating room inventories, and linking medical teams to specific patients or hospital floors.
 * **Data Security & Privacy:** Establish a robust security framework to protect sensitive medical information through advanced encryption, data masking, and strict access control, ensuring compliance with privacy standards.
@@ -15,21 +15,21 @@ The primary mission of this system is to replace manual record-keeping with a se
 * **Global Interoperability:** Enable seamless data exchange with external health authorities by standardizing medical reports for automated billing and legal reporting.
 * **Advanced Analytics:** Transform raw clinical data into actionable insights through integrated reporting modules and executive dashboards for real-time monitoring of hospital performance.
 
-## 📂 Project Structure & Index
+## Project Structure & Index
 This repository is organized into specific modules to ensure clarity and professional standards. Click on the links to navigate:
 
-### 📑 [Documentation](./docs/)
+### [Documentation](./docs/)
 * **[01_Planning](./docs/01_Planning/)**: Project proposal, technological stack, architecture, and daily session logs.
 * **[02_Database_Design](./docs/02_Database_Design/)**: ER diagrams, Relational model, and Security matrix.
 * **[03_Infrastructure](./docs/03_Infrastructure/)**: SSL setup, High Availability (Replication), and Backup strategy.
 * **[04_Manuals](./docs/04_Manuals/)**: Technical installation guide and User manual.
 * **[References](./docs/References.md)**: Bibliography and web resources used.
 
-### 💻 [Source Code](./src/)
+### [Source Code](./server/)
 * **[Server Code](./server/README.md)**: Server-side logic for database interactions and API endpoints.
 * **[Client Code](./client/README.md)**: Client-side desktop application for hospital staff to manage records and operations.
 
-### 🗄️ [SQL Scripts](./sql/)
+### [SQL Scripts](./sql/)
 * **[Schema](./sql/schema.sql)**: Database structure and tables.
 * **[Security](./sql/security.sql)**: Roles, users, and permission grants.
 * **[Data](./sql/dummy_data.sql)**: Initial testing data.
@@ -40,7 +40,7 @@ This repository is organized into specific modules to ensure clarity and profess
 docs/
 ├── 01_Planning/
 │   ├── Planning.md                    # WBS, Timeline, and Task Table
-│   ├── Tech_Stack.md                  # Software & Hardware choices
+│   ├── Tech_Stack.md                  # Solution stack
 │   └── Session_Log.md                 # The daily log of hours and activities
 │
 ├── 02_Database_Design/
