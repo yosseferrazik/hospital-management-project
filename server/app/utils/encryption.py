@@ -12,7 +12,7 @@ def get_cipher():
 
 
 def save_credentials_to_file(username, password_hash_bcrypt):
-    """Guardar usuari i contrasenya (hash bcrypt) en fitxer xifrat."""
+    """Store the username and password hash in an encrypted file."""
     cipher = get_cipher()
     data = {}
     if os.path.exists(CRED_FILE):

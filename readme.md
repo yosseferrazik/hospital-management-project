@@ -1,67 +1,68 @@
 ![Hospital](https://imagenes.elpais.com/resizer/v2/AFAITZ3H6DI4FMKGYEDGKNPBNM.jpg?auth=bf9cdc39c32a763812ec3172ab6d8ca422787358ebb01637b93f2f17246b4b51&width=1960&height=1103&smart=true "Hospital")
-# 🏥 Hospital Sa Palomera 
-> This repository contains the complete intermodular project for the **ASIX program (Institut Sa Palomera)**. The project integrates Database Design (PostgreSQL), Programming (Python), and Infrastructure Management.
+# Hospital Sa Palomera
+> This repository contains the intermodular project for the **ASIX program (Institut Sa Palomera)**. The project combines database design, Python development, and infrastructure planning for a hospital management platform.
 
 ## Project Overview & Objectives
-Due to significant population growth in the areas of Blanes and Lloret, the **Hospital Sa Palomera** is currently facing the challenge of transitioning from an obsolete paper-based management system to a modern digital infrastructure. This project aims to design and implement a comprehensive software solution to streamline medical, administrative, and logistical operations.
+Due to significant population growth in the areas of Blanes and Lloret, **Hospital Sa Palomera** is facing the transition from an obsolete paper-based management model to a modern digital system. This project designs and implements a software solution to support medical, administrative, and operational workflows.
 
-The primary mission of this system is to replace manual record-keeping with a secure, high-performance digital environment that ensures data integrity and improves healthcare delivery.
+The main purpose of the platform is to replace manual record-keeping with a secure and maintainable digital environment that improves data integrity, operational efficiency, and healthcare delivery.
 
 ### Key Strategic Goals:
-* **Comprehensive Resource Management:** Digitalize the registration and oversight of all hospital staff (medical, nursing, administrative, and maintenance) and patient records to ensure seamless coordination.
-* **Operational Efficiency:** Optimize clinical workflows by automating surgical scheduling, managing operating room inventories, and linking medical teams to specific patients or hospital floors.
-* **Data Security & Privacy:** Establish a robust security framework to protect sensitive medical information through advanced encryption, data masking, and strict access control, ensuring compliance with privacy standards.
-* **High Availability & Reliability:** Build a resilient architecture capable of 24/7 operation, featuring automated backup systems and redundant data structures to prevent any service interruption.
-* **Global Interoperability:** Enable seamless data exchange with external health authorities by standardizing medical reports for automated billing and legal reporting.
-* **Advanced Analytics:** Transform raw clinical data into actionable insights through integrated reporting modules and executive dashboards for real-time monitoring of hospital performance.
+* **Comprehensive Resource Management:** Digitalize the registration and oversight of hospital staff, patients, visits, and surgeries.
+* **Operational Efficiency:** Streamline clinical workflows, scheduling, and day-to-day administrative processes.
+* **Data Security & Privacy:** Protect sensitive medical information through access control, encryption, and database security measures.
+* **High Availability & Reliability:** Define an infrastructure prepared for backup strategies, secure connectivity, and future scaling.
+* **Interoperability Readiness:** Keep the project aligned with realistic healthcare integration and reporting needs.
+* **Maintainability:** Organize code, SQL scripts, and documentation in a modular way that supports iterative development.
 
 ## Project Structure & Index
-This repository is organized into specific modules to ensure clarity and professional standards. Click on the links to navigate:
+This repository is organized into focused modules for code, SQL, diagrams, and supporting documentation.
 
 ### [Documentation](./docs/)
-* **[01_Planning](./docs/01_Planning/)**: Project proposal, technological stack, architecture, and daily session logs.
-* **[02_Database_Design](./docs/02_Database_Design/)**: ER diagrams, Relational model, and Security matrix.
-* **[03_Infrastructure](./docs/03_Infrastructure/)**: SSL setup, High Availability (Replication), and Backup strategy.
-* **[04_Manuals](./docs/04_Manuals/)**: Technical installation guide and User manual.
-* **[References](./docs/References.md)**: Bibliography and web resources used.
+* **[01_Planning](./docs/01_Planning/)**: Planning and technology decisions.
+* **[02_Database_Design](./docs/02_Database_Design/)**: Relational model, data dictionary, and security matrix.
+* **[03_Infrastructure](./docs/03_Infrastructure/)**: Infrastructure, TLS, and GDPR-related documentation.
+* **[04_Manuals](./docs/04_Manuals/)**: Reserved for installation and user manuals.
+* **[Session Logs](./docs/Session_Logs.md)**: Work log with dated project progress.
+* **[References](./docs/References.md)**: Bibliography and technical sources used during development.
 
-### [Source Code](./server/)
-* **[Server Code](./server/README.md)**: Server-side logic for database interactions and API endpoints.
-* **[Client Code](./client/README.md)**: Client-side desktop application for hospital staff to manage records and operations.
+### Application Code
+* **[Server](./server/README.md)**: Flask API, services, routes, authentication flow, and database integration.
+* **[Client](./client/README.md)**: Tkinter desktop application used by hospital staff.
 
 ### [SQL Scripts](./sql/)
-* **[Schema](./sql/schema.sql)**: Database structure and tables.
-* **[Security](./sql/security.sql)**: Roles, users, and permission grants.
-* **[Data](./sql/dummy_data.sql)**: Initial testing data.
+* **[Schema](./sql/schema.sql)**: Database schema definition.
+* **[Security](./sql/security.sql)**: Roles, grants, and row-level security configuration.
+* **[Triggers](./sql/triggers.sql)**: Trigger-based integrity rules.
+* **[Dummy Data](./sql/dummy_data.sql)**: Initial sample data.
+* **[Tests](./sql/tests.sql)**: Manual SQL checks and setup helpers used during development.
 
-
-## 📄 Documentation Guide
-```
+## Documentation Guide
+```text
 docs/
 ├── 01_Planning/
-│   ├── Planning.md                    # WBS, Timeline, and Task Table
-│   ├── Tech_Stack.md                  # Solution stack
-│   └── Session_Log.md                 # The daily log of hours and activities
+│   └── Tech_Stack.md                 # Selected technologies and rationale
 │
 ├── 02_Database_Design/
-│   ├── ER_Diagram.png                 # Entity-Relationship diagram
-│   ├── Relational_Model.pdf           # Table schemas and normalization 
-│   ├── Data_Dictionary.pdf            # Details on fields, types, and constraints 
-│   └── Security_Matrix.pdf            # RBAC Roles and Permissions table 
+│   ├── Relational_Model.md           # Relational design and structure
+│   ├── Data_Dictionary.md            # Fields, types, and constraints
+│   └── Security_Matrix.md            # Roles and permissions model
 │
 ├── 03_Infrastructure/
-│   ├── TLS_Configuration.pdf          # Steps for PostgreSQL encryption 
-│   ├── Replication_Architecture.pdf   # Master-Slave diagram and logic 
-│   ├── Backup_Strategy.pdf            # Backup scripts and cloud sync guide 
-│   └── GDPR_Compliance.pdf            # Data privacy and masking documentation 
+│   ├── TLS_Configuration.md          # PostgreSQL TLS and certificate setup
+│   └── GDPR_Compliance.md            # Privacy and compliance considerations
 │
-├── 04_Manuals/
-│   ├── Installation_Guide.pdf         # Tech guide (venv, requirements, db setup) 
-│   └── User_Manual.pdf                # Visual guide for the interface
+├── 04_Manuals/                       # Reserved for future manuals
+│   └── README.md
 │
-└── References.md                      # Bibliography and web resources (Mandatory)
+├── References.md                     # Bibliography and technical sources
+└── Session_Logs.md                   # Project work log
 ```
 
-## 👥 Authors
-* **Yossef Errazik** - [[Link to Profile](https://github.com/yosseferrazik)]
+## Current Development Notes
+* The project is still in progress and some modules are being actively reorganized.
+* The current codebase is split into a Flask backend and a Tkinter desktop client.
+* The database name used by the documentation and helper scripts is **`hospital_management`**.
 
+## Authors
+* **Yossef Errazik** - [[GitHub Profile](https://github.com/yosseferrazik)]

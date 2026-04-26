@@ -33,6 +33,20 @@ class Staff(db.Model):
     staff_type = db.Column(db.String(50), nullable=False)  # MEDICAL, NURSING, GENERAL
 
 
+class MedicalSpecialty(db.Model):
+    __tablename__ = "medical_specialties"
+    specialty_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    description = db.Column(db.Text)
+
+    # Many-to-many relationship with MedicalStaff
+    medical_staff = db.relationship(
+        "MedicalStaff",
+        secondary="medical_staff_specialties",
+        back_populates="specialties",
+    )
+
+
 class MedicalStaff(db.Model):
     __tablename__ = "medical_staff"
     staff_id = db.Column(db.Integer, db.ForeignKey("staff.staff_id"), primary_key=True)
@@ -41,6 +55,31 @@ class MedicalStaff(db.Model):
     )
     license_number = db.Column(db.String(50), unique=True, nullable=False)
     curriculum = db.Column(db.Text)
+
+    # Relationship with the base table
+    staff = db.relationship("Staff", backref=db.backref("medical_staff", uselist=False))
+
+    # Many-to-many relationship with MedicalSpecialty
+    specialties = db.relationship(
+        "MedicalSpecialty",
+        secondary="medical_staff_specialties",
+        back_populates="medical_staff",
+    )
+
+
+class MedicalStaffSpecialty(db.Model):
+    __tablename__ = "medical_staff_specialties"
+    medical_staff_specialty_id = db.Column(db.Integer, primary_key=True)
+    staff_id = db.Column(
+        db.Integer, db.ForeignKey("medical_staff.staff_id"), nullable=False
+    )
+    specialty_id = db.Column(
+        db.Integer, db.ForeignKey("medical_specialties.specialty_id"), nullable=False
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("staff_id", "specialty_id", name="uq_staff_specialty"),
+    )
 
 
 class NursingStaff(db.Model):
@@ -51,11 +90,51 @@ class NursingStaff(db.Model):
     assigned_floor_id = db.Column(db.Integer, db.ForeignKey("floors.floor_id"))
     certifications = db.Column(db.Text)
 
+    staff = db.relationship("Staff", backref=db.backref("nursing_staff", uselist=False))
+
 
 class GeneralStaff(db.Model):
     __tablename__ = "general_staff"
     staff_id = db.Column(db.Integer, db.ForeignKey("staff.staff_id"), primary_key=True)
     job_type = db.Column(db.String(100), nullable=False)
+
+    staff = db.relationship("Staff", backref=db.backref("general_staff", uselist=False))
+
+
+class Floor(db.Model):
+    __tablename__ = "floors"
+    floor_id = db.Column(db.Integer, primary_key=True)
+    floor_number = db.Column(db.Integer, nullable=False, unique=True)
+
+
+class Room(db.Model):
+    __tablename__ = "rooms"
+    room_id = db.Column(db.Integer, primary_key=True)
+    room_number = db.Column(db.String(20), nullable=False)
+    floor_id = db.Column(db.Integer, db.ForeignKey("floors.floor_id"), nullable=False)
+
+    floor = db.relationship("Floor", backref="rooms")
+
+
+class OperatingTheater(db.Model):
+    __tablename__ = "operating_theaters"
+    theater_id = db.Column(db.Integer, primary_key=True)
+    theater_code = db.Column(db.String(20), unique=True, nullable=False)
+    floor_id = db.Column(db.Integer, db.ForeignKey("floors.floor_id"), nullable=False)
+
+    floor = db.relationship("Floor", backref="theaters")
+
+
+class MedicalDevice(db.Model):
+    __tablename__ = "medical_devices"
+    device_id = db.Column(db.Integer, primary_key=True)
+    device_type = db.Column(db.String(100), nullable=False)
+    theater_id = db.Column(
+        db.Integer, db.ForeignKey("operating_theaters.theater_id"), nullable=False
+    )
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+
+    theater = db.relationship("OperatingTheater", backref="devices")
 
 
 class Patient(db.Model):
@@ -73,6 +152,36 @@ class Patient(db.Model):
     emergency_contact_phone = db.Column(db.String(20))
     blood_type = db.Column(db.String(5))
     allergies = db.Column(db.Text)
+
+
+class Visit(db.Model):
+    __tablename__ = "visits"
+    visit_id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(
+        db.Integer, db.ForeignKey("patients.patient_id"), nullable=False
+    )
+    doctor_id = db.Column(
+        db.Integer, db.ForeignKey("medical_staff.staff_id"), nullable=False
+    )
+    visit_timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    diagnosis = db.Column(db.Text)
+    notes = db.Column(db.Text)
+
+    patient = db.relationship("Patient", backref="visits")
+    doctor = db.relationship("MedicalStaff", backref="visits")
+
+
+class ScheduledAppointment(db.Model):
+    __tablename__ = "scheduled_appointments"
+    appointment_id = db.Column(db.Integer, primary_key=True)
+    visit_id = db.Column(
+        db.Integer, db.ForeignKey("visits.visit_id"), unique=True, nullable=False
+    )
+    appointment_date = db.Column(db.Date, nullable=False)
+    appointment_time = db.Column(db.Time, nullable=False)
+    status = db.Column(db.String(50), default="SCHEDULED")
+
+    visit = db.relationship("Visit", backref="appointment")
 
 
 class Surgery(db.Model):
@@ -93,8 +202,9 @@ class Surgery(db.Model):
     procedure_type = db.Column(db.String(200), nullable=False)
     notes = db.Column(db.Text)
 
-    patient = db.relationship("Patient")
-    primary_surgeon = db.relationship("MedicalStaff")
+    patient = db.relationship("Patient", backref="surgeries")
+    theater = db.relationship("OperatingTheater", backref="surgeries")
+    primary_surgeon = db.relationship("MedicalStaff", backref="lead_surgeries")
 
 
 class SurgeryAssistant(db.Model):
@@ -107,33 +217,8 @@ class SurgeryAssistant(db.Model):
     )
     role = db.Column(db.String(100), nullable=False)
 
-
-class ScheduledAppointment(db.Model):
-    __tablename__ = "scheduled_appointments"
-    appointment_id = db.Column(db.Integer, primary_key=True)
-    visit_id = db.Column(
-        db.Integer, db.ForeignKey("visits.visit_id"), unique=True, nullable=False
-    )
-    appointment_date = db.Column(db.Date, nullable=False)
-    appointment_time = db.Column(db.Time, nullable=False)
-    status = db.Column(db.String(50), default="SCHEDULED")
-
-
-class Visit(db.Model):
-    __tablename__ = "visits"
-    visit_id = db.Column(db.Integer, primary_key=True)
-    patient_id = db.Column(
-        db.Integer, db.ForeignKey("patients.patient_id"), nullable=False
-    )
-    doctor_id = db.Column(
-        db.Integer, db.ForeignKey("medical_staff.staff_id"), nullable=False
-    )
-    visit_timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    diagnosis = db.Column(db.Text)
-    notes = db.Column(db.Text)
-
-    patient = db.relationship("Patient")
-    doctor = db.relationship("MedicalStaff")
+    surgery = db.relationship("Surgery", backref="assistants")
+    nurse = db.relationship("NursingStaff", backref="assisted_surgeries")
 
 
 class DummyRegistry(db.Model):

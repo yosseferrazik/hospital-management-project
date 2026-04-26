@@ -1,4 +1,5 @@
-DROP database hospital_management_db;
+DROP DATABASE IF EXISTS hospital_management;
+
 -- First user (admin)
 INSERT INTO STAFF (
     national_id,
@@ -19,9 +20,9 @@ INSERT INTO STAFF (
     '2007-07-08',
     '+1234567890',
     'yosseferrazik@hsp.com',
-    'Calle Falsa 123, Ciudad, País',
+    '123 Sample Street, City, Country',
     CURRENT_DATE,
-    'GENERAL'  
+    'GENERAL'
 );
 
 INSERT INTO GENERAL_STAFF (
@@ -33,3 +34,5 @@ INSERT INTO GENERAL_STAFF (
 );
 
 SELECT * FROM STAFF;
+
+CREATE DATABASE hospital_management;
