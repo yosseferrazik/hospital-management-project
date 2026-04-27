@@ -1,0 +1,12 @@
+Hospital Sa Palomera Client Setup
+
+This installer will copy the Hospital Sa Palomera desktop client to your computer.
+
+Before continuing, please make sure that:
+- You are installing the application on an authorized workstation.
+- You have closed any previous instance of the client.
+- The backend service and required network access will be available when you use the application.
+
+By continuing with this installation, you confirm that you are an authorized user and that you accept the applicable license terms provided with this software.
+
+Click Next to continue or Cancel to exit the setup.

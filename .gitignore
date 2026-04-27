@@ -19,6 +19,9 @@ site/
 .eggs/
 pip-wheel-metadata/
 
+# Windows packaging artifacts
+client/installer/*.exe
+
 # Test, coverage, and type-checker output
 .coverage
 .coverage.*

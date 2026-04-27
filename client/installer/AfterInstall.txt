@@ -1,0 +1,13 @@
+Hospital Sa Palomera Client Installation Complete
+
+The desktop client has been installed successfully.
+
+Before starting the application, please confirm that:
+- The backend server is running and reachable.
+- The API endpoint expected by this version of the client is available at:
+  http://localhost:5000/api
+- You have valid staff credentials to sign in.
+
+You can launch the application from the Start Menu shortcut or from the installation folder.
+
+Thank you for installing the Hospital Sa Palomera client.
