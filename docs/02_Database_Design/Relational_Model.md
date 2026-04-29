@@ -1,4 +1,4 @@
-# Relational Model
+# 📄Relational Model
 > This document details the relational model for our hospital management system, outlining the tables, their attributes, and the relationships between them. The design is based on the ER diagram and follows normalization principles to ensure data integrity and efficiency.
 
 ## Tables

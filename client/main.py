@@ -8,11 +8,18 @@ from views.login_view import LoginView
 
 
 class HospitalApp:
+    # Paleta de diseño
+    BG = "#f0f2f5"
+
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Sa Palomera Hospital - Management System")
         self.root.geometry("900x700")
-        self.root.configure(bg="#f0f0f0")
+        self.root.configure(bg=self.BG)
+        self.root.minsize(800, 600)  # evita que las tarjetas se deformen
+
+        # Icono (opcional, descomenta si tienes un archivo .ico en la carpeta)
+        # self.root.iconbitmap("assets/icon.ico")
 
         self.center_window()
 
@@ -20,6 +27,7 @@ class HospitalApp:
         self.show_login()
 
     def center_window(self):
+        """Centra la ventana en la pantalla."""
         self.root.update_idletasks()
         width = self.root.winfo_width()
         height = self.root.winfo_height()

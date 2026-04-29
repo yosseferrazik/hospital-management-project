@@ -16,3 +16,7 @@
 | **15/04/2026** | 4h | Continued the relational model and drafted the first version of the login structure. |
 | **17/04/2026** | 3h | Implemented the SQL schema based on the proposed relational model. |
 | **20/04/2026** | 7h | Worked on the security matrix, data dictionary, and the first TLS configuration draft. |
+|        22/04/2026        |  5h  |                                            Finished the security schema, working the maintainment block                                            |
+|             24/04/2026             |   5h   |                                                                          Drafting the 3 Tier architecture and the db connection                                                                          |
+|                  25/04/2026                  |    3h    |                                                                                                     Defining the CRUD logic and handlers.                                                                                                     |
+|                       27/04/2026                       |     4h     |                                                                                                                        Finished the maintainment block, starting Hight Availability block                                                                                                                       |

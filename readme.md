@@ -33,9 +33,7 @@ This repository is organized into focused modules for code, SQL, diagrams, and s
 ### [SQL Scripts](./sql/)
 * **[Schema](./sql/schema.sql)**: Database schema definition.
 * **[Security](./sql/security.sql)**: Roles, grants, and row-level security configuration.
-* **[Triggers](./sql/triggers.sql)**: Trigger-based integrity rules.
 * **[Dummy Data](./sql/dummy_data.sql)**: Initial sample data.
-* **[Tests](./sql/tests.sql)**: Manual SQL checks and setup helpers used during development.
 
 ## Documentation Guide
 ```text

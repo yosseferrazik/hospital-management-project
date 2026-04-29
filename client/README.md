@@ -1,6 +1,5 @@
 # Client
-
-This directory contains the Tkinter desktop client for the Hospital Sa Palomera project. It is the staff-facing application used to authenticate against the backend and access the main operational workflows already implemented in the project.
+> This directory contains the Tkinter desktop client for the Hospital Sa Palomera project. It is the staff-facing application used to authenticate against the backend and access the main operational workflows already implemented in the project.
 
 ## Purpose
 

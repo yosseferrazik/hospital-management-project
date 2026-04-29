@@ -344,5 +344,67 @@ GRANT SELECT ON patient_directory TO app_staff;
 COMMENT ON VIEW patient_directory IS 'Limited patient view for general staff showing only name and current room.';
 
 -- --------------------------------------------------------------------
+-- 9. BUSINESS RULE TRIGGERS AND CONSTRAINTS
+-- --------------------------------------------------------------------
+-- These triggers enforce data integrity rules that cannot be expressed
+-- with standard foreign keys or check constraints.
+-- --------------------------------------------------------------------
+
+-- -------------------------
+-- 9.1 Surgery overlap prevention
+-- -------------------------
+CREATE OR REPLACE FUNCTION check_surgery_overlap()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM surgeries
+        WHERE theater_id = NEW.theater_id
+          AND surgery_date = NEW.surgery_date
+          AND (start_time, end_time) OVERLAPS (NEW.start_time, NEW.end_time)
+          AND surgery_id != COALESCE(NEW.surgery_id, -1)
+    ) THEN
+        RAISE EXCEPTION 'There is already a surgery scheduled in that operating room at the same time.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+COMMENT ON FUNCTION check_surgery_overlap() IS 'Prevents scheduling overlapping surgeries in the same operating theater.';
+
+CREATE TRIGGER tr_prevent_surgery_overlap
+    BEFORE INSERT OR UPDATE ON surgeries
+    FOR EACH ROW EXECUTE FUNCTION check_surgery_overlap();
+
+COMMENT ON TRIGGER tr_prevent_surgery_overlap ON surgeries IS 'Enforces that no two surgeries overlap in the same theater on the same date.';
+
+-- -------------------------
+-- 9.2 Nurse assignment validation
+-- -------------------------
+CREATE OR REPLACE FUNCTION validate_nurse_assignment()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.assigned_doctor_id IS NOT NULL THEN
+        IF NOT EXISTS (SELECT 1 FROM medical_staff WHERE staff_id = NEW.assigned_doctor_id) THEN
+            RAISE EXCEPTION 'The assigned doctor does not exist in medical_staff';
+        END IF;
+    END IF;
+    IF NEW.assigned_floor_id IS NOT NULL THEN
+        IF NOT EXISTS (SELECT 1 FROM floors WHERE floor_id = NEW.assigned_floor_id) THEN
+            RAISE EXCEPTION 'The assigned floor does not exist';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+COMMENT ON FUNCTION validate_nurse_assignment() IS 'Validates that a nurse’s assigned doctor and floor exist in the respective tables.';
+
+CREATE TRIGGER tr_validate_nurse_assignment
+    BEFORE INSERT OR UPDATE ON nursing_staff
+    FOR EACH ROW EXECUTE FUNCTION validate_nurse_assignment();
+
+COMMENT ON TRIGGER tr_validate_nurse_assignment ON nursing_staff IS 'Ensures assigned_doctor_id and assigned_floor_id reference existing records.';
+
+-- --------------------------------------------------------------------
 -- END OF SCRIPT
 -- --------------------------------------------------------------------
