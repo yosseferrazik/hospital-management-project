@@ -30,7 +30,28 @@ sudo chmod 750 /opt/hms/scripts/backup.sh
 sudo cp "$REPO_ROOT/scripts/ops/check_replication.sh" /opt/hms/scripts/check_replication.sh
 sudo chmod 750 /opt/hms/scripts/check_replication.sh
 
-# Install hms-api systemd unit (if present)
+# Ensure hms user/group exists for running the API
+if ! id -u hms >/dev/null 2>&1; then
+  sudo useradd --system --home /opt/hms --shell /usr/sbin/nologin hms || true
+  echo "Created system user 'hms'"
+fi
+
+# Copy example env to /etc/hms.env if absent (admin should edit with secrets)
+if [ -f "$REPO_ROOT/.env.example" ] && [ ! -f /etc/hms.env ]; then
+  sudo cp "$REPO_ROOT/.env.example" /etc/hms.env
+  sudo chmod 600 /etc/hms.env
+  echo "Installed /etc/hms.env from .env.example — please edit to add secrets"
+fi
+
+# Install API app directory if present in repo
+if [ -d "$REPO_ROOT/api" ]; then
+  sudo mkdir -p /opt/hms/api
+  sudo cp -r "$REPO_ROOT/api/"* /opt/hms/api/ || true
+  sudo chown -R hms:hms /opt/hms/api
+  echo "Copied API code to /opt/hms/api and set ownership to hms"
+fi
+
+# Install hms-api systemd unit (if present) and start it
 if [ -f "$REPO_ROOT/scripts/systemd/hms-api.service" ]; then
   sudo cp "$REPO_ROOT/scripts/systemd/hms-api.service" /etc/systemd/system/hms-api.service
   sudo systemctl daemon-reload
