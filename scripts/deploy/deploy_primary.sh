@@ -43,6 +43,9 @@ if [ -f "$REPO_ROOT/.env.example" ] && [ ! -f /etc/hms.env ]; then
   echo "Installed /etc/hms.env from .env.example — please edit to add secrets"
 fi
 
+# Ensure systemd units reference /etc/hms.env (note to operator)
+echo "Note: systemd units installed will read /etc/hms.env if they are configured to do so. Edit /etc/hms.env now before starting the services for production secrets." || true
+
 # Install API app directory if present in repo
 if [ -d "$REPO_ROOT/api" ]; then
   sudo mkdir -p /opt/hms/api
@@ -57,6 +60,11 @@ if [ -f "$REPO_ROOT/scripts/systemd/hms-api.service" ]; then
   sudo systemctl daemon-reload
   sudo systemctl enable --now hms-api.service || true
   echo "Installed and started hms-api.service (if app present)"
+fi
+
+# Set up Python virtualenv for API if code exists
+if [ -d "/opt/hms/api" ]; then
+  sudo bash "$REPO_ROOT/scripts/deploy/setup_api.sh" || true
 fi
 
 echo "Primary deployment files installed under /opt/hms/scripts/"
