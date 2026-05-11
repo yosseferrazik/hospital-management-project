@@ -1,0 +1,35 @@
+---
+---
+# Simple Ansible playbook to deploy HMS primary and standby via Tailscale
+# Usage:
+# 1. Update inventory.ini with Tailscale IPs and correct ansible_user
+# 2. Set `repo_url` and optionally `primary_ip`
+# 3. Run: ansible-playbook -i inventory.ini deploy_hms.yml --extra-vars "repo_url=https://github.com/you/repo.git"
+
+- hosts: primary
+  become: yes
+  vars:
+    repo_dest: /opt/hms_repo
+  tasks:
+    - name: Ensure repository is present on primary
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ repo_dest }}"
+        version: HEAD
+
+    - name: Run primary deploy script
+      command: /bin/bash {{ repo_dest }}/scripts/deploy/deploy_primary.sh
+
+- hosts: standby
+  become: yes
+  vars:
+    repo_dest: /opt/hms_repo
+  tasks:
+    - name: Ensure repository is present on standby
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ repo_dest }}"
+        version: HEAD
+
+    - name: Run standby deploy script
+      command: /bin/bash {{ repo_dest }}/scripts/deploy/deploy_standby.sh PRIMARY_IP={{ hostvars['primary']['ansible_host'] }}

@@ -68,3 +68,5 @@ certs/
 *~
 .DS_Store
 Thumbs.db
+
+drawio/

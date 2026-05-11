@@ -1,8 +1,11 @@
 import time
-
+import os
+from dotenv import load_dotenv
 import requests
 
-API_BASE_URL = "http://localhost:5000/api"
+load_dotenv()
+
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:5000/api")
 
 
 class APIClient:
