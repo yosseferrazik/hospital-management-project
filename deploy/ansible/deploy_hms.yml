@@ -9,6 +9,7 @@
 - hosts: primary
   become: yes
   vars:
+    repo_url: https://github.com/yosseferrazik/hospital-management-project.git
     repo_dest: /opt/hms_repo
   tasks:
     - name: Ensure repository is present on primary
@@ -23,6 +24,7 @@
 - hosts: standby
   become: yes
   vars:
+    repo_url: https://github.com/yosseferrazik/hospital-management-project.git
     repo_dest: /opt/hms_repo
   tasks:
     - name: Ensure repository is present on standby
