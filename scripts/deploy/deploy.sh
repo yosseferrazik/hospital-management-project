@@ -233,7 +233,15 @@ main() {
     # Must be root
     if [ "$EUID" -ne 0 ]; then log_error "Please run as root"; exit 1; fi
 
-    # Check time window unless --force
+    # Parse flags
+    local ROLLBACK=false FORCE=false
+    for arg in "$@"; do
+        case "$arg" in
+            --rollback) ROLLBACK=true ;;
+            --force)    FORCE=true ;;
+        esac
+    done
+
     if $ROLLBACK; then
         do_rollback
         exit $?
