@@ -6,8 +6,8 @@
 |:-------------- |:------------ |
 | Document Owner | Project Team |
 | Status         | Complete     |
-| Version        | 3.0          |
-| Last Updated   | 2026-05-06   |
+| Version        | 4.0          |
+| Last Updated   | 2026-05-17   |
 
 ## Purpose
 
@@ -27,11 +27,11 @@ The Hospital Management System uses PostgreSQL as its primary data store for all
 **Backup Topology:**
 
 - Primary backup node: Same host as PostgreSQL primary (active writes)
-- Secondary backup node: Optional standby with replicated data
-- Backup storage: Local retention on primary node + external/off-site copy
+- Secondary backup node: Standby (Sion) with replicated data via rsync
+- Backup storage: Local retention on primary node + copy on standby node
 
 **Data Criticality:**
-All tables contain operational clinical data subject to healthcare privacy regulations. Standard backup retention: 5 most recent daily backups locally, plus 1 weekly off-site copy.
+All tables contain operational clinical data subject to healthcare privacy regulations. Standard backup retention: 5 most recent daily backups locally, plus copy on standby node.
 
 ## Scope
 
@@ -43,7 +43,7 @@ This runbook covers:
 - Full database restoration procedures
 - Targeted restoration for specific tables
 - Post-restore validation steps
-- Off-site backup replication
+- Rsync backup to standby node
 - Operational precautions for sensitive healthcare data
 
 Focus on the database layer as PostgreSQL is the system of record for operational data.
@@ -56,8 +56,7 @@ Focus on the database layer as PostgreSQL is the system of record for operationa
 | Automation      | Python script scheduled via Cron (daily at 02:00 UTC)                       |
 | Frequency       | Daily automated backups                                                     |
 | Local Retention | Keep the five most recent daily backups                                     |
-| Weekly Archive  | One backup per week retained separately for longer-term recovery            |
-| Off-site Copy   | Automated copy of weekly backup to external storage or remote node          |
+| Standby Copy    | Rsync each backup to the standby node (Sion) after creation                 |
 | Protection      | File permissions restricted; optional encryption for sensitive environments |
 | Recovery Target | RTO 2-4 hours, RPO 1 hour for critical data                                 |
 
@@ -67,7 +66,7 @@ Focus on the database layer as PostgreSQL is the system of record for operationa
 |:---------------------- |:---------------------------------------------------------------------- |
 | System Administrator   | Deploys and maintains backup scripts; monitors automation health       |
 | Database Administrator | Validates backup integrity; leads restore operations; tests procedures |
-| DevOps/Infrastructure  | Manages backup storage, off-site replication, and monitoring alerts    |
+| DevOps/Infrastructure  | Manages backup storage, rsync to standby, and monitoring alerts    |
 | Project Team           | Updates procedures when database schema or infrastructure changes      |
 
 ## Environment Configuration
@@ -76,13 +75,14 @@ The backup system requires the following environment setup:
 
 | Variable         | Example Value                          | Description                                  |
 |:---------------- |:-------------------------------------- |:-------------------------------------------- |
-| `DB_NAME`        | `hospital_management`                  | PostgreSQL database name                     |
+| `DB_NAME`        | `hsp_db`                               | PostgreSQL database name                     |
 | `DB_HOST`        | `localhost` or `vm-hms-primary.local`  | PostgreSQL host                              |
 | `DB_PORT`        | `5432`                                 | PostgreSQL port                              |
-| `DB_USER`        | `backup_user`                          | PostgreSQL user with backup privilege        |
-| `DB_PASSWORD`    | (via `.pgpass` or environment)         | Database user password (secure storage only) |
-| `BACKUP_DIR`     | `/backups/local` or `/var/backups/hms` | Local backup directory                       |
-| `BACKUP_ARCHIVE` | `/backups/archive` or remote path      | Weekly archive directory (optional)          |
+| `DB_USER`        | `postgres`                             | PostgreSQL user with backup privilege        |
+| `DB_PASSWORD`    | (via `.pgpass` or peer auth)           | Database user password (secure storage only) |
+| `BACKUP_DIR`     | `/backups/local`                       | Local backup directory                       |
+| `STANDBY_HOST`   | `100.98.214.53`                        | Standby node Tailscale IP for rsync          |
+| `STANDBY_DIR`    | `/backups/local`                       | Backup directory on standby node             |
 | `LOG_FILE`       | `/var/log/hms_backup.log`              | Backup operation log                         |
 
 ## Manual Backup Procedure
@@ -164,17 +164,16 @@ These steps allow a system administrator at Hospital Sa Palomera to deploy the a
 
 ```bash
 sudo apt update
-sudo apt install -y postgresql-client python3 python3-pip awscli gnupg
-sudo pip3 install boto3
+sudo apt install -y postgresql-client python3 python3-pip rsync
 ```
 
 2) Create directories and set permissions
 
 ```bash
 # Create script and backup directories
-sudo mkdir -p /opt/hms/scripts /backups/local /backups/archive
-sudo chown -R postgres:postgres /backups/local /backups/archive
-sudo chmod 700 /backups/local /backups/archive
+sudo mkdir -p /opt/hms/scripts /backups/local
+sudo chown -R postgres:postgres /backups/local
+sudo chmod 700 /backups/local
 
 # Create log directory
 sudo touch /var/log/hms_backup.log
@@ -182,27 +181,33 @@ sudo chown postgres:postgres /var/log/hms_backup.log
 sudo chmod 640 /var/log/hms_backup.log
 ```
 
-3) Create a PostgreSQL backup user (optional but recommended)
+3) Configure SSH key for rsync to standby node
 
-Run on the PostgreSQL primary as the postgres superuser:
-
-```bash
-sudo -u postgres psql -c "CREATE USER backup_user WITH PASSWORD 'secure_backup_password';"
-sudo -u postgres psql -c "GRANT CONNECT ON DATABASE hospital_management TO backup_user;"
-sudo -u postgres psql -c "GRANT USAGE ON SCHEMA public TO backup_user;"
-sudo -u postgres psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO backup_user;"
-```
-
-4) Configure `.pgpass` for non-interactive authentication (on the backup operator account)
-
-Create `/var/lib/postgresql/.pgpass` or `/home/backup/.pgpass` for the OS user that will run backups (commonly `postgres`):
+On the primary node (Briar), generate an SSH key for the postgres user and install it on the standby node (Sion):
 
 ```bash
-sudo -u postgres bash -c 'echo "localhost:5432:hospital_management:backup_user:secure_backup_password" > ~/.pgpass'
-sudo -u postgres chmod 600 ~/.pgpass
+# On primary (Briar):
+sudo -u postgres ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
+sudo -u postgres cat ~/.ssh/id_ed25519.pub
 ```
 
-5) Deploy the Python backup script
+Copy the public key output, then on the standby node (Sion):
+
+```bash
+# On standby (Sion):
+mkdir -p ~/.ssh
+echo "<paste the public key>" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+```
+
+Test the connection from primary:
+
+```bash
+# On primary (Briar):
+sudo -u postgres ssh -o StrictHostKeyChecking=accept-new yerrazik@<STANDBY_IP> "mkdir -p /backups/local"
+```
+
+4) Deploy the Python backup script
 
 Create `/opt/hms/scripts/backup_database.py` with the content provided in this runbook (the full script appears later in this file). Then:
 
@@ -211,16 +216,30 @@ sudo chown postgres:postgres /opt/hms/scripts/backup_database.py
 sudo chmod 750 /opt/hms/scripts/backup_database.py
 ```
 
-6) Create wrapper script for environment variables
+5) Create wrapper script for environment variables
 
-Create `/opt/hms/scripts/backup_wrapper.sh` with the example env vars (provided earlier). Make it executable:
+Create `/opt/hms/scripts/backup_wrapper.sh`:
 
 ```bash
-sudo chown root:root /opt/hms/scripts/backup_wrapper.sh
+sudo tee /opt/hms/scripts/backup_wrapper.sh > /dev/null << 'WRAPPER'
+#!/bin/bash
+export HMS_DB_NAME=hsp_db
+export HMS_DB_HOST=localhost
+export HMS_DB_PORT=5432
+export HMS_DB_USER=postgres
+export HMS_BACKUP_DIR=/backups/local
+export HMS_LOG_FILE=/var/log/hms_backup.log
+export HMS_RETENTION_DAYS=5
+export HMS_STANDBY_HOST=<STANDBY_TAILSCALE_IP>
+export HMS_STANDBY_USER=yerrazik
+export HMS_STANDBY_DIR=/backups/local
+/usr/bin/python3 /opt/hms/scripts/backup_database.py
+WRAPPER
 sudo chmod 750 /opt/hms/scripts/backup_wrapper.sh
+sudo chown root:root /opt/hms/scripts/backup_wrapper.sh
 ```
 
-7) Add Cron job (as root or backup operator)
+6) Add Cron job (as root or backup operator)
 
 Edit root crontab (`sudo crontab -e`) and add:
 
@@ -228,7 +247,7 @@ Edit root crontab (`sudo crontab -e`) and add:
 0 2 * * * /bin/bash /opt/hms/scripts/backup_wrapper.sh >> /var/log/hms_backup_cron.log 2>&1
 ```
 
-8) Test the backup manually
+7) Test the backup manually
 
 Run the script interactively as the postgres user and inspect logs:
 
@@ -239,26 +258,23 @@ ls -lt /backups/local/
 cat /backups/local/.metadata.json | python3 -m json.tool
 ```
 
-9) Test restore to a validation database
+8) Test restore to a validation database
 
 ```bash
 # Select latest backup
-BACKUP_FILE=$(ls -t /backups/local/hospital_management_*.dump | head -1)
+BACKUP_FILE=$(ls -t /backups/local/hsp_db_*.dump | head -1)
 
-sudo -u postgres createdb hospital_management_test
-sudo -u postgres pg_restore -h localhost -U postgres -d hospital_management_test $BACKUP_FILE
+sudo -u postgres createdb hsp_db_test
+sudo -u postgres pg_restore -h localhost -U postgres -d hsp_db_test $BACKUP_FILE
 
-sudo -u postgres psql -d hospital_management_test -c "SELECT COUNT(*) FROM patients;"
-sudo -u postgres dropdb hospital_management_test
+sudo -u postgres psql -d hsp_db_test -c "SELECT COUNT(*) FROM patients;"
+sudo -u postgres dropdb hsp_db_test
 ```
 
-10) (Optional) Configure AWS S3 upload
-
-If using AWS S3, ensure AWS CLI is configured with an IAM user that has PutObject permission to the designated bucket. Run a test upload:
+9) Verify rsync to standby
 
 ```bash
-aws s3 cp /backups/local/$(basename $BACKUP_FILE) s3://hms-backups/daily/ --sse AES256
-aws s3 ls s3://hms-backups/daily/ --recursive | tail -n 10
+sudo -u postgres ssh yerrazik@<STANDBY_TAILSCALE_IP> "ls -lt /backups/local/"
 ```
 
 ---
@@ -275,32 +291,7 @@ sudo journalctl -u hms-backup.service -n 200
 
 ## Automated Backup System (Python + Cron)
 
-The recommended approach for production-like deployments uses a Python script scheduled via Cron. This ensures consistent, unattended backup execution with logging and retention management.
-
-### Setup: Create Backup User (One-time)
-
-Create a PostgreSQL user with minimal backup-only privilege:
-
-```sql
--- Connect as PostgreSQL superuser
-CREATE USER backup_user WITH PASSWORD 'secure_backup_password';
-GRANT CONNECT ON DATABASE hospital_management TO backup_user;
-GRANT USAGE ON SCHEMA public TO backup_user;
-
--- Optional: further restrict to read-only
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO backup_user;
-```
-
-Or use OS-level passwordless authentication (`.pgpass`):
-
-```bash
-# As the backup operator user (e.g., postgres or hms_backup)
-cat ~/.pgpass
-# Format: hostname:port:database:username:password
-localhost:5432:hospital_management:backup_user:secure_backup_password
-
-chmod 600 ~/.pgpass
-```
+The recommended approach for production-like deployments uses a Python script scheduled via Cron. This ensures consistent, unattended backup execution with logging, retention management, and automatic rsync to the standby node.
 
 ### Setup: Create Backup Script
 
@@ -312,9 +303,24 @@ Create `/opt/hms/scripts/backup_database.py` (or adjust path as appropriate):
 HMS Database Backup Automation Script
 
 Performs daily PostgreSQL logical backups with retention management,
-logging, and optional off-site replication.
+logging, and optional rsync to the standby replica node.
 
 Supports Cron execution with environment variable configuration.
+
+Usage:
+    python3 backup_database.py
+
+Environment Variables:
+    HMS_DB_NAME         - Database name (default: hsp_db)
+    HMS_DB_HOST         - PostgreSQL host (default: localhost)
+    HMS_DB_PORT         - PostgreSQL port (default: 5432)
+    HMS_DB_USER         - PostgreSQL backup user (default: backup_user)
+    HMS_BACKUP_DIR      - Local backup directory (default: /backups/local)
+    HMS_LOG_FILE        - Log file path (default: /var/log/hms_backup.log)
+    HMS_RETENTION_DAYS  - Local backup retention days (default: 5)
+    HMS_STANDBY_HOST    - Standby node hostname/IP for rsync (default: none)
+    HMS_STANDBY_USER    - SSH user on standby (default: yerrazik)
+    HMS_STANDBY_DIR     - Backup directory on standby (default: /backups/local)
 """
 
 import os
@@ -326,16 +332,16 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # Configuration from environment or defaults
-DB_NAME = os.getenv('HMS_DB_NAME', 'hospital_management')
+DB_NAME = os.getenv('HMS_DB_NAME', 'hsp_db')
 DB_HOST = os.getenv('HMS_DB_HOST', 'localhost')
 DB_PORT = os.getenv('HMS_DB_PORT', '5432')
 DB_USER = os.getenv('HMS_DB_USER', 'backup_user')
 BACKUP_DIR = os.getenv('HMS_BACKUP_DIR', '/backups/local')
-BACKUP_ARCHIVE_DIR = os.getenv('HMS_BACKUP_ARCHIVE_DIR', '/backups/archive')
 LOG_FILE = os.getenv('HMS_LOG_FILE', '/var/log/hms_backup.log')
 RETENTION_DAYS = int(os.getenv('HMS_RETENTION_DAYS', '5'))
-ARCHIVE_DAY_OF_WEEK = int(os.getenv('HMS_ARCHIVE_DAY', '0'))  # 0=Sunday
-ENABLE_ARCHIVE = os.getenv('HMS_ENABLE_ARCHIVE', 'true').lower() == 'true'
+STANDBY_HOST = os.getenv('HMS_STANDBY_HOST', '')
+STANDBY_USER = os.getenv('HMS_STANDBY_USER', 'yerrazik')
+STANDBY_DIR = os.getenv('HMS_STANDBY_DIR', '/backups/local')
 
 # Setup logging
 logging.basicConfig(
@@ -354,10 +360,10 @@ def run_backup():
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     backup_filename = f"{DB_NAME}_{timestamp}.dump"
     backup_filepath = os.path.join(BACKUP_DIR, backup_filename)
-
+    
     # Ensure backup directory exists
     Path(BACKUP_DIR).mkdir(parents=True, exist_ok=True)
-
+    
     # Build pg_dump command
     cmd = [
         'pg_dump',
@@ -369,18 +375,18 @@ def run_backup():
         '-v',       # Verbose output
         '-f', backup_filepath
     ]
-
+    
     try:
         logger.info(f"Starting backup to {backup_filepath}...")
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-
+        
         # Verify backup file
         if not os.path.exists(backup_filepath):
             raise FileNotFoundError(f"Backup file not created: {backup_filepath}")
-
+        
         file_size_mb = os.path.getsize(backup_filepath) / (1024 * 1024)
         logger.info(f"Backup completed successfully: {backup_filename} ({file_size_mb:.2f} MB)")
-
+        
         # Log backup metadata
         metadata = {
             'timestamp': timestamp,
@@ -391,9 +397,9 @@ def run_backup():
             'status': 'success'
         }
         log_backup_metadata(metadata)
-
+        
         return backup_filepath, True
-
+        
     except subprocess.CalledProcessError as e:
         logger.error(f"Backup failed: {e.stderr}")
         return None, False
@@ -406,16 +412,16 @@ def cleanup_old_backups():
     """Remove backups older than RETENTION_DAYS."""
     cutoff_date = datetime.now() - timedelta(days=RETENTION_DAYS)
     deleted_count = 0
-
+    
     try:
         logger.info(f"Cleaning up backups older than {RETENTION_DAYS} days...")
-
+        
         for backup_file in Path(BACKUP_DIR).glob(f"{DB_NAME}_*.dump"):
             # Extract timestamp from filename
             try:
                 file_timestamp_str = backup_file.stem.replace(f"{DB_NAME}_", "")
                 file_timestamp = datetime.strptime(file_timestamp_str, '%Y%m%d_%H%M%S')
-
+                
                 if file_timestamp < cutoff_date:
                     backup_file.unlink()
                     deleted_count += 1
@@ -423,43 +429,39 @@ def cleanup_old_backups():
             except ValueError:
                 # Skip files that don't match naming pattern
                 logger.debug(f"Skipping non-standard filename: {backup_file.name}")
-
+        
         logger.info(f"Cleanup complete: {deleted_count} old backups removed")
         return True
-
+        
     except Exception as e:
         logger.error(f"Error during backup cleanup: {e}")
         return False
 
 
-def archive_weekly_backup(backup_filepath):
-    """Copy latest backup to weekly archive if today is archive day."""
-    today_dow = datetime.now().weekday()  # 0=Monday, 6=Sunday
-
-    # Convert ARCHIVE_DAY_OF_WEEK from Sunday=0 to Python's Monday=0 format
-    py_archive_day = (ARCHIVE_DAY_OF_WEEK + 6) % 7
-
-    if today_dow != py_archive_day or not ENABLE_ARCHIVE:
+def rsync_to_standby(backup_filepath):
+    """Rsync backup file to the standby replica node."""
+    if not STANDBY_HOST:
+        logger.info("No standby host configured, skipping rsync")
         return True
-
+    
     try:
-        logger.info(f"Archiving backup for off-site storage...")
-        Path(BACKUP_ARCHIVE_DIR).mkdir(parents=True, exist_ok=True)
-
-        # Copy backup to archive with week number
-        week_number = datetime.now().strftime('%Y_W%V')  # e.g., 2026_W18
-        archive_filename = backup_filepath.split('/')[-1].replace('.dump', f'_WEEK{week_number}.dump')
-        archive_filepath = os.path.join(BACKUP_ARCHIVE_DIR, archive_filename)
-
-        cmd = ['cp', backup_filepath, archive_filepath]
-        subprocess.run(cmd, check=True)
-
-        logger.info(f"Backup archived: {archive_filename}")
+        dest = f"{STANDBY_USER}@{STANDBY_HOST}:{STANDBY_DIR}/"
+        logger.info(f"Rsyncing backup to standby {STANDBY_HOST}:{STANDBY_DIR}...")
+        
+        cmd = [
+            'rsync', '-avz', '--partial',
+            backup_filepath,
+            dest
+        ]
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logger.info(f"Rsync to standby completed: {result.stdout.split(chr(10))[-2] if result.stdout.strip() else 'ok'}")
         return True
-
+        
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Rsync to standby failed: {e.stderr}")
+        return False
     except Exception as e:
-        logger.error(f"Error archiving backup: {e}")
-        # Don't fail the whole backup on archive error
+        logger.error(f"Unexpected rsync error: {e}")
         return False
 
 
@@ -469,12 +471,12 @@ def verify_backup(backup_filepath):
         logger.info(f"Verifying backup integrity...")
         cmd = ['pg_restore', '-l', backup_filepath]
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-
+        
         # Count objects in backup
         object_count = len([line for line in result.stdout.split('\n') if line.strip()])
         logger.info(f"Backup verification successful: {object_count} objects found")
         return True
-
+        
     except Exception as e:
         logger.error(f"Backup verification failed: {e}")
         return False
@@ -484,22 +486,22 @@ def log_backup_metadata(metadata):
     """Log backup metadata to JSON file for monitoring."""
     try:
         metadata_file = os.path.join(BACKUP_DIR, '.metadata.json')
-
+        
         # Append to metadata log (or create if doesn't exist)
         existing_data = []
         if os.path.exists(metadata_file):
             with open(metadata_file, 'r') as f:
                 existing_data = json.load(f)
-
+        
         existing_data.append(metadata)
-
+        
         # Keep only last 30 backup records
         if len(existing_data) > 30:
             existing_data = existing_data[-30:]
-
+        
         with open(metadata_file, 'w') as f:
             json.dump(existing_data, f, indent=2)
-
+            
     except Exception as e:
         logger.warning(f"Could not log backup metadata: {e}")
 
@@ -509,26 +511,26 @@ def main():
     logger.info("=== HMS Backup Script Started ===")
     logger.info(f"Database: {DB_NAME} @ {DB_HOST}:{DB_PORT}")
     logger.info(f"Backup directory: {BACKUP_DIR}")
-
+    
     # Execute backup
     backup_filepath, backup_success = run_backup()
-
+    
     if not backup_success:
         logger.error("Backup execution failed - aborting cleanup and archive")
         sys.exit(1)
-
+    
     # Verify backup
     verify_success = verify_backup(backup_filepath)
     if not verify_success:
         logger.warning("Backup verification failed - proceeding with caution")
-
-    # Archive to off-site (if enabled and today is archive day)
-    archive_weekly_backup(backup_filepath)
-
+    
+    # Rsync to standby node
+    rsync_to_standby(backup_filepath)
+    
     # Cleanup old backups
     cleanup_old_backups()
-
-    logger.info("=== HMS Backup Script Completed Successfully ===\n")
+    
+    logger.info("=== HMS Backup Script Completed Successfully ===")
     sys.exit(0)
 
 
@@ -557,15 +559,16 @@ Example wrapper script (`/opt/hms/scripts/backup_wrapper.sh`):
 #!/bin/bash
 
 # Load environment configuration
-export HMS_DB_NAME=hospital_management
+export HMS_DB_NAME=hsp_db
 export HMS_DB_HOST=localhost
 export HMS_DB_PORT=5432
-export HMS_DB_USER=backup_user
+export HMS_DB_USER=postgres
 export HMS_BACKUP_DIR=/backups/local
-export HMS_BACKUP_ARCHIVE_DIR=/backups/archive
 export HMS_LOG_FILE=/var/log/hms_backup.log
 export HMS_RETENTION_DAYS=5
-export HMS_ENABLE_ARCHIVE=true
+export HMS_STANDBY_HOST=100.98.214.53
+export HMS_STANDBY_USER=yerrazik
+export HMS_STANDBY_DIR=/backups/local
 
 # Run backup script
 /usr/bin/python3 /opt/hms/scripts/backup_database.py
@@ -604,44 +607,31 @@ ls -lt /backups/local/ | head -10
 cat /backups/local/.metadata.json | python3 -m json.tool
 ```
 
-### Off-Site Replication
+### Rsync to Standby Node
 
-The Python script supports automatic weekly archiving. To replicate to external storage:
+After each backup, the Python script automatically rsyncs the backup file to the standby node (Sion). This requires:
 
-**Option 1: Network-mounted backup directory**
+1. SSH key-based authentication from `postgres` user on Briar to `yerrazik` user on Sion
+2. The `rsync` package installed on both nodes
+3. Tailscale connectivity between the nodes
+
+**Setup SSH key (one-time):**
 
 ```bash
-# Mount remote NFS or SMB share
-sudo mkdir -p /mnt/remote_backup
-sudo mount -t nfs remote_server:/export/backups /mnt/remote_backup
-
-# Update HMS_BACKUP_ARCHIVE_DIR to use remote path
-export HMS_BACKUP_ARCHIVE_DIR=/mnt/remote_backup/archive
+# On Briar (primary):
+sudo -u postgres ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
+sudo -u postgres ssh -o StrictHostKeyChecking=accept-new yerrazik@100.98.214.53 "mkdir -p /backups/local"
 ```
 
-**Option 2: Cloud storage (AWS S3 example)**
+Copy the public key (`sudo -u postgres cat ~/.ssh/id_ed25519.pub`) and append it to `~/.ssh/authorized_keys` on Sion.
 
-Add S3 upload to the Python script:
+**Verify rsync works:**
 
-```python
-import boto3
-
-def upload_to_s3(backup_filepath):
-    """Upload backup to AWS S3."""
-    s3_client = boto3.client('s3')
-    bucket_name = os.getenv('HMS_S3_BUCKET', 'hospital-backups')
-
-    try:
-        s3_key = f"backups/{datetime.now().strftime('%Y/%m')}/{os.path.basename(backup_filepath)}"
-        s3_client.upload_file(backup_filepath, bucket_name, s3_key)
-        logger.info(f"Uploaded to S3: s3://{bucket_name}/{s3_key}")
-    except Exception as e:
-        logger.error(f"S3 upload failed: {e}")
+```bash
+sudo -u postgres ssh yerrazik@100.98.214.53 "ls -lt /backups/local/"
 ```
 
-Then call `upload_to_s3(backup_filepath)` after successful backup.
-
-## Backup Procedure
+The script uses `rsync -avz --partial` so it only transfers the new backup and can resume if interrupted.
 
 ## Restore Procedure
 
@@ -826,8 +816,8 @@ Backups of the Hospital Management System contain sensitive healthcare data incl
 - **Storage Location**: Store backups in dedicated, restricted directories separate from application data
 - **Encryption at Rest**: For sensitive environments, encrypt backup files using GPG or similar
 - **Encryption in Transit**: Use TLS/HTTPS for any network transfer of backup files
-- **Off-site Security**: If using remote/cloud storage, enable encryption and verify provider compliance with healthcare regulations (HIPAA/GDPR)
-- **Retention Limits**: Do not retain backups indefinitely; follow policy of 5 recent daily + weekly archive, then secure deletion
+- **Standby Transfer Security**: Rsync traffic goes over Tailscale (encrypted tunnel); backups at rest on standby inherit the same file permissions
+- **Retention Limits**: Do not retain backups indefinitely; follow policy of 5 most recent daily backups, then secure deletion
 - **Access Logging**: Log who accesses backup files and when (use `auditd` on Linux)
 
 ### Encryption Example (GPG)
@@ -939,7 +929,7 @@ Regular testing ensures backups are usable when recovery is needed. Establish a 
 | Restore into validation environment | Weekly    | Database Admin | All tables present, row counts match, no errors   |
 | Full database failover drill        | Quarterly | DevOps / DBA   | Complete restore + application boot in under RTO  |
 | Targeted table recovery test        | Monthly   | Database Admin | Can restore single table without FK violations    |
-| Off-site replication test           | Monthly   | Infrastructure | Weekly archive copies verified in remote location |
+| Rsync to standby test              | Monthly   | Infrastructure | Backup file present on standby node at /backups/local/ |
 
 ---
 
@@ -976,6 +966,7 @@ Update this runbook whenever:
 |:---------- |:-------:|:----------------------------------------------------------------------- |:------------ |
 | 2026-05-04 | 1.0     | Initial manual backup procedures                                        | Project Team |
 | 2026-05-06 | 3.0     | Added Python + Cron automation, enhanced restore, complete independence | Project Team |
+| 2026-05-17 | 4.0     | Removed S3 upload; replaced with rsync to standby node (Sion)           | Project Team |
 
 ---
 

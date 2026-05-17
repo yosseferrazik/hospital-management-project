@@ -41,7 +41,7 @@ This document defines the availability and resilience planning for the Hospital 
 | Primary node   | Hospital datacenter    | Active database + API    | PostgreSQL primary, Flask API, backup coordinator        |
 | Secondary node | AWS Cloud (EC2)        | Standby database         | PostgreSQL standby (read-only), failover target           |
 | Backup storage | Local (primary disk)   | Local backup retention   | `/backups/local` - last 5 backup copies                   |
-| Backup storage | AWS S3                 | Cloud backup repository  | Daily uploads, 30-day retention, AES-256 encryption       |
+
 
 ---
 
@@ -51,7 +51,7 @@ The high-availability design is validated using the following nodes:
 
 | VM / Instance             | HA Role      | Main Responsibilities                                                                                       |
 |:------------------------- |:------------ |:----------------------------------------------------------------------------------------------------------- |
-| `vm-hms-primary`          | Active node  | Hosts PostgreSQL primary, Flask API, local backup execution, cloud upload coordinator                       |
+| `vm-hms-primary`          | Active node  | Hosts PostgreSQL primary, Flask API, local backup execution, rsync to standby coordinator                       |
 | AWS EC2 (replica)         | Standby node | Hosts PostgreSQL standby, supports failover, restore validation                                             |
 | `vm-admin-client`         | Admin node   | Monitors replication, validates backups, supports manual failover checks                                    |
 
@@ -65,7 +65,7 @@ The high-availability design is validated using the following nodes:
 | Application resilience | Manual restart or failover; API on primary node only           |
 | Traffic distribution   | Clients point directly to primary node IP                      |
 | Local backups          | Daily, retain last 5 copies on `/backups/local`                |
-| Cloud backups          | Daily upload to AWS S3, 30-day retention, AES-256 encryption   |
+| Off-site replication   | Daily rsync to standby node (Sion)                            |
 | Recovery operations    | Manual, documented promotion and restore procedures            |
 
 ---
@@ -90,15 +90,6 @@ The high-availability design is validated using the following nodes:
 | Storage | 80 GB gp3 | OS + PostgreSQL data directory |
 | Region | Closest to hospital | Minimizes replication lag |
 
-### Backup Storage (AWS S3)
-
-| Component | Specification |
-|:----------|:--------------|
-| Bucket | `hms-backups` |
-| Encryption | SSE-S3 (AES-256) |
-| Lifecycle | Delete after 30 days |
-| Versioning | Enabled |
-
 ### Storage Separation Requirements
 
 | Storage Area              | Location                  | HA Relevance                                                                   |
@@ -115,7 +106,7 @@ The high-availability design is validated using the following nodes:
 Summary:
 
 - Daily logical backups are performed and retained locally (default: last 5 copies).
-- A daily off-site copy (for example to AWS S3) is retained for longer (default: 30 days).
+- A daily off-site copy (rsynced to the standby node (Sion)) is retained for longer.
 
 For operational scripts, cron schedules, encryption guidance and full restore procedures, see the canonical runbook: docs/04_Operations_and_Manuals/Backup_and_Restore_Runbook.md. This document focuses on HA topology, failover and recovery scope; detailed backup tooling is handled in the runbook to avoid duplication.
 
@@ -125,7 +116,7 @@ For operational scripts, cron schedules, encryption guidance and full restore pr
 
 The operational model covers:
 
-- Full database restoration from local or off-site backup
+- Full database restoration from local backup or standby node
 - Targeted restoration of critical tables (patients and staff)
 - Standby promotion in case of primary database failure
 - Validation steps after recovery
@@ -159,7 +150,7 @@ Refer to that runbook for exact steps and scripts; this document focuses on the 
 ### Database Corruption on Primary
 
 - New writes should be stopped immediately.
-- Restore validation performed from latest local backup or S3.
+- Restore validation performed from latest local backup or standby node.
 - Standby node may be promoted if corruption has not replicated.
 
 ### Application Service Failure Only
@@ -182,7 +173,7 @@ Refer to that runbook for exact steps and scripts; this document focuses on the 
 |:----------------------------------------------- |:---------:|:----------:|:----------------------------------------------- |
 | **Critical Data** (Patients, Surgeries, Visits) | 1 hour    | 15 minutes | Standby promotion or restore from latest backup |
 | **Core API** (Authentication, Operations)       | 2-4 hours | 1 hour     | Application restart + database validation       |
-| **Full System Rebuild**                         | 4-8 hours | 1 hour     | Fresh deployment + restore from S3 backup       |
+| **Full System Rebuild**                         | 4-8 hours | 1 hour     | Fresh deployment + restore from standby node       |
 | **Non-Critical** (Reports, Analytics)           | 24 hours  | 24 hours   | Scheduled recovery window                       |
 
 These targets are validated quarterly through drills.
@@ -227,7 +218,7 @@ sudo -u postgres dropdb hospital_management_test
 
 1. Select reference date (1-2 weeks ago)
 2. Provision fresh EC2 instance for testing
-3. Restore database from S3 backup of reference date
+3. Restore database from standby node backup of reference date
 4. Deploy fresh application instance
 5. Verify full functionality
 6. Calculate achieved RTO and RPO
@@ -245,7 +236,7 @@ sudo -u postgres dropdb hospital_management_test
 | Disk space (local)    | `df -h /backups/local`               | < 20% free      |
 | Disk space (data)     | `df -h /var/lib/postgresql`          | < 15% free      |
 | Backup success        | Check `/var/log/hms-backup.log`      | Failure         |
-| Upload success        | Check `/var/log/hms-cloud-upload.log`| Failure         |
+| Rsync success         | Check `/var/log/hms-rsync.log`       | Failure         |
 
 ### Replication Monitoring Script
 
@@ -272,6 +263,6 @@ Add to cron (every 5 minutes):
 - The system is currently in design and validation scope, not production scope.
 - Manual failover is acceptable for the current phase; future versions may implement automated failover.
 - Infrastructure uses on-premise primary node + AWS EC2 replica.
-- Backups use local retention (5 copies) + S3 cloud upload (30 days).
+- Backups use local retention (5 copies) + rsync to standby node (Sion).
 - Split-brain prevention currently relies on manual intervention.
 - Monitoring is optional but recommended; monitoring setup shown for reference.

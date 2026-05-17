@@ -18,7 +18,7 @@ This document describes the deployment architecture for the Hospital Management 
 - Primary node in hospital datacenter
 - Secondary replica node in AWS cloud
 - Automated daily backups with local retention (5 copies)
-- Daily backup upload to cloud storage
+- Daily rsync of backups to standby node (Sion)
 - Backup and restore scripts
 - Replication diagram and administration manual
 
@@ -94,16 +94,6 @@ The deployment uses a two-node database cluster with active-passive replication.
 │   │   │              - Read-only operations                         │   │   │
 │   │   │              - Continuous replication from primary          │   │   │
 │   │   │              - Failover target                              │   │   │
-│   │   └─────────────────────────────────────────────────────────────┘   │   │
-│   │                                                                     │   │
-│   └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │                         AWS S3 BUCKET (future)                     │   │
-│   │                         hms-backups                                 │   │
-│   │                                                                     │   │
-│   │   ┌─────────────────────────────────────────────────────────────┐   │   │
-│   │   │  Daily backup uploads from primary node (planned)           │   │   │
 │   │   └─────────────────────────────────────────────────────────────┘   │   │
 │   │                                                                     │   │
 │   └─────────────────────────────────────────────────────────────────────┘   │
@@ -198,7 +188,7 @@ Keep this file authoritative; infra-level docs should only summarize and link to
 
 - [ ] Provision primary node hardware (hospital datacenter)
 - [ ] Create AWS EC2 instance for replica node
-- [ ] Create AWS S3 bucket for cloud backups
+- [ ] Configure rsync to standby node (Sion) for backup replication
 - [ ] Configure network connectivity between primary and AWS (VPN or direct)
 - [ ] Install Ubuntu Server 24.04 LTS on both nodes
 - [ ] Configure NTP/Chrony on both nodes
@@ -213,9 +203,8 @@ Keep this file authoritative; infra-level docs should only summarize and link to
 - [ ] Configure PostgreSQL for replication (replication user, `postgresql.conf`, `pg_hba.conf`)
 - [ ] Create `/backups/local` directory with proper permissions
   - [ ] Deploy backup script as documented in docs/04_Operations_and_Manuals/Backup_and_Restore_Runbook.md (recommended location: `/usr/local/bin/backup.sh`, chmod 700)
-  - [ ] Deploy cloud upload script as documented in docs/04_Operations_and_Manuals/Backup_and_Restore_Runbook.md (recommended location: `/usr/local/bin/upload_to_s3.sh`, chmod 700)
-- [ ] Configure AWS CLI with IAM credentials
-- [ ] Add cron jobs for backup and upload
+  - [ ] Deploy rsync script for off-site replication to standby node (Sion)
+- [ ] Add cron jobs for backup and rsync to standby
 - [ ] Start Flask API
 
 ### Replica Node Setup
@@ -230,8 +219,8 @@ Keep this file authoritative; infra-level docs should only summarize and link to
 
 - [ ] Run backup script manually as documented: `sudo -u postgres /usr/local/bin/backup.sh` or use the canonical runbook example at docs/04_Operations_and_Manuals/Backup_and_Restore_Runbook.md
 - [ ] Verify backup file appears in `/backups/local/`
-- [ ] Run cloud upload script manually
-- [ ] Verify backup appears in S3 bucket
+- [ ] Verify rsync to standby node (Sion)
+- [ ] Confirm backup file exists on standby node
 - [ ] Test full restore: `./restore_full.sh /backups/local/backup_*.sql.gz`
 - [ ] Test table restore (patients + staff): `./restore_tables.sh /backups/local/backup_*.sql.gz`
 
@@ -258,4 +247,4 @@ Keep this file authoritative; infra-level docs should only summarize and link to
 | Symptom                | Diagnosis                                   | Solution                               |
 |:---------------------- |:------------------------------------------- |:-------------------------------------- |
 | No backup file created | Check cron log: `grep CRON /var/log/syslog` | Verify script path and permissions     |
-| Upload to S3 fails     | Check AWS CLI: `aws s3 ls`                  | Verify IAM credentials and bucket name |
+| Rsync to standby fails | Check network: `ping <STANDBY_IP>`          | Verify connectivity and SSH keys |

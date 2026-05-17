@@ -25,7 +25,7 @@ All sensitive communication paths must be encrypted in transit.
 | Flask API to PostgreSQL primary             | TLS                                              |
 | PostgreSQL primary to PostgreSQL standby    | TLS (replication over encrypted channel)         |
 | Administrative access to PostgreSQL nodes   | TLS + SSH                                       |
-| Backup upload to AWS S3                     | HTTPS (native)                                  |
+
 
 ## Baseline Requirements
 

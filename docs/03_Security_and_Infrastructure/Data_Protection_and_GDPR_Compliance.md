@@ -76,7 +76,7 @@ The future solution should be prepared to support:
 
 - Audit logs: retain 2 years in the primary system and archive compressed copies for 7 years.
 
-- Backups: retain rolling daily backups for 14 days, weekly backups for 12 weeks, and monthly snapshots for 12 months (encrypted and stored off-site).
+- Backups: retain rolling daily backups for 14 days, weekly backups for 12 weeks, and monthly snapshots for 12 months (encrypted and replicated to standby node).
 
 Adjust retention durations to meet local legal requirements and institutional policies. Implement automated purge jobs with safe-guards (soft-delete flag, approval workflow, and irreversible purge only after review).
 

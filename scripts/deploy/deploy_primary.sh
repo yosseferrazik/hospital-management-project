@@ -7,13 +7,12 @@ set -euo pipefail
 echo "Deploying HMS primary node..."
 
 sudo apt update
-sudo apt install -y postgresql-14 postgresql-client-14 python3 python3-pip awscli git
-sudo pip3 install boto3
+sudo apt install -y postgresql-14 postgresql-client-14 python3 python3-pip git rsync
 
 # Create directories
-sudo mkdir -p /opt/hms/scripts /backups/local /backups/archive /var/log/hms
-sudo chown -R postgres:postgres /backups/local /backups/archive
-sudo chmod 700 /backups/local /backups/archive
+sudo mkdir -p /opt/hms/scripts /backups/local /var/log/hms
+sudo chown -R postgres:postgres /backups/local
+sudo chmod 700 /backups/local
 
 # Copy repository (assumes repo already cloned under current directory)
 REPO_ROOT=$(pwd)
@@ -77,7 +76,7 @@ Description=HMS Backup Service
 [Service]
 Type=oneshot
 User=postgres
-ExecStart=/opt/hms/scripts/backup.sh
+ExecStart=/opt/hms/scripts/backup_wrapper.sh
 EOF
 
 sudo tee /etc/systemd/system/hms-backup.timer > /dev/null <<'EOF'

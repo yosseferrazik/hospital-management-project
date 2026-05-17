@@ -3,7 +3,7 @@
 HMS Database Backup Automation Script
 
 Performs daily PostgreSQL logical backups with retention management,
-logging, and optional off-site replication.
+logging, and optional rsync to the standby replica node.
 
 Supports Cron execution with environment variable configuration.
 
@@ -16,11 +16,11 @@ Environment Variables:
     HMS_DB_PORT         - PostgreSQL port (default: 5432)
     HMS_DB_USER         - PostgreSQL backup user (default: backup_user)
     HMS_BACKUP_DIR      - Local backup directory (default: /backups/local)
-    HMS_BACKUP_ARCHIVE_DIR - Weekly archive directory (default: /backups/archive)
     HMS_LOG_FILE        - Log file path (default: /var/log/hms_backup.log)
     HMS_RETENTION_DAYS  - Local backup retention days (default: 5)
-    HMS_ARCHIVE_DAY     - Day of week for archiving, 0=Sunday (default: 0)
-    HMS_ENABLE_ARCHIVE  - Enable off-site archiving (default: true)
+    HMS_STANDBY_HOST    - Standby node hostname/IP for rsync (default: none)
+    HMS_STANDBY_USER    - SSH user on standby (default: yerrazik)
+    HMS_STANDBY_DIR     - Backup directory on standby (default: /backups/local)
 """
 
 import os
@@ -37,11 +37,11 @@ DB_HOST = os.getenv('HMS_DB_HOST', 'localhost')
 DB_PORT = os.getenv('HMS_DB_PORT', '5432')
 DB_USER = os.getenv('HMS_DB_USER', 'backup_user')
 BACKUP_DIR = os.getenv('HMS_BACKUP_DIR', '/backups/local')
-BACKUP_ARCHIVE_DIR = os.getenv('HMS_BACKUP_ARCHIVE_DIR', '/backups/archive')
 LOG_FILE = os.getenv('HMS_LOG_FILE', '/var/log/hms_backup.log')
 RETENTION_DAYS = int(os.getenv('HMS_RETENTION_DAYS', '5'))
-ARCHIVE_DAY_OF_WEEK = int(os.getenv('HMS_ARCHIVE_DAY', '0'))  # 0=Sunday
-ENABLE_ARCHIVE = os.getenv('HMS_ENABLE_ARCHIVE', 'true').lower() == 'true'
+STANDBY_HOST = os.getenv('HMS_STANDBY_HOST', '')
+STANDBY_USER = os.getenv('HMS_STANDBY_USER', 'yerrazik')
+STANDBY_DIR = os.getenv('HMS_STANDBY_DIR', '/backups/local')
 
 # Setup logging
 logging.basicConfig(
@@ -138,34 +138,30 @@ def cleanup_old_backups():
         return False
 
 
-def archive_weekly_backup(backup_filepath):
-    """Copy latest backup to weekly archive if today is archive day."""
-    today_dow = datetime.now().weekday()  # 0=Monday, 6=Sunday
-    
-    # Convert ARCHIVE_DAY_OF_WEEK from Sunday=0 to Python's Monday=0 format
-    py_archive_day = (ARCHIVE_DAY_OF_WEEK + 6) % 7
-    
-    if today_dow != py_archive_day or not ENABLE_ARCHIVE:
+def rsync_to_standby(backup_filepath):
+    """Rsync backup file to the standby replica node."""
+    if not STANDBY_HOST:
+        logger.info("No standby host configured, skipping rsync")
         return True
     
     try:
-        logger.info(f"Archiving backup for off-site storage...")
-        Path(BACKUP_ARCHIVE_DIR).mkdir(parents=True, exist_ok=True)
+        dest = f"{STANDBY_USER}@{STANDBY_HOST}:{STANDBY_DIR}/"
+        logger.info(f"Rsyncing backup to standby {STANDBY_HOST}:{STANDBY_DIR}...")
         
-        # Copy backup to archive with week number
-        week_number = datetime.now().strftime('%Y_W%V')  # e.g., 2026_W18
-        archive_filename = backup_filepath.split('/')[-1].replace('.dump', f'_WEEK{week_number}.dump')
-        archive_filepath = os.path.join(BACKUP_ARCHIVE_DIR, archive_filename)
-        
-        cmd = ['cp', backup_filepath, archive_filepath]
-        subprocess.run(cmd, check=True)
-        
-        logger.info(f"Backup archived: {archive_filename}")
+        cmd = [
+            'rsync', '-avz', '--partial',
+            backup_filepath,
+            dest
+        ]
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logger.info(f"Rsync to standby completed: {result.stdout.split(chr(10))[-2] if result.stdout.strip() else 'ok'}")
         return True
         
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Rsync to standby failed: {e.stderr}")
+        return False
     except Exception as e:
-        logger.error(f"Error archiving backup: {e}")
-        # Don't fail the whole backup on archive error
+        logger.error(f"Unexpected rsync error: {e}")
         return False
 
 
@@ -228,13 +224,13 @@ def main():
     if not verify_success:
         logger.warning("Backup verification failed - proceeding with caution")
     
-    # Archive to off-site (if enabled and today is archive day)
-    archive_weekly_backup(backup_filepath)
+    # Rsync to standby node
+    rsync_to_standby(backup_filepath)
     
     # Cleanup old backups
     cleanup_old_backups()
     
-    logger.info("=== HMS Backup Script Completed Successfully ===\n")
+    logger.info("=== HMS Backup Script Completed Successfully ===")
     sys.exit(0)
 
 

@@ -3,7 +3,7 @@ Operational helper scripts for Hospital Management System
 Location: scripts/ops/
 
 Files:
-- backup.sh             Simplified backup script (pg_dump custom format, retention, optional S3 upload).
+- backup.sh             Simplified backup script (pg_dump custom format, retention).
 - check_replication.sh  Monitor replication lag (used by cron or monitoring tools).
 - check_cert_expiry.sh  Check TLS certificate expiry and warn via syslog.
 
