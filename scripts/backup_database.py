@@ -11,7 +11,7 @@ Usage:
     python3 backup_database.py
 
 Environment Variables:
-    HMS_DB_NAME         - Database name (default: hospital_management)
+    HMS_DB_NAME         - Database name (default: hsp_db)
     HMS_DB_HOST         - PostgreSQL host (default: localhost)
     HMS_DB_PORT         - PostgreSQL port (default: 5432)
     HMS_DB_USER         - PostgreSQL backup user (default: backup_user)
@@ -32,7 +32,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # Configuration from environment or defaults
-DB_NAME = os.getenv('HMS_DB_NAME', 'hospital_management')
+DB_NAME = os.getenv('HMS_DB_NAME', 'hsp_db')
 DB_HOST = os.getenv('HMS_DB_HOST', 'localhost')
 DB_PORT = os.getenv('HMS_DB_PORT', '5432')
 DB_USER = os.getenv('HMS_DB_USER', 'backup_user')
