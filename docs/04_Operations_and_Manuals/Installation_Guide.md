@@ -37,7 +37,7 @@ source .venv/bin/activate
 3. Install server dependencies:
 
 ```powershell
-pip install -r server/requirements.txt
+pip install -r server/src/requirements.txt
 ```
 
 4. Configure environment variables (local example):
@@ -45,21 +45,19 @@ pip install -r server/requirements.txt
 PowerShell:
 
 ```powershell
-$env:FLASK_ENV = 'development'
-$env:DATABASE_URL = 'postgresql://user:password@localhost:5432/hospital_management'
+$env:DATABASE_URL = 'postgresql://user:password@localhost:5432/hsp_db'
 ```
 
 bash:
 
 ```bash
-export FLASK_ENV=development
-export DATABASE_URL='postgresql://user:password@localhost:5432/hospital_management'
+export DATABASE_URL='postgresql://user:password@localhost:5432/hsp_db'
 ```
 
 5. Run the API (development mode):
 
 ```powershell
-python server/run.py
+python server/src/run.py
 ```
 
 The API will normally listen on `http://127.0.0.1:5000` unless configured otherwise.

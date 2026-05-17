@@ -28,7 +28,7 @@ The current platform is implemented as a desktop client plus backend API archite
 
 | Technology | Version | Primary Use                                                | Notes                                                                         |
 |:---------- |:------- |:---------------------------------------------------------- |:----------------------------------------------------------------------------- |
-| Python     | 3.10+   | Client application, backend API, business logic, utilities | Shared language across the full stack simplifies development and maintenance. |
+| Python     | 3.12    | Client application, backend API, business logic, utilities | Shared language across the full stack simplifies development and maintenance. |
 
 ### Backend and API
 
@@ -38,6 +38,7 @@ The current platform is implemented as a desktop client plus backend API archite
 | Flask-SQLAlchemy   | ORM integration          | Provides model mapping, session handling, and database access patterns.      |
 | Flask-JWT-Extended | Authentication tokens    | Issues and validates JWT access tokens for protected routes.                 |
 | Flask-CORS         | Cross-origin support     | Enabled at application level for integration flexibility during development. |
+| Gunicorn            | WSGI HTTP server         | Production server replacing Flask dev server. Managed via systemd.           |
 | Werkzeug           | Flask runtime foundation | Included as part of the Flask execution stack.                               |
 
 ### Data and Persistence
@@ -46,7 +47,7 @@ The current platform is implemented as a desktop client plus backend API archite
 |:---------- |:--------------------------- |:--------------------------------------------------------------------------- |
 | PostgreSQL | Primary relational database | Intended system of record for hospital entities and operational data.       |
 | SQLAlchemy | ORM and query abstraction   | Used through Flask-SQLAlchemy for model definitions and queries.            |
-| psycopg2   | PostgreSQL driver           | Provides runtime connectivity between the Flask application and PostgreSQL. |
+| psycopg2-binary | PostgreSQL driver       | Provides runtime connectivity between the Flask application and PostgreSQL. |
 
 ### Security and Authentication
 
@@ -93,7 +94,7 @@ The current platform is implemented as a desktop client plus backend API archite
 | Area                    | Current Approach                                        |
 | :---------------------- | :------------------------------------------------------ |
 | Client execution        | Local desktop process started from `client/src/main.py` |
-| API execution           | Local Flask process started from `server/src/run.py`    |
+| API execution           | Gunicorn via systemd, started from `wsgi.py`            |
 | Default API base URL    | `http://localhost:5000/api`                             |
 | Database initialization | `db.create_all()` in the Flask app factory              |
 | Configuration source    | Environment variables loaded through `python-dotenv`    |

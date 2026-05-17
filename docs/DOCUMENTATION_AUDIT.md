@@ -1,5 +1,8 @@
 # Documentation Audit and Restructuring Plan
 
+> **DEPRECATED** — The project now uses `TECHNICAL_SPECIFICATION.md` as the single canonical reference.
+> This audit is preserved for historical reference only.
+
 This document summarizes an automated audit of the repository documentation, identifies issues (duplication, contradictions, obsolete files, organization and terminology inconsistencies), and describes the proposed restructuring plan and execution steps.
 
 1) Findings (summary)

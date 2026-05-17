@@ -1,15 +1,20 @@
 [Unit]
-Description=Hospital Management System Flask API (hms-api)
+Description=Hospital Management System API (hms-api)
 After=network.target
+Wants=network-online.target
 
 [Service]
+Type=simple
 User=hms
 Group=hms
-WorkingDirectory=/opt/hms/api
+WorkingDirectory=/opt/hms/current/server/src
 EnvironmentFile=/etc/hms.env
-ExecStart=/usr/bin/python3 -m gunicorn --bind 0.0.0.0:5000 run:app
-Restart=on-failure
+ExecStart=/opt/hms/venv/bin/gunicorn --bind 0.0.0.0:5000 --workers 4 --access-logfile /var/log/hms/access.log --error-logfile /var/log/hms/error.log wsgi:app
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
 RestartSec=5
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

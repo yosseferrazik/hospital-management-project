@@ -1,4 +1,6 @@
-from flask import Flask
+from datetime import datetime, timezone
+
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
@@ -28,12 +30,33 @@ from app.routes import (
 )
 
 
+def _register_health_endpoint(app):
+    @app.route("/health", methods=["GET"])
+    def health():
+        db_ok = False
+        try:
+            db.session.execute(db.text("SELECT 1"))
+            db_ok = True
+        except Exception:
+            pass
+        status_code = 200 if db_ok else 503
+        return jsonify(
+            {
+                "status": "healthy" if db_ok else "degraded",
+                "database": "connected" if db_ok else "disconnected",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        ), status_code
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     db.init_app(app)
     JWTManager(app)
     CORS(app)
+
+    _register_health_endpoint(app)
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(maintenance_bp)
@@ -57,6 +80,6 @@ def create_app():
     app.register_blueprint(staff_bp)
 
     with app.app_context():
-        db.create_all()  # Create tables if they do not exist
+        db.create_all()
 
     return app

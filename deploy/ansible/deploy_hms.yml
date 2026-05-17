@@ -1,37 +1,85 @@
 ---
----
-# Simple Ansible playbook to deploy HMS primary and standby via Tailscale
-# Usage:
-# 1. Update inventory.ini with Tailscale IPs and correct ansible_user
-# 2. Set `repo_url` and optionally `primary_ip`
-# 3. Run: ansible-playbook -i inventory.ini deploy_hms.yml --extra-vars "repo_url=https://github.com/you/repo.git"
-
-- hosts: primary
+- name: Deploy HMS API to primary node
+  hosts: primary
   become: yes
   vars:
-    repo_url: https://github.com/yosseferrazik/hospital-management-project.git
-    repo_dest: /opt/hms_repo
+    repo_url: "https://github.com/yosseferrazik/hospital-management-project.git"
+    hms_dir: "/opt/hms"
   tasks:
-    - name: Ensure repository is present on primary
+    - name: Install required system packages
+      apt:
+        name:
+          - git
+          - rsync
+          - python3-venv
+          - build-essential
+          - libpq-dev
+        state: present
+        update_cache: yes
+
+    - name: Create hms system user
+      user:
+        name: hms
+        system: yes
+        home: "{{ hms_dir }}"
+        shell: /usr/sbin/nologin
+        state: present
+
+    - name: Create directory structure
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: hms
+        group: hms
+        mode: "0755"
+      loop:
+        - "{{ hms_dir }}/releases"
+        - "{{ hms_dir }}/venv"
+        - "/var/log/hms"
+
+    - name: Ensure /etc/hms.env exists
+      copy:
+        src: "../../.env.example"
+        dest: "/etc/hms.env"
+        owner: root
+        group: root
+        mode: "0600"
+      failed_when: false
+
+    - name: Clone or update repository
       git:
         repo: "{{ repo_url }}"
-        dest: "{{ repo_dest }}"
-        version: HEAD
+        dest: "{{ hms_dir }}/repo"
+        version: main
+        force: yes
 
-    - name: Run primary deploy script
-      command: /bin/bash {{ repo_dest }}/scripts/deploy/deploy_primary.sh
+    - name: Run deploy script
+      command: "bash {{ hms_dir }}/repo/scripts/deploy/deploy.sh --force"
+      args:
+        chdir: "{{ hms_dir }}/repo"
+      register: deploy_result
+      changed_when: "'nothing to do' not in deploy_result.stdout"
 
-- hosts: standby
+    - name: Show deploy result
+      debug:
+        var: deploy_result.stdout_lines
+
+
+- name: Configure standby PostgreSQL replica
+  hosts: standby
   become: yes
   vars:
-    repo_url: https://github.com/yosseferrazik/hospital-management-project.git
-    repo_dest: /opt/hms_repo
+    primary_ip: "{{ hostvars['primary']['ansible_host'] }}"
   tasks:
-    - name: Ensure repository is present on standby
-      git:
-        repo: "{{ repo_url }}"
-        dest: "{{ repo_dest }}"
-        version: HEAD
+    - name: Ensure PostgreSQL 16 is installed
+      apt:
+        name: postgresql-16
+        state: present
+        update_cache: yes
 
-    - name: Run standby deploy script
-      command: /bin/bash {{ repo_dest }}/scripts/deploy/deploy_standby.sh PRIMARY_IP={{ hostvars['primary']['ansible_host'] }}
+    - name: Run standby setup
+      command: "PRIMARY_IP={{ primary_ip }} bash scripts/deploy/deploy_standby.sh"
+      args:
+        chdir: "/opt/hms/current"
+      failed_when: false
+      ignore_errors: yes
