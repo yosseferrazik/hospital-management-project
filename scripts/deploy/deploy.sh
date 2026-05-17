@@ -126,7 +126,7 @@ setup_venv() {
 
 update_symlink() {
     local release_dir="$1"
-    local previous
+    local previous=""
     if [ -L "$CURRENT_LINK" ]; then
         previous=$(readlink -f "$CURRENT_LINK")
     fi
