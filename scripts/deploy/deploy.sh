@@ -80,11 +80,11 @@ ensure_repo() {
     local repo_dir="$HMS_DIR/repo"
     if [ -d "$repo_dir/.git" ]; then
         log_info "Updating existing repo at $repo_dir"
-        git -C "$repo_dir" fetch origin
-        git -C "$repo_dir" reset --hard origin/main
+        git -C "$repo_dir" fetch origin >&2
+        git -C "$repo_dir" reset --hard origin/main >&2
     else
         log_info "Cloning repository to $repo_dir"
-        git clone "$REPO_URL" "$repo_dir"
+        git clone "$REPO_URL" "$repo_dir" >&2
     fi
     echo "$repo_dir"
 }
