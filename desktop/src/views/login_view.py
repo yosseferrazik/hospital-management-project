@@ -69,10 +69,7 @@ class LoginView:
         buttons.pack(fill="x", pady=(8, 0))
 
         self.login_btn = UIStyle.filled_button(buttons, "Sign in", self.do_login)
-        self.login_btn.pack(fill="x", pady=(0, 8))
-        UIStyle.secondary_button(
-            buttons, "Create an account", self.app.show_register
-        ).pack(fill="x")
+        self.login_btn.pack(fill="x")
 
         self.username_entry.bind("<Return>", lambda _e: self.password_entry.focus())
         self.password_entry.bind("<Return>", lambda _e: self.do_login())
@@ -194,7 +191,8 @@ class LoginView:
             self._show_message(f"Error: {error}", error=True)
             return
         if response and "access_token" in response:
-            Session().set_token(response["access_token"], username, "")
+            role = response.get("role", "")
+            Session().set_token(response["access_token"], username, role)
             self._show_message("Welcome! Redirecting...", success=True)
             self.frame.after(600, self.app.show_main_interface)
             return

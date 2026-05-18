@@ -30,6 +30,7 @@ from app.routes import (
     staff_bp,
     export_bp,
     dashboard_bp,
+    audit_bp,
 )
 
 
@@ -106,6 +107,7 @@ def create_app():
     app.register_blueprint(staff_bp)
     app.register_blueprint(export_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(audit_bp)
 
     with app.app_context():
         db.create_all()

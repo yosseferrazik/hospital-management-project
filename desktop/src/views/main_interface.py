@@ -9,6 +9,8 @@ from views.queries_reports_view import QueriesReportsView
 from views.resource_browser import ResourceBrowser
 from views.test_data_view import TestDataView
 from views.statistics_view import StatisticsView
+from views.user_management_view import UserManagementView
+from views.audit_log_view import AuditLogView
 
 
 class MainInterface:
@@ -52,46 +54,63 @@ class MainInterface:
             fg="#bfd2e2",
         ).pack(anchor="w", pady=(4, 0))
 
-        self.nav_buttons = {}
         nav_group = tk.Frame(self.sidebar, bg=UIStyle.HEADER_BG)
         nav_group.pack(fill="x", padx=12, pady=(8, 0))
-        for text, key in [
+
+        base_items = [
             ("Dashboard", "dashboard"),
             ("Maintenance", "maintenance"),
             ("Data Workspace", "data"),
             ("Operational Reports", "queries"),
             ("Statistics", "statistics"),
             ("Dummy Data", "test"),
-        ]:
-            button = tk.Button(
-                nav_group,
-                text=text,
-                font=UIStyle.FONT,
-                bg=UIStyle.HEADER_BG,
-                fg=UIStyle.HEADER_TEXT,
-                activebackground=UIStyle.HEADER_BG_ALT,
-                activeforeground=UIStyle.HEADER_TEXT,
-                relief="flat",
-                anchor="w",
-                padx=18,
-                pady=12,
-                cursor="hand2",
-                command=lambda value=key: self.navigate(value),
-            )
-            button.pack(fill="x", pady=3)
-            self.nav_buttons[key] = button
+        ]
+        admin_items = [
+            ("Users", "users"),
+            ("Audit Logs", "audit"),
+        ]
+
+        self.nav_buttons = {}
+        for text, key in base_items:
+            self._add_nav_button(nav_group, text, key)
+        if self.session.role == "ADMIN":
+            sep = tk.Frame(nav_group, bg="#2a4a6a", height=1)
+            sep.pack(fill="x", pady=8)
+            for text, key in admin_items:
+                self._add_nav_button(nav_group, text, key, admin=True)
 
         footer = tk.Frame(self.sidebar, bg=UIStyle.HEADER_BG)
         footer.pack(side="bottom", fill="x", padx=12, pady=18)
+        info = f"User: {self.session.username or 'User'} | {self.session.role or 'N/A'}"
         tk.Label(
             footer,
-            text=f"User: {self.session.username or 'User'}",
-            font=UIStyle.FONT,
+            text=info,
+            font=UIStyle.SMALL_FONT,
             bg=UIStyle.HEADER_BG,
             fg="#bfd2e2",
             anchor="w",
         ).pack(fill="x", pady=(0, 10))
         UIStyle.danger_button(footer, "Logout", self.logout).pack(fill="x")
+
+    def _add_nav_button(self, parent, text, key, admin=False):
+        fg_color = "#fbbf24" if admin else UIStyle.HEADER_TEXT
+        button = tk.Button(
+            parent,
+            text=text,
+            font=UIStyle.FONT,
+            bg=UIStyle.HEADER_BG,
+            fg=fg_color,
+            activebackground=UIStyle.HEADER_BG_ALT,
+            activeforeground=fg_color,
+            relief="flat",
+            anchor="w",
+            padx=18,
+            pady=12,
+            cursor="hand2",
+            command=lambda value=key: self.navigate(value),
+        )
+        button.pack(fill="x", pady=3)
+        self.nav_buttons[key] = button
 
         topbar = tk.Frame(
             self.frame,
@@ -156,6 +175,16 @@ class MainInterface:
                 "Dummy Data",
                 "Generate and clean sample records safely",
                 TestDataView,
+            ),
+            "users": (
+                "User Management",
+                "Create and manage system accounts",
+                UserManagementView,
+            ),
+            "audit": (
+                "Audit Logs",
+                "View database change logs",
+                AuditLogView,
             ),
         }
 

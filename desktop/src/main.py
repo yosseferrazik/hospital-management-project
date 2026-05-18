@@ -39,11 +39,6 @@ class HospitalApp:
 
         self._swap_frame(lambda: LoginView(self.root, self))
 
-    def show_register(self):
-        from views.register_view import RegisterView
-
-        self._swap_frame(lambda: RegisterView(self.root, self))
-
     def show_main_interface(self):
         self._swap_frame(lambda: MainInterface(self.root, self))
 

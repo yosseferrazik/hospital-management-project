@@ -24,9 +24,9 @@ def register_user(username, password, staff_id, role):
 def login_user(username, password):
     user = AppUser.query.filter_by(username=username).first()
     if not user:
-        return None, "Invalid credentials"
+        return None, None, None, "Invalid credentials"
     if not bcrypt.checkpw(password.encode(), user.password_hash.encode()):
-        return None, "Invalid credentials"
+        return None, None, None, "Invalid credentials"
     token = create_access_token(
         identity=str(user.user_id), additional_claims={"role": user.role, "staff_id": user.staff_id}
     )
@@ -38,4 +38,4 @@ def login_user(username, password):
     except Exception:
         db.session.rollback()
         raise
-    return token, None
+    return token, user.role, user.staff_id, None

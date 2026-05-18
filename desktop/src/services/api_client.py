@@ -209,3 +209,18 @@ class APIClient:
 
     def get_all_prescriptions(self, force_refresh=False):
         return self.list_resource("/prescriptions", force_refresh=force_refresh)
+
+    def register_user(self, username, password, staff_id, role):
+        return self._request(
+            "POST", "/auth/register",
+            data={"username": username, "password": password, "staff_id": staff_id, "role": role},
+        )
+
+    def get_users(self):
+        return self._request("GET", "/auth/users")
+
+    def get_audit_logs(self, params=None):
+        return self._request("GET", "/audit-logs", params=params)
+
+    def get_staff_list(self):
+        return self.list_resource("/staff", force_refresh=True)

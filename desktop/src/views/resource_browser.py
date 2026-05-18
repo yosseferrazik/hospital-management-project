@@ -422,6 +422,17 @@ class ResourceBrowser:
             header, "Refresh", lambda: self.load_list(force_refresh=True)
         ).pack(side="right")
 
+        filter_shell, filter_body = UIStyle.panel(self.list_frame, padx=10, pady=8)
+        filter_shell.pack(fill="x", pady=(0, 8))
+        tk.Label(filter_body, text="Filter:", font=UIStyle.SMALL_FONT, bg=UIStyle.CARD_BG, fg=UIStyle.TEXT_DARK).pack(side="left")
+        self.filter_var = tk.StringVar()
+        self.filter_entry = ttk.Entry(filter_body, textvariable=self.filter_var, font=UIStyle.FONT)
+        self.filter_entry.pack(side="left", fill="x", expand=True, padx=(6, 6), ipady=4)
+        self.filter_entry.bind("<KeyRelease>", lambda _: self._apply_local_filter())
+        UIStyle.secondary_button(filter_body, "Clear", self._clear_filter).pack(side="left")
+
+        self._all_items = []
+
         table_shell, table_body = UIStyle.panel(self.list_frame, padx=0, pady=0)
         table_shell.pack(fill="both", expand=True)
 
@@ -566,6 +577,7 @@ class ResourceBrowser:
             messagebox.showerror("Error", error)
             return
 
+        self._all_items = []
         if not response:
             self.tree.insert(
                 "",
@@ -576,7 +588,20 @@ class ResourceBrowser:
 
         for item in response:
             values = [item.get(col, "") for col, _ in definition["list_columns"]]
-            self.tree.insert("", "end", values=values)
+            self._all_items.append(values)
+        self._apply_local_filter()
+
+    def _apply_local_filter(self):
+        for row in self.tree.get_children():
+            self.tree.delete(row)
+        query = self.filter_var.get().strip().lower()
+        for values in self._all_items:
+            if not query or any(query in str(v).lower() for v in values):
+                self.tree.insert("", "end", values=values)
+
+    def _clear_filter(self):
+        self.filter_var.set("")
+        self._apply_local_filter()
 
     def on_select(self, _event=None):
         selection = self.tree.selection()
