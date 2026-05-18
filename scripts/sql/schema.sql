@@ -103,7 +103,7 @@ CREATE TABLE PATIENTS (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     birth_date DATE NOT NULL,
-    gender VARCHAR(10) CHECK (gender IN ('MALE', 'FEMALE', 'OTHER')),
+    gender VARCHAR(10) CHECK (UPPER(gender) IN ('MALE', 'FEMALE', 'OTHER')),
     phone VARCHAR(20),
     email VARCHAR(255),
     address TEXT,
