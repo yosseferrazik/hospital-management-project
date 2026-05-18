@@ -6,22 +6,24 @@ This directory contains operational and deployment scripts for the Hospital Mana
 
 ```
 scripts/
-├── deploy/          # Deployment automation (deploy.sh, setup_api.sh, deploy_standby.sh)
-├── ops/             # Operational helpers (backup, replication, cert expiry)
-├── systemd/         # systemd service units
-├── logrotate/       # Log rotation configuration
-├── sql/             # Database schema, security, seed scripts
+├── deploy/                  # Deployment automation (deploy.sh, setup_api.sh, deploy_standby.sh)
+├── ops/                     # Operational helpers (backup, replication, cert expiry)
+├── systemd/                 # systemd service units
+├── logrotate/               # Log rotation configuration
+├── sql/                     # Database schema, security, seed scripts
 ├── backup_database.py       # Python automated backup script
 └── backup_wrapper.sh        # Cron wrapper for backup
 ```
 
 ## Deployment
 
-See `scripts/deploy/README.md` for the versioned deploy workflow.
+See `scripts/deploy/README.md` for the versioned deploy workflow.  
+See `docs/DEPLOYMENT.md` for the full production deployment guide.
 
 ## Operations
 
-See `scripts/ops/README.md` for monitoring and maintenance helpers.
+See `scripts/ops/README.md` for monitoring and maintenance helpers.  
+See `docs/CONFIGURATION.md` for logging and backup configuration.
 
 ## systemd
 

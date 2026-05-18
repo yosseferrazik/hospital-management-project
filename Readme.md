@@ -4,11 +4,22 @@
 
 ---
 
-## Canonical Reference
+## Documentation
 
-**→ [TECHNICAL_SPECIFICATION.md](./TECHNICAL_SPECIFICATION.md)**
+**Canonical reference:** [TECHNICAL_SPECIFICATION.md](./TECHNICAL_SPECIFICATION.md)
 
-This is the single source of truth for all architecture, deployment, operations, and security decisions. Read it first.
+### Practical Guides (quick start)
+
+| Guide | Description |
+|:------|:------------|
+| [docs/INSTALLATION.md](./docs/INSTALLATION.md) | Step-by-step setup from scratch |
+| [docs/CONFIGURATION.md](./docs/CONFIGURATION.md) | Environment variables, database, ports, logging |
+| [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) | Production deployment on real servers |
+| [docs/USAGE.md](./docs/USAGE.md) | API endpoints with real request/response examples |
+
+### Reference Documentation (detailed)
+
+Detailed specs, runbooks, data dictionary, security, and planning documents are in [docs/](./docs/README.md).
 
 ---
 
@@ -16,14 +27,12 @@ This is the single source of truth for all architecture, deployment, operations,
 
 | Area               | Location |
 |:-------------------|:---------|
-| Architecture & ops | `TECHNICAL_SPECIFICATION.md` |
 | API code           | `server/src/` |
 | Desktop client     | `desktop/src/` |
 | Deploy automation  | `scripts/deploy/deploy.sh` |
 | SQL schema         | `scripts/sql/schema.sql` |
 | Systemd unit       | `scripts/systemd/hms-api.service` |
 | Ansible playbook   | `deploy/ansible/deploy_hms.yml` |
-| Historical docs    | `docs/` (may contain outdated info) |
 
 ---
 

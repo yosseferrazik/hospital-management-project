@@ -364,7 +364,7 @@ CREATE INDEX idx_audit_logs_table_name ON AUDIT_LOGS(table_name);
 -- COMMENTS FOR DOCUMENTATION
 -- =====================================================
 
-COMMENT ON DATABASE hospital_management IS 'Hospital Management System database';
+COMMENT ON DATABASE hsp_db IS 'Hospital Management System database';
 
 COMMENT ON TABLE FLOORS IS 'Building floor information';
 COMMENT ON TABLE ROOMS IS 'Patient rooms located on floors';

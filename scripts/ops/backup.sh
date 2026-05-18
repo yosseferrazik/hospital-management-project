@@ -6,7 +6,7 @@
 set -euo pipefail
 
 BACKUP_DIR=${BACKUP_DIR:-/backups/local}
-DB_NAME=${DB_NAME:-hospital_management}
+DB_NAME=${DB_NAME:-hsp_db}
 DB_HOST=${DB_HOST:-localhost}
 DB_PORT=${DB_PORT:-5432}
 DB_USER=${DB_USER:-backup_user}

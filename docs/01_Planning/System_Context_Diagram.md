@@ -47,7 +47,7 @@ The diagram intentionally stays at the system context level. Internal containers
 
 ## C4 System Context Diagram
 
-![image](/docs\images\C4_Context_Diagram.drawio.png)
+![image](images/C4_Context_Diagram.drawio.png)
 
 ## Boundary Notes
 

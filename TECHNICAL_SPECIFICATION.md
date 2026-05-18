@@ -89,7 +89,7 @@ useradd --system --home-dir /opt/hms --shell /usr/sbin/nologin hms
 
 ```
 hospital-management-project/
-├── TECHINCAL_SPECIFICATION.md    # ← this document
+├── TECHNICAL_SPECIFICATION.md    # ← this document
 ├── .env.example                  # Environment variable template
 ├── server/
 │   └── src/
@@ -272,20 +272,6 @@ All production dependencies are pinned in `server/src/requirements.txt`. The fil
 - **SQLAlchemy models** (18 models in `server/src/app/models.py`) are the Python-side schema definition.
 - **SQL scripts** (`scripts/sql/schema.sql`, `security.sql`) contain the canonical production schema with additional features: RBAC roles, Row-Level Security (RLS), audit triggers, constraint triggers.
 - `db.create_all()` runs at every startup in the Flask app factory. In production the SQL scripts are applied separately — the Python models must remain compatible with the production schema.
-
-### 5.4 Critical Restriction
-
-> **DO NOT modify SQL schema scripts, PostgreSQL configuration, or apply migrations that could break replication.**
->
-> This includes but is not limited to:
-> - Editing `scripts/sql/schema.sql`
-> - Editing `scripts/sql/security.sql`
-> - Editing `scripts/sql/initial_script.sql`
-> - Altering PostgreSQL `postgresql.conf` or `pg_hba.conf`
-> - Running DDL that could cause replication conflicts
-> - Adding or removing tables, columns, or constraints via migration scripts
->
-> All schema changes must be evaluated for replication impact before execution.
 
 ---
 
@@ -624,7 +610,11 @@ sudo nano /etc/hms.env   # fill DATABASE_URL and JWT_SECRET_KEY
 | Document | Status | Purpose |
 |:---------|:-------|:--------|
 | `TECHNICAL_SPECIFICATION.md` | **Canonical** | Single source of truth for architecture, deploy, operations |
-| `docs/` | **Historical** | Contains planning docs, runbooks, manuals — may contain outdated information; cross-reference with this spec |
+| `docs/` (reference) | Supplementary | Detailed specs, runbooks, data dictionary |
+| `docs/INSTALLATION.md` | Active | Quick-start step-by-step setup |
+| `docs/CONFIGURATION.md` | Active | Environment variables, database, ports, logging |
+| `docs/DEPLOYMENT.md` | Active | Production deployment guide |
+| `docs/USAGE.md` | Active | API endpoints with examples |
 | `scripts/deploy/README.md` | Active | Deploy script usage |
 | `scripts/ops/README.md` | Active | Operations helper usage |
 | `scripts/README.md` | Active | Scripts directory overview |
