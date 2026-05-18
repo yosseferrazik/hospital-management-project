@@ -68,13 +68,37 @@ Content-Type: application/json
 
 ## 3. Cuadro de Mando (Dashboard)
 
+### 3.1 Dashboard Web Interactivo
+
+El sistema incluye un dashboard web visual accesible desde el navegador:
+
+```
+GET /api/dashboard/view
+```
+
+También redirige automáticamente desde la raíz: `http://localhost:5000/`
+
+Características:
+- KPI: total de visitas del día y número de especialidades
+- Gráfico de barras: visitas por especialidad médica
+- Gráfico de donut: distribución porcentual
+- Tabla detallada con porcentajes
+- Auto-refresh cada 60 segundos
+- Tema oscuro profesional
+
+Tecnología: HTML + Chart.js (CDN), sin dependencias adicionales.
+
+### 3.2 API JSON (para Power BI)
+
 Endpoint JSON consumible por Power BI o cualquier herramienta de BI:
 
 ```
 GET /api/dashboard/stats
 ```
 
-### Respuesta
+Sin autenticación requerida para facilitar la integración con Power BI.
+
+#### Respuesta
 
 ```json
 {
@@ -89,6 +113,13 @@ GET /api/dashboard/stats
 
 - **total_visits**: visitas del día actual.
 - **by_specialty**: desglose por área médica (especialidad del doctor).
+
+#### Power BI
+
+1. Power BI Desktop → **Obtener datos** → **Web**
+2. URL: `http://localhost:5000/api/dashboard/stats`
+3. Power BI detecta JSON automáticamente y lo expande en columnas
+4. Para desglose por especialidad: expandir `by_specialty` → **Expand to New Rows**
 
 ## 4. Dependencias
 

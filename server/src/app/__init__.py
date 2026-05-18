@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, redirect
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager, get_jwt_identity, get_jwt
 from flask_cors import CORS
@@ -73,6 +73,10 @@ def create_app():
     db.init_app(app)
     jwt = JWTManager(app)
     CORS(app)
+
+    @app.route("/")
+    def index():
+        return redirect("/api/dashboard/view")
 
     @app.before_request
     def before_request():

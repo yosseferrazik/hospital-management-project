@@ -97,6 +97,8 @@ curl -X POST http://localhost:5000/api/maintenance/patients \
 | `GET /api/export/visits?start_date=&end_date=&format=` | Download visits in XML/JSON (no auth)    |
 | `POST /api/export/send`                            | Send visits to external API                  |
 | `GET /api/dashboard/stats`                         | Today's visits by specialty (for Power BI)   |
+| `GET /api/dashboard/view`                          | Interactive web dashboard (Chart.js)         |
+| `GET /`                                            | Redirects to `/api/dashboard/view`           |
 
 ### Protected Endpoints (require JWT token)
 
