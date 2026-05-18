@@ -13,23 +13,23 @@
 -- --------------------------------------------------------------------
 
 -- Administrative role (full access)
-CREATE ROLE app_admin WITH LOGIN CONNECTION LIMIT 5;
+CREATE ROLE IF NOT EXISTS app_admin WITH LOGIN CONNECTION LIMIT 5;
 COMMENT ON ROLE app_admin IS 'Application role for system administrators';
 
 -- Medical staff role (doctors, surgeons)
-CREATE ROLE app_doctor WITH LOGIN CONNECTION LIMIT 50;
+CREATE ROLE IF NOT EXISTS app_doctor WITH LOGIN CONNECTION LIMIT 50;
 COMMENT ON ROLE app_doctor IS 'Application role for doctors and medical staff';
 
 -- Nursing staff role
-CREATE ROLE app_nurse WITH LOGIN CONNECTION LIMIT 100;
+CREATE ROLE IF NOT EXISTS app_nurse WITH LOGIN CONNECTION LIMIT 100;
 COMMENT ON ROLE app_nurse IS 'Application role for nursing staff';
 
 -- Receptionist role (front-desk)
-CREATE ROLE app_receptionist WITH LOGIN CONNECTION LIMIT 10;
+CREATE ROLE IF NOT EXISTS app_receptionist WITH LOGIN CONNECTION LIMIT 10;
 COMMENT ON ROLE app_receptionist IS 'Application role for receptionists';
 
 -- General staff role (pharmacy, maintenance, etc.)
-CREATE ROLE app_staff WITH LOGIN CONNECTION LIMIT 30;
+CREATE ROLE IF NOT EXISTS app_staff WITH LOGIN CONNECTION LIMIT 30;
 COMMENT ON ROLE app_staff IS 'Application role for general hospital staff';
 
 -- --------------------------------------------------------------------
@@ -123,7 +123,41 @@ GRANT SELECT ON audit_logs TO app_admin;
 REVOKE ALL ON audit_logs FROM app_doctor, app_nurse, app_receptionist, app_staff;
 
 -- --------------------------------------------------------------------
--- 4. ROW LEVEL SECURITY (RLS) POLICIES
+-- 4. HELPER FUNCTIONS FOR APPLICATION CONTEXT
+-- --------------------------------------------------------------------
+-- The application will set a session variable 'app.current_user_id' and
+-- 'app.current_staff_id' upon connection. These functions retrieve them.
+-- Must be defined before RLS policies that reference them.
+-- --------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_current_app_user_id()
+RETURNS INTEGER AS $$
+BEGIN
+    RETURN NULLIF(current_setting('app.current_user_id', true), '')::INTEGER;
+EXCEPTION
+    WHEN OTHERS THEN RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION get_current_app_user_id() IS 'Returns the user_id from app_users of the currently connected application user.';
+
+CREATE OR REPLACE FUNCTION get_current_staff_id()
+RETURNS INTEGER AS $$
+BEGIN
+    RETURN NULLIF(current_setting('app.current_staff_id', true), '')::INTEGER;
+EXCEPTION
+    WHEN OTHERS THEN RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION get_current_staff_id() IS 'Returns the staff_id associated with the currently connected application user.';
+
+-- Grant execution to all roles
+GRANT EXECUTE ON FUNCTION get_current_app_user_id() TO app_admin, app_doctor, app_nurse, app_receptionist, app_staff;
+GRANT EXECUTE ON FUNCTION get_current_staff_id() TO app_admin, app_doctor, app_nurse, app_receptionist, app_staff;
+
+-- --------------------------------------------------------------------
+-- 5. ROW LEVEL SECURITY (RLS) POLICIES
 -- --------------------------------------------------------------------
 -- Enable RLS on tables that require fine‑grained access control.
 -- --------------------------------------------------------------------
@@ -182,39 +216,6 @@ CREATE POLICY doctor_admin_admission_access ON admissions
     FOR ALL
     TO app_doctor, app_admin
     USING (true);
-
--- --------------------------------------------------------------------
--- 5. HELPER FUNCTIONS FOR APPLICATION CONTEXT
--- --------------------------------------------------------------------
--- The application will set a session variable 'app.current_user_id' and
--- 'app.current_staff_id' upon connection. These functions retrieve them.
--- --------------------------------------------------------------------
-
-CREATE OR REPLACE FUNCTION get_current_app_user_id()
-RETURNS INTEGER AS $$
-BEGIN
-    RETURN NULLIF(current_setting('app.current_user_id', true), '')::INTEGER;
-EXCEPTION
-    WHEN OTHERS THEN RETURN NULL;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-COMMENT ON FUNCTION get_current_app_user_id() IS 'Returns the user_id from app_users of the currently connected application user.';
-
-CREATE OR REPLACE FUNCTION get_current_staff_id()
-RETURNS INTEGER AS $$
-BEGIN
-    RETURN NULLIF(current_setting('app.current_staff_id', true), '')::INTEGER;
-EXCEPTION
-    WHEN OTHERS THEN RETURN NULL;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-COMMENT ON FUNCTION get_current_staff_id() IS 'Returns the staff_id associated with the currently connected application user.';
-
--- Grant execution to all roles
-GRANT EXECUTE ON FUNCTION get_current_app_user_id() TO app_admin, app_doctor, app_nurse, app_receptionist, app_staff;
-GRANT EXECUTE ON FUNCTION get_current_staff_id() TO app_admin, app_doctor, app_nurse, app_receptionist, app_staff;
 
 -- --------------------------------------------------------------------
 -- 6. AUDIT TRIGGER FUNCTION AND TRIGGERS
