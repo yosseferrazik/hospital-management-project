@@ -48,6 +48,33 @@ class TestDataView:
             justify="left",
         ).pack(anchor="w", pady=(4, 12))
 
+        count_row = tk.Frame(controls, bg=UIStyle.CARD_BG)
+        count_row.pack(fill="x", pady=(0, 10))
+        tk.Label(
+            count_row,
+            text="Patient count:",
+            font=UIStyle.FONT,
+            bg=UIStyle.CARD_BG,
+            fg=UIStyle.TEXT_DARK,
+        ).pack(side="left")
+        self.count_var = tk.StringVar(value="14")
+        self.count_entry = ttk.Spinbox(
+            count_row,
+            from_=1,
+            to=50000,
+            textvariable=self.count_var,
+            width=10,
+            font=UIStyle.FONT,
+        )
+        self.count_entry.pack(side="left", padx=(8, 0))
+        tk.Label(
+            count_row,
+            text="(1–50 000)",
+            font=UIStyle.SUBTITLE_FONT,
+            bg=UIStyle.CARD_BG,
+            fg=UIStyle.TEXT_LIGHT,
+        ).pack(side="left", padx=(6, 0))
+
         buttons = tk.Frame(controls, bg=UIStyle.CARD_BG)
         buttons.pack(fill="x")
         UIStyle.filled_button(buttons, "Generate Dummy Data", self.generate_data).pack(
@@ -89,10 +116,15 @@ class TestDataView:
         self.log_text.pack(fill="both", expand=True)
 
     def generate_data(self):
+        try:
+            count = int(self.count_var.get())
+            count = max(1, min(count, 50000))
+        except ValueError:
+            count = 14
         self._run_async(
             "Generating dummy data...",
-            self.api_client.generate_dummy,
-            "Dummy data generated successfully.",
+            lambda: self.api_client.generate_dummy(count=count),
+            f"Dummy data generated successfully ({count} patients).",
         )
 
     def clear_data(self):

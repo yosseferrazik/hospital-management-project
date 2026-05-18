@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 from views.maintenance_view import MaintenanceView
 from views.resource_browser import ResourceBrowser
 from views.surgeries_view import SurgeriesView
@@ -290,18 +290,28 @@ class MainMenu:
             icon="question",
         )
         if choice == "yes":
-            self.generate_dummy()
+            count = simpledialog.askinteger(
+                "Patient Count",
+                "Number of patients to generate (1–50000):",
+                parent=self.frame,
+                minvalue=1,
+                maxvalue=50000,
+                initialvalue=14,
+            )
+            if count is None:
+                return
+            self.generate_dummy(count)
         else:
             self.cleanup_dummy()
 
-    def generate_dummy(self):
+    def generate_dummy(self, count=14):
         client = APIClient(Session())
-        response, error = client.generate_dummy()
+        response, error = client.generate_dummy(count=count)
 
         if error:
             messagebox.showerror("Error", f"Failed to generate: {error}")
         else:
-            messagebox.showinfo("Success", "Test data generated successfully")
+            messagebox.showinfo("Success", f"Test data generated ({count} patients)")
 
     def cleanup_dummy(self):
         confirmed = messagebox.askyesno(

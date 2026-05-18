@@ -1,5 +1,6 @@
 import random
-from datetime import datetime, timedelta
+import math
+from datetime import datetime, timedelta, timezone
 
 from faker import Faker
 
@@ -29,6 +30,7 @@ from app.models import (
 )
 
 fake = Faker("es_ES")
+BATCH = 1000
 
 
 def _register(table_name, record_id):
@@ -37,11 +39,19 @@ def _register(table_name, record_id):
 
 def _random_birth_date(min_age=22, max_age=85):
     age = random.randint(min_age, max_age)
-    return datetime.utcnow().date() - timedelta(days=age * 365 + random.randint(0, 300))
+    return datetime.now(timezone.utc).date() - timedelta(days=age * 365 + random.randint(0, 300))
 
 
 def _unique_email(prefix):
     return f"{prefix}.{fake.unique.lexify(text='??????')}@example.test"
+
+
+def _flush_batch(committed=0):
+    db.session.flush()
+    committed += 1
+    if committed % 5 == 0:
+        db.session.commit()
+    return committed
 
 
 def _ensure_support_data():
@@ -109,12 +119,12 @@ def _ensure_support_data():
     return specialties, floors, Room.query.all(), OperatingTheater.query.all(), Medication.query.all()
 
 
-def _create_staff_batch(specialties):
-    doctors = []
-    nurses = []
-    general_staff_members = []
+def _create_staff_batch(specialties, patient_count):
+    factor = max(1, math.ceil(patient_count / 1000))
+    batch_committed = 0
 
-    for index in range(5):
+    doctors = []
+    for _ in range(5 * factor):
         staff = Staff(
             national_id=fake.unique.numerify(text="#########"),
             first_name=fake.first_name(),
@@ -139,8 +149,10 @@ def _create_staff_batch(specialties):
         db.session.flush()
         _register("medical_staff", doctor.staff_id)
         doctors.append(doctor)
+        batch_committed = _flush_batch(batch_committed)
 
-    for index in range(8):
+    nurses = []
+    for _ in range(8 * factor):
         staff = Staff(
             national_id=fake.unique.numerify(text="#########"),
             first_name=fake.first_name(),
@@ -164,8 +176,10 @@ def _create_staff_batch(specialties):
         db.session.flush()
         _register("nursing_staff", nurse.staff_id)
         nurses.append(nurse)
+        batch_committed = _flush_batch(batch_committed)
 
-    for _index in range(4):
+    general = []
+    for _ in range(4 * factor):
         staff = Staff(
             national_id=fake.unique.numerify(text="#########"),
             first_name=fake.first_name(),
@@ -180,19 +194,21 @@ def _create_staff_batch(specialties):
         db.session.add(staff)
         db.session.flush()
         _register("staff", staff.staff_id)
-        general = GeneralStaff(staff_id=staff.staff_id, job_type=random.choice(["Reception", "Maintenance", "Cleaning", "Admin"]))
-        db.session.add(general)
+        person = GeneralStaff(staff_id=staff.staff_id, job_type=random.choice(["Reception", "Maintenance", "Cleaning", "Admin"]))
+        db.session.add(person)
         db.session.flush()
-        _register("general_staff", general.staff_id)
-        general_staff_members.append(general)
+        _register("general_staff", person.staff_id)
+        general.append(person)
+        batch_committed = _flush_batch(batch_committed)
 
     db.session.commit()
-    return doctors, nurses, general_staff_members
+    return doctors, nurses, general
 
 
-def _create_patients():
+def _create_patients(count):
     patients = []
-    for _index in range(14):
+    batch_committed = 0
+    for _ in range(count):
         patient = Patient(
             national_id=fake.unique.numerify(text="#########"),
             first_name=fake.first_name(),
@@ -212,19 +228,22 @@ def _create_patients():
         db.session.flush()
         _register("patients", patient.patient_id)
         patients.append(patient)
+        batch_committed = _flush_batch(batch_committed)
     db.session.commit()
     return patients
 
 
-def generate_dummy_data():
+def generate_dummy_data(patient_count=14):
+    patient_count = max(1, min(patient_count, 50000))
     cleanup_dummy()
 
     specialties, floors, rooms, theaters, medications = _ensure_support_data()
-    doctors, nurses, _general = _create_staff_batch(specialties)
-    patients = _create_patients()
+    doctors, nurses, _general = _create_staff_batch(specialties, patient_count)
+    patients = _create_patients(patient_count)
 
+    visit_count = max(16, patient_count)
     visits = []
-    for _index in range(16):
+    for _ in range(visit_count):
         visit_time = fake.date_time_between(start_date="-20d", end_date="+5d")
         visit = Visit(
             patient_id=random.choice(patients).patient_id,
@@ -239,7 +258,7 @@ def generate_dummy_data():
         visits.append(visit)
     db.session.commit()
 
-    for visit in visits[:10]:
+    for visit in visits[:max(10, len(visits) // 2)]:
         appointment = ScheduledAppointment(
             visit_id=visit.visit_id,
             appointment_date=(visit.visit_timestamp.date() + timedelta(days=random.randint(0, 3))),
@@ -251,14 +270,15 @@ def generate_dummy_data():
         _register("scheduled_appointments", appointment.appointment_id)
     db.session.commit()
 
+    surgery_count = max(6, patient_count // 3)
     surgeries = []
-    for _index in range(6):
+    for _ in range(surgery_count):
         start_hour = random.randint(8, 15)
         surgery = Surgery(
             patient_id=random.choice(patients).patient_id,
             theater_id=random.choice(theaters).theater_id,
             primary_surgeon_id=random.choice(doctors).staff_id,
-            surgery_date=(datetime.utcnow().date() + timedelta(days=random.randint(0, 5))),
+            surgery_date=(datetime.now(timezone.utc).date() + timedelta(days=random.randint(0, 5))),
             start_time=(datetime.min + timedelta(hours=start_hour)).time(),
             end_time=(datetime.min + timedelta(hours=start_hour + 2)).time(),
             procedure_type=random.choice(["Appendectomy", "Bypass", "Hip Replacement", "Knee Arthroscopy"]),
@@ -278,13 +298,14 @@ def generate_dummy_data():
             _register("surgery_assistants", surgery.surgery_id)
     db.session.commit()
 
+    admission_count = max(6, patient_count // 3)
     admissions = []
-    for patient in patients[:6]:
+    for patient in patients[:admission_count]:
         admission = Admission(
             patient_id=patient.patient_id,
             room_id=random.choice(rooms).room_id,
             admission_date=fake.date_time_between(start_date="-10d", end_date="now"),
-            expected_discharge_date=(datetime.utcnow().date() + timedelta(days=random.randint(2, 10))),
+            expected_discharge_date=(datetime.now(timezone.utc).date() + timedelta(days=random.randint(2, 10))),
         )
         db.session.add(admission)
         db.session.flush()
@@ -292,14 +313,14 @@ def generate_dummy_data():
         admissions.append(admission)
     db.session.commit()
 
-    for visit in visits[:12]:
+    for visit in visits[:min(visit_count, len(visits))]:
         prescription = Prescription(
             visit_id=visit.visit_id,
             medication_id=random.choice(medications).medication_id,
             dosage=random.choice(["250mg", "500mg", "1g"]),
             frequency=random.choice(["Every 8h", "Daily", "Twice a day"]),
             duration_days=random.randint(3, 14),
-            start_date=datetime.utcnow().date(),
+            start_date=datetime.now(timezone.utc).date(),
         )
         db.session.add(prescription)
         db.session.flush()
@@ -328,7 +349,8 @@ def generate_dummy_data():
         _register("dispensation_items", item.item_id)
     db.session.commit()
 
-    for patient in patients[:8]:
+    exam_count = max(8, patient_count // 2)
+    for patient in patients[:exam_count]:
         exam = RadiologyExam(
             patient_id=patient.patient_id,
             requesting_doctor_id=random.choice(doctors).staff_id,

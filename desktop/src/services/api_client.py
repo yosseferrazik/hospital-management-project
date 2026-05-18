@@ -12,17 +12,17 @@ class APIClient:
     def __init__(self, session):
         self.session = session
         self.http = requests.Session()
-        self.timeout = 10
+        self.timeout = 300
         self._cache = {}
         self._cache_ttl = 20
 
-    def _request(self, method, endpoint, data=None, params=None):
+    def _request(self, method, endpoint, data=None, params=None, timeout=None):
         url = f"{API_BASE_URL}{endpoint}"
         headers = self.session.get_headers()
         headers["Content-Type"] = "application/json"
 
         try:
-            request_args = {"headers": headers, "timeout": self.timeout}
+            request_args = {"headers": headers, "timeout": timeout or self.timeout}
             if method == "GET":
                 request_args["params"] = params or data
                 response = self.http.get(url, **request_args)
@@ -186,8 +186,8 @@ class APIClient:
             "GET", "/maintenance/visits/scheduled", params={"date": date}
         )
 
-    def generate_dummy(self):
-        return self._request("POST", "/dummy/generate", data={})
+    def generate_dummy(self, count=14):
+        return self._request("POST", "/dummy/generate", data={"count": count}, timeout=300)
 
     def cleanup_dummy(self):
         return self._request("DELETE", "/dummy/cleanup", data={})

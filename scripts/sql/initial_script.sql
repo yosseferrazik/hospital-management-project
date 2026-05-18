@@ -31,3 +31,4 @@ FROM new_staff ns;
 -- NOTE: The inserted password is the bcrypt hash of 'ChangeMePleaseChange!'.
 -- Change the password on first login or update the script to use a different secret.
 
+SELECT * FROM audit_logs;
