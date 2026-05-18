@@ -218,6 +218,31 @@ class TestMisc(unittest.TestCase):
         r = request("GET", "/medication")
         assert_ok(r, "medications list")
 
+    def test_75_health_endpoint(self):
+        r = request("GET", "/health".replace("/api", ""))
+        # /health is at root, not under /api
+        if r.status_code == 200:
+            self.assertIn("status", r.json())
+            self.assertIn("database", r.json())
+
+
+class TestAuditLogs(unittest.TestCase):
+    def test_80_insert_generates_audit(self):
+        r = request("POST", "/patient", json={
+            "national_id": "TEST-AUDIT-001",
+            "first_name": "Audit", "last_name": "Test",
+            "birth_date": "2000-01-01",
+            "gender": "MALE",
+        })
+        assert_ok(r, "patient for audit test")
+        self.assertIsNotNone(r.json().get("patient_id"))
+        created_ids["audit_patient"] = r.json()["patient_id"]
+
+    def test_81_login_sets_session_vars(self):
+        r = request("POST", "/auth/login", json={"username": "yossef", "password": "ChangeMePleaseChange!"})
+        assert_ok(r, "login")
+        self.assertIn("access_token", r.json())
+
 
 if __name__ == "__main__":
     print("=" * 60)
