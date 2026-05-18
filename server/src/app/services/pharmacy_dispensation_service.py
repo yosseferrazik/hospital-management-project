@@ -6,7 +6,7 @@ def create_pharmacy_dispensation(data):
     return create_record(PharmacyDispensation,
         admission_id=data["admission_id"],
         dispensed_at=parse_date(data.get("dispensed_at"), "%Y-%m-%d %H:%M:%S"),
-        total_cost=data.get("total_cost", 0),
+        total_cost=data.get("total_cost") or 0,
         notes=data.get("notes"),
     )
 
@@ -24,7 +24,7 @@ def update_pharmacy_dispensation(dispensation_id, data):
     return update_record(dispensation,
         admission_id=data["admission_id"],
         dispensed_at=parse_date(data.get("dispensed_at"), "%Y-%m-%d %H:%M:%S"),
-        total_cost=data.get("total_cost", 0),
+        total_cost=data.get("total_cost") or 0,
         notes=data.get("notes"),
     )
 

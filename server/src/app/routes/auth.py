@@ -39,4 +39,4 @@ def login():
             return jsonify({"error": error}), 401
         return jsonify({"access_token": token}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 400

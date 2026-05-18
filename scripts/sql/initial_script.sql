@@ -12,6 +12,11 @@ WITH new_staff AS (
 		'000000000', 'Yossef', 'Errazik', '1988-06-15', '+34-600000000', NULL, 'yossef.errazik@example.com', 'System Administrator', 'GENERAL'
 	)
 	RETURNING staff_id
+),
+general_row AS (
+	INSERT INTO GENERAL_STAFF (staff_id, job_type)
+	SELECT ns.staff_id, 'System Administrator'
+	FROM new_staff ns
 )
 INSERT INTO APP_USERS (username, password_hash, staff_id, role, is_active, created_at)
 SELECT

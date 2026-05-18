@@ -30,6 +30,14 @@ def delete_staff(staff_id):
     return delete_record(staff)
 
 
+def _commit():
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+
 def create_medical_staff(data):
     staff = Staff(
         national_id=data["national_id"],
@@ -51,7 +59,7 @@ def create_medical_staff(data):
         curriculum=data.get("curriculum"),
     )
     db.session.add(medical)
-    db.session.commit()
+    _commit()
     return staff
 
 
@@ -77,7 +85,7 @@ def create_nursing_staff(data):
         certifications=data.get("certifications"),
     )
     db.session.add(nursing)
-    db.session.commit()
+    _commit()
     return staff
 
 
@@ -97,7 +105,7 @@ def create_general_staff(data):
     db.session.flush()
     general = GeneralStaff(staff_id=staff.staff_id, job_type=data["job_type"])
     db.session.add(general)
-    db.session.commit()
+    _commit()
     return staff
 
 
@@ -107,7 +115,7 @@ def assign_nursing_to_doctor(nurse_id, doctor_id):
         raise ValueError("Nurse not found")
     nurse.assigned_doctor_id = doctor_id
     nurse.assigned_floor_id = None
-    db.session.commit()
+    _commit()
     return nurse
 
 
@@ -117,5 +125,5 @@ def assign_nursing_to_floor(nurse_id, floor_id):
         raise ValueError("Nurse not found")
     nurse.assigned_floor_id = floor_id
     nurse.assigned_doctor_id = None
-    db.session.commit()
+    _commit()
     return nurse

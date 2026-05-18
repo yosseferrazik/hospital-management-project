@@ -10,9 +10,9 @@ def list_staff():
     return jsonify([{
         "staff_id": s.staff_id, "national_id": s.national_id,
         "first_name": s.first_name, "last_name": s.last_name,
-        "birth_date": str(s.birth_date), "phone": s.phone,
+        "birth_date": str(s.birth_date) if s.birth_date else None, "phone": s.phone,
         "ssn": s.ssn, "email": s.email, "address": s.address,
-        "hire_date": str(s.hire_date), "staff_type": s.staff_type,
+        "hire_date": str(s.hire_date) if s.hire_date else None, "staff_type": s.staff_type,
     } for s in staff])
 
 
@@ -24,9 +24,9 @@ def get(staff_id):
     return jsonify({
         "staff_id": staff.staff_id, "national_id": staff.national_id,
         "first_name": staff.first_name, "last_name": staff.last_name,
-        "birth_date": str(staff.birth_date), "phone": staff.phone,
+        "birth_date": str(staff.birth_date) if staff.birth_date else None, "phone": staff.phone,
         "ssn": staff.ssn, "email": staff.email, "address": staff.address,
-        "hire_date": str(staff.hire_date), "staff_type": staff.staff_type,
+        "hire_date": str(staff.hire_date) if staff.hire_date else None, "staff_type": staff.staff_type,
     })
 
 

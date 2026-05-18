@@ -53,14 +53,23 @@ def add_patient():
 @jwt_required()
 def assign_nursing():
     data = request.get_json()
+    if not data:
+        return jsonify({"error": "Request body is required"}), 400
     nurse_id = data.get("nurse_id")
-    if "doctor_id" in data:
-        nurse = staff_service.assign_nursing_to_doctor(nurse_id, data["doctor_id"])
-    elif "floor_id" in data:
-        nurse = staff_service.assign_nursing_to_floor(nurse_id, data["floor_id"])
-    else:
-        return jsonify({"error": "doctor_id or floor_id required"}), 400
-    return jsonify({"message": "Assigned"}), 200
+    if not nurse_id:
+        return jsonify({"error": "nurse_id is required"}), 400
+    try:
+        if "doctor_id" in data:
+            nurse = staff_service.assign_nursing_to_doctor(nurse_id, data["doctor_id"])
+        elif "floor_id" in data:
+            nurse = staff_service.assign_nursing_to_floor(nurse_id, data["floor_id"])
+        else:
+            return jsonify({"error": "doctor_id or floor_id required"}), 400
+        return jsonify({"message": "Assigned"}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @maintenance_bp.route("/surgeries", methods=["GET"])

@@ -30,5 +30,9 @@ def login_user(username, password):
         identity=str(user.user_id), additional_claims={"role": user.role}
     )
     user.last_login = datetime.now(timezone.utc)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     return token, None

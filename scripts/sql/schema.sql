@@ -388,3 +388,13 @@ COMMENT ON TABLE DISPENSATION_ITEMS IS 'Individual items in pharmacy dispensatio
 COMMENT ON TABLE RADIOLOGY_EXAMS IS 'Radiology examination records';
 COMMENT ON TABLE APP_USERS IS 'Application user accounts linked to staff';
 COMMENT ON TABLE AUDIT_LOGS IS 'System audit trail';
+
+-- DUMMY_REGISTRY table (not created by SQLAlchemy, only used by dummy_data service)
+CREATE TABLE IF NOT EXISTS DUMMY_REGISTRY (
+    id SERIAL PRIMARY KEY,
+    table_name VARCHAR(100) NOT NULL,
+    record_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON TABLE DUMMY_REGISTRY IS 'Tracks records created by the dummy data generator for cleanup';

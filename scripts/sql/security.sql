@@ -49,7 +49,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON patients TO app_admin;
 GRANT SELECT, INSERT, UPDATE, DELETE ON patients TO app_doctor;
 GRANT SELECT, UPDATE (phone, email, address, emergency_contact_name, emergency_contact_phone, allergies) ON patients TO app_nurse;
 GRANT SELECT, INSERT, UPDATE, DELETE ON patients TO app_receptionist;
-GRANT SELECT (patient_id, first_name, last_name, room_number) ON patients TO app_staff;  -- Limited view via view (created later)
+GRANT SELECT (patient_id, first_name, last_name) ON patients TO app_staff;
 
 -- ========== VISITS ==========
 GRANT SELECT, INSERT, UPDATE, DELETE ON visits TO app_admin, app_doctor;
@@ -142,7 +142,7 @@ CREATE POLICY nurse_patient_access ON patients
             JOIN nursing_staff ns ON ns.assigned_floor_id = r.floor_id
             WHERE a.patient_id = patients.patient_id
               AND a.actual_discharge_date IS NULL
-              AND ns.staff_id = current_setting('app.current_staff_id')::INTEGER
+              AND ns.staff_id = get_current_staff_id()
         )
     );
 
@@ -174,7 +174,7 @@ CREATE POLICY nurse_admission_access ON admissions
         room_id IN (
             SELECT r.room_id FROM rooms r
             JOIN nursing_staff ns ON ns.assigned_floor_id = r.floor_id
-            WHERE ns.staff_id = current_setting('app.current_staff_id')::INTEGER
+            WHERE ns.staff_id = get_current_staff_id()
         )
     );
 
@@ -263,24 +263,17 @@ BEGIN
         CURRENT_TIMESTAMP,
         v_action_type,
         TG_TABLE_NAME,
-        COALESCE(
-                 (to_jsonb(NEW) ->> 'patient_id')::INTEGER,
-                 (to_jsonb(OLD) ->> 'patient_id')::INTEGER,
-                 (to_jsonb(NEW) ->> 'visit_id')::INTEGER,
-                 (to_jsonb(OLD) ->> 'visit_id')::INTEGER,
-                 (to_jsonb(NEW) ->> 'prescription_id')::INTEGER,
-                 (to_jsonb(OLD) ->> 'prescription_id')::INTEGER,
-                 (to_jsonb(NEW) ->> 'admission_id')::INTEGER,
-                 (to_jsonb(OLD) ->> 'admission_id')::INTEGER,
-                 (to_jsonb(NEW) ->> 'surgery_id')::INTEGER,
-                 (to_jsonb(OLD) ->> 'surgery_id')::INTEGER,
-                 (to_jsonb(NEW) ->> 'appointment_id')::INTEGER,
-                 (to_jsonb(OLD) ->> 'appointment_id')::INTEGER,
-                 (to_jsonb(NEW) ->> 'dispensation_id')::INTEGER,
-                 (to_jsonb(OLD) ->> 'dispensation_id')::INTEGER,
-                 (to_jsonb(NEW) ->> 'exam_id')::INTEGER,
-                 (to_jsonb(OLD) ->> 'exam_id')::INTEGER,
-                 NULL),
+        CASE TG_TABLE_NAME
+            WHEN 'patients' THEN COALESCE((to_jsonb(NEW) ->> 'patient_id')::INTEGER, (to_jsonb(OLD) ->> 'patient_id')::INTEGER)
+            WHEN 'visits' THEN COALESCE((to_jsonb(NEW) ->> 'visit_id')::INTEGER, (to_jsonb(OLD) ->> 'visit_id')::INTEGER)
+            WHEN 'prescriptions' THEN COALESCE((to_jsonb(NEW) ->> 'prescription_id')::INTEGER, (to_jsonb(OLD) ->> 'prescription_id')::INTEGER)
+            WHEN 'admissions' THEN COALESCE((to_jsonb(NEW) ->> 'admission_id')::INTEGER, (to_jsonb(OLD) ->> 'admission_id')::INTEGER)
+            WHEN 'surgeries' THEN COALESCE((to_jsonb(NEW) ->> 'surgery_id')::INTEGER, (to_jsonb(OLD) ->> 'surgery_id')::INTEGER)
+            WHEN 'scheduled_appointments' THEN COALESCE((to_jsonb(NEW) ->> 'appointment_id')::INTEGER, (to_jsonb(OLD) ->> 'appointment_id')::INTEGER)
+            WHEN 'pharmacy_dispensations' THEN COALESCE((to_jsonb(NEW) ->> 'dispensation_id')::INTEGER, (to_jsonb(OLD) ->> 'dispensation_id')::INTEGER)
+            WHEN 'radiology_exams' THEN COALESCE((to_jsonb(NEW) ->> 'exam_id')::INTEGER, (to_jsonb(OLD) ->> 'exam_id')::INTEGER)
+            ELSE NULL
+        END,
         v_old_data,
         v_new_data,
         inet_client_addr(),
