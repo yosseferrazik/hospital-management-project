@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import bcrypt
 from app.models import db, AppUser, Staff
 from flask_jwt_extended import create_access_token
@@ -27,6 +29,6 @@ def login_user(username, password):
     token = create_access_token(
         identity=str(user.user_id), additional_claims={"role": user.role}
     )
-    user.last_login = db.func.now()
+    user.last_login = datetime.now(timezone.utc)
     db.session.commit()
     return token, None

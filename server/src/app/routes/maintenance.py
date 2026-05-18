@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 from app.services import staff_service, patient_service, surgery_service, visit_service
 
 maintenance_bp = Blueprint("maintenance", __name__, url_prefix="/api/maintenance")
@@ -8,7 +8,7 @@ maintenance_bp = Blueprint("maintenance", __name__, url_prefix="/api/maintenance
 @maintenance_bp.route("/staff/medical", methods=["POST"])
 @jwt_required()
 def add_medical_staff():
-    data = request.json
+    data = request.get_json()
     try:
         staff = staff_service.create_medical_staff(data)
         return jsonify({"staff_id": staff.staff_id}), 201
@@ -19,32 +19,41 @@ def add_medical_staff():
 @maintenance_bp.route("/staff/nursing", methods=["POST"])
 @jwt_required()
 def add_nursing_staff():
-    data = request.json
-    staff = staff_service.create_nursing_staff(data)
-    return jsonify({"staff_id": staff.staff_id}), 201
+    data = request.get_json()
+    try:
+        staff = staff_service.create_nursing_staff(data)
+        return jsonify({"staff_id": staff.staff_id}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @maintenance_bp.route("/staff/general", methods=["POST"])
 @jwt_required()
 def add_general_staff():
-    data = request.json
-    staff = staff_service.create_general_staff(data)
-    return jsonify({"staff_id": staff.staff_id}), 201
+    data = request.get_json()
+    try:
+        staff = staff_service.create_general_staff(data)
+        return jsonify({"staff_id": staff.staff_id}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @maintenance_bp.route("/patients", methods=["POST"])
 @jwt_required()
 def add_patient():
-    data = request.json
-    patient = patient_service.create_patient(data)
-    return jsonify({"patient_id": patient.patient_id}), 201
+    data = request.get_json()
+    try:
+        patient = patient_service.create_patient(data)
+        return jsonify({"patient_id": patient.patient_id}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @maintenance_bp.route("/nursing/assign", methods=["PUT"])
 @jwt_required()
 def assign_nursing():
-    data = request.json
-    nurse_id = data["nurse_id"]
+    data = request.get_json()
+    nurse_id = data.get("nurse_id")
     if "doctor_id" in data:
         nurse = staff_service.assign_nursing_to_doctor(nurse_id, data["doctor_id"])
     elif "floor_id" in data:

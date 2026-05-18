@@ -1,37 +1,33 @@
 from app.models import db, Staff, MedicalStaff, NursingStaff, GeneralStaff
-from datetime import datetime
+from app.services.base import parse_date, get_all, get_by_id, update_record, delete_record
 
 
 def get_staff():
-    return Staff.query.all()
+    return get_all(Staff)
 
 
 def get_staff_member(staff_id):
-    return Staff.query.get(staff_id)
+    return get_by_id(Staff, staff_id)
 
 
 def update_staff(staff_id, data):
-    staff = Staff.query.get(staff_id)
-    if staff:
-        staff.national_id = data["national_id"]
-        staff.first_name = data["first_name"]
-        staff.last_name = data["last_name"]
-        staff.birth_date = datetime.strptime(data["birth_date"], "%Y-%m-%d")
-        staff.phone = data.get("phone")
-        staff.ssn = data.get("ssn")
-        staff.email = data.get("email")
-        staff.address = data.get("address")
-        staff.staff_type = data["staff_type"]
-        db.session.commit()
-    return staff
+    staff = get_by_id(Staff, staff_id)
+    return update_record(staff,
+        national_id=data["national_id"],
+        first_name=data["first_name"],
+        last_name=data["last_name"],
+        birth_date=parse_date(data["birth_date"], "%Y-%m-%d"),
+        phone=data.get("phone"),
+        ssn=data.get("ssn"),
+        email=data.get("email"),
+        address=data.get("address"),
+        staff_type=data["staff_type"],
+    )
 
 
 def delete_staff(staff_id):
-    staff = Staff.query.get(staff_id)
-    if staff:
-        db.session.delete(staff)
-        db.session.commit()
-    return staff
+    staff = get_by_id(Staff, staff_id)
+    return delete_record(staff)
 
 
 def create_medical_staff(data):
@@ -39,7 +35,7 @@ def create_medical_staff(data):
         national_id=data["national_id"],
         first_name=data["first_name"],
         last_name=data["last_name"],
-        birth_date=datetime.strptime(data["birth_date"], "%Y-%m-%d"),
+        birth_date=parse_date(data["birth_date"], "%Y-%m-%d"),
         phone=data.get("phone"),
         ssn=data.get("ssn"),
         email=data.get("email"),
@@ -64,7 +60,7 @@ def create_nursing_staff(data):
         national_id=data["national_id"],
         first_name=data["first_name"],
         last_name=data["last_name"],
-        birth_date=datetime.strptime(data["birth_date"], "%Y-%m-%d"),
+        birth_date=parse_date(data["birth_date"], "%Y-%m-%d"),
         phone=data.get("phone"),
         ssn=data.get("ssn"),
         email=data.get("email"),
@@ -90,7 +86,7 @@ def create_general_staff(data):
         national_id=data["national_id"],
         first_name=data["first_name"],
         last_name=data["last_name"],
-        birth_date=datetime.strptime(data["birth_date"], "%Y-%m-%d"),
+        birth_date=parse_date(data["birth_date"], "%Y-%m-%d"),
         phone=data.get("phone"),
         ssn=data.get("ssn"),
         email=data.get("email"),
@@ -106,7 +102,7 @@ def create_general_staff(data):
 
 
 def assign_nursing_to_doctor(nurse_id, doctor_id):
-    nurse = NursingStaff.query.get(nurse_id)
+    nurse = get_by_id(NursingStaff, nurse_id)
     if not nurse:
         raise ValueError("Nurse not found")
     nurse.assigned_doctor_id = doctor_id
@@ -116,7 +112,7 @@ def assign_nursing_to_doctor(nurse_id, doctor_id):
 
 
 def assign_nursing_to_floor(nurse_id, floor_id):
-    nurse = NursingStaff.query.get(nurse_id)
+    nurse = get_by_id(NursingStaff, nurse_id)
     if not nurse:
         raise ValueError("Nurse not found")
     nurse.assigned_floor_id = floor_id

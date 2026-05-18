@@ -1,33 +1,24 @@
-from app.models import db, Medication
+from app.models import Medication
+from app.services.base import create_record, get_all, get_by_id, update_record, delete_record
 
 
 def create_medication(data):
-    medication = Medication(medication_name=data["medication_name"], description=data.get("description"))
-    db.session.add(medication)
-    db.session.commit()
-    return medication
+    return create_record(Medication, medication_name=data["medication_name"], description=data.get("description"))
 
 
 def get_medications():
-    return Medication.query.all()
+    return get_all(Medication)
 
 
 def get_medication(medication_id):
-    return Medication.query.get(medication_id)
+    return get_by_id(Medication, medication_id)
 
 
 def update_medication(medication_id, data):
-    medication = Medication.query.get(medication_id)
-    if medication:
-        medication.medication_name = data["medication_name"]
-        medication.description = data.get("description")
-        db.session.commit()
-    return medication
+    medication = get_by_id(Medication, medication_id)
+    return update_record(medication, medication_name=data["medication_name"], description=data.get("description"))
 
 
 def delete_medication(medication_id):
-    medication = Medication.query.get(medication_id)
-    if medication:
-        db.session.delete(medication)
-        db.session.commit()
-    return medication
+    medication = get_by_id(Medication, medication_id)
+    return delete_record(medication)

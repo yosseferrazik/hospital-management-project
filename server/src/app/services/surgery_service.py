@@ -1,72 +1,62 @@
 from app.models import db, Surgery, SurgeryAssistant
-from sqlalchemy import and_
-from datetime import datetime
+from app.services.base import parse_date, parse_time, create_record, get_all, get_by_id, update_record, delete_record
 
 
 def create_surgery(data):
-    surgery = Surgery(
+    return create_record(Surgery,
         patient_id=data["patient_id"],
         theater_id=data["theater_id"],
         primary_surgeon_id=data["primary_surgeon_id"],
-        surgery_date=datetime.strptime(data["surgery_date"], "%Y-%m-%d"),
-        start_time=datetime.strptime(data["start_time"], "%H:%M:%S").time(),
-        end_time=datetime.strptime(data["end_time"], "%H:%M:%S").time(),
+        surgery_date=parse_date(data["surgery_date"], "%Y-%m-%d"),
+        start_time=parse_time(data["start_time"]),
+        end_time=parse_time(data["end_time"]),
         procedure_type=data["procedure_type"],
         notes=data.get("notes"),
     )
-    db.session.add(surgery)
-    db.session.commit()
-    return surgery
 
 
 def get_surgeries():
-    return Surgery.query.all()
+    return get_all(Surgery)
 
 
 def get_surgery(surgery_id):
-    return Surgery.query.get(surgery_id)
+    return get_by_id(Surgery, surgery_id)
 
 
 def update_surgery(surgery_id, data):
-    surgery = Surgery.query.get(surgery_id)
-    if surgery:
-        surgery.patient_id = data["patient_id"]
-        surgery.theater_id = data["theater_id"]
-        surgery.primary_surgeon_id = data["primary_surgeon_id"]
-        surgery.surgery_date = datetime.strptime(data["surgery_date"], "%Y-%m-%d")
-        surgery.start_time = datetime.strptime(data["start_time"], "%H:%M:%S").time()
-        surgery.end_time = datetime.strptime(data["end_time"], "%H:%M:%S").time()
-        surgery.procedure_type = data["procedure_type"]
-        surgery.notes = data.get("notes")
-        db.session.commit()
-    return surgery
+    surgery = get_by_id(Surgery, surgery_id)
+    return update_record(surgery,
+        patient_id=data["patient_id"],
+        theater_id=data["theater_id"],
+        primary_surgeon_id=data["primary_surgeon_id"],
+        surgery_date=parse_date(data["surgery_date"], "%Y-%m-%d"),
+        start_time=parse_time(data["start_time"]),
+        end_time=parse_time(data["end_time"]),
+        procedure_type=data["procedure_type"],
+        notes=data.get("notes"),
+    )
 
 
 def delete_surgery(surgery_id):
-    surgery = Surgery.query.get(surgery_id)
-    if surgery:
-        db.session.delete(surgery)
-        db.session.commit()
-    return surgery
+    surgery = get_by_id(Surgery, surgery_id)
+    return delete_record(surgery)
 
 
 def get_surgeries_by_date(date):
     surgeries = db.session.query(Surgery).filter(Surgery.surgery_date == date).all()
     result = []
     for s in surgeries:
+        patient = s.patient
+        surgeon = s.primary_surgeon.staff if s.primary_surgeon else None
         assistants = SurgeryAssistant.query.filter_by(surgery_id=s.surgery_id).all()
-        result.append(
-            {
-                "surgery_id": s.surgery_id,
-                "theater_id": s.theater_id,
-                "patient": f"{s.patient.first_name} {s.patient.last_name}",
-                "surgeon": f"{s.primary_surgeon.staff.first_name} {s.primary_surgeon.staff.last_name}",
-                "start_time": str(s.start_time),
-                "end_time": str(s.end_time),
-                "procedure_type": s.procedure_type,
-                "assistants": [
-                    {"nurse_id": a.nurse_id, "role": a.role} for a in assistants
-                ],
-            }
-        )
+        result.append({
+            "surgery_id": s.surgery_id,
+            "theater_id": s.theater_id,
+            "patient": f"{patient.first_name} {patient.last_name}" if patient else "Unknown",
+            "surgeon": f"{surgeon.first_name} {surgeon.last_name}" if surgeon else "Unknown",
+            "start_time": str(s.start_time),
+            "end_time": str(s.end_time),
+            "procedure_type": s.procedure_type,
+            "assistants": [{"nurse_id": a.nurse_id, "role": a.role} for a in assistants],
+        })
     return result

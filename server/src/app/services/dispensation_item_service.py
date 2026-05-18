@@ -1,40 +1,24 @@
-from app.models import db, DispensationItem
+from app.models import DispensationItem
+from app.services.base import create_record, get_all, get_by_id, update_record, delete_record
 
 
 def create_dispensation_item(data):
-    item = DispensationItem(
-        dispensation_id=data["dispensation_id"],
-        medication_id=data["medication_id"],
-        quantity=data["quantity"],
-        unit_price=data["unit_price"],
-    )
-    db.session.add(item)
-    db.session.commit()
-    return item
+    return create_record(DispensationItem, dispensation_id=data["dispensation_id"], medication_id=data["medication_id"], quantity=data["quantity"], unit_price=data["unit_price"])
 
 
 def get_dispensation_items():
-    return DispensationItem.query.all()
+    return get_all(DispensationItem)
 
 
 def get_dispensation_item(item_id):
-    return DispensationItem.query.get(item_id)
+    return get_by_id(DispensationItem, item_id)
 
 
 def update_dispensation_item(item_id, data):
-    item = DispensationItem.query.get(item_id)
-    if item:
-        item.dispensation_id = data["dispensation_id"]
-        item.medication_id = data["medication_id"]
-        item.quantity = data["quantity"]
-        item.unit_price = data["unit_price"]
-        db.session.commit()
-    return item
+    item = get_by_id(DispensationItem, item_id)
+    return update_record(item, dispensation_id=data["dispensation_id"], medication_id=data["medication_id"], quantity=data["quantity"], unit_price=data["unit_price"])
 
 
 def delete_dispensation_item(item_id):
-    item = DispensationItem.query.get(item_id)
-    if item:
-        db.session.delete(item)
-        db.session.commit()
-    return item
+    item = get_by_id(DispensationItem, item_id)
+    return delete_record(item)

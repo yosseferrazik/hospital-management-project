@@ -1,49 +1,42 @@
-from app.models import db, RadiologyExam
-from datetime import datetime
+from app.models import RadiologyExam
+from app.services.base import parse_date, create_record, get_all, get_by_id, update_record, delete_record
 
 
 def create_radiology_exam(data):
-    exam = RadiologyExam(
+    return create_record(RadiologyExam,
         patient_id=data["patient_id"],
         requesting_doctor_id=data["requesting_doctor_id"],
         exam_type=data["exam_type"],
-        requested_at=datetime.strptime(data["requested_at"], "%Y-%m-%d %H:%M:%S") if "requested_at" in data else None,
-        performed_at=datetime.strptime(data["performed_at"], "%Y-%m-%d %H:%M:%S") if "performed_at" in data else None,
+        requested_at=parse_date(data.get("requested_at"), "%Y-%m-%d %H:%M:%S"),
+        performed_at=parse_date(data.get("performed_at"), "%Y-%m-%d %H:%M:%S"),
         result_image_url=data.get("result_image_url"),
         radiologist_report=data.get("radiologist_report"),
         status=data.get("status", "REQUESTED"),
     )
-    db.session.add(exam)
-    db.session.commit()
-    return exam
 
 
 def get_radiology_exams():
-    return RadiologyExam.query.all()
+    return get_all(RadiologyExam)
 
 
 def get_radiology_exam(exam_id):
-    return RadiologyExam.query.get(exam_id)
+    return get_by_id(RadiologyExam, exam_id)
 
 
 def update_radiology_exam(exam_id, data):
-    exam = RadiologyExam.query.get(exam_id)
-    if exam:
-        exam.patient_id = data["patient_id"]
-        exam.requesting_doctor_id = data["requesting_doctor_id"]
-        exam.exam_type = data["exam_type"]
-        exam.requested_at = datetime.strptime(data["requested_at"], "%Y-%m-%d %H:%M:%S") if "requested_at" in data else None
-        exam.performed_at = datetime.strptime(data["performed_at"], "%Y-%m-%d %H:%M:%S") if "performed_at" in data else None
-        exam.result_image_url = data.get("result_image_url")
-        exam.radiologist_report = data.get("radiologist_report")
-        exam.status = data.get("status", "REQUESTED")
-        db.session.commit()
-    return exam
+    exam = get_by_id(RadiologyExam, exam_id)
+    return update_record(exam,
+        patient_id=data["patient_id"],
+        requesting_doctor_id=data["requesting_doctor_id"],
+        exam_type=data["exam_type"],
+        requested_at=parse_date(data.get("requested_at"), "%Y-%m-%d %H:%M:%S"),
+        performed_at=parse_date(data.get("performed_at"), "%Y-%m-%d %H:%M:%S"),
+        result_image_url=data.get("result_image_url"),
+        radiologist_report=data.get("radiologist_report"),
+        status=data.get("status", "REQUESTED"),
+    )
 
 
 def delete_radiology_exam(exam_id):
-    exam = RadiologyExam.query.get(exam_id)
-    if exam:
-        db.session.delete(exam)
-        db.session.commit()
-    return exam
+    exam = get_by_id(RadiologyExam, exam_id)
+    return delete_record(exam)

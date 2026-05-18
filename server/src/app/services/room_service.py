@@ -1,33 +1,24 @@
-from app.models import db, Room
+from app.models import Room
+from app.services.base import create_record, get_all, get_by_id, update_record, delete_record
 
 
 def create_room(data):
-    room = Room(room_number=data["room_number"], floor_id=data["floor_id"])
-    db.session.add(room)
-    db.session.commit()
-    return room
+    return create_record(Room, room_number=data["room_number"], floor_id=data["floor_id"])
 
 
 def get_rooms():
-    return Room.query.all()
+    return get_all(Room)
 
 
 def get_room(room_id):
-    return Room.query.get(room_id)
+    return get_by_id(Room, room_id)
 
 
 def update_room(room_id, data):
-    room = Room.query.get(room_id)
-    if room:
-        room.room_number = data["room_number"]
-        room.floor_id = data["floor_id"]
-        db.session.commit()
-    return room
+    room = get_by_id(Room, room_id)
+    return update_record(room, room_number=data["room_number"], floor_id=data["floor_id"])
 
 
 def delete_room(room_id):
-    room = Room.query.get(room_id)
-    if room:
-        db.session.delete(room)
-        db.session.commit()
-    return room
+    room = get_by_id(Room, room_id)
+    return delete_record(room)

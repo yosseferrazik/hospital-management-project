@@ -1,45 +1,38 @@
-from app.models import db, Prescription
-from datetime import datetime
+from app.models import Prescription
+from app.services.base import parse_date, create_record, get_all, get_by_id, update_record, delete_record
 
 
 def create_prescription(data):
-    prescription = Prescription(
+    return create_record(Prescription,
         visit_id=data["visit_id"],
         medication_id=data["medication_id"],
         dosage=data["dosage"],
         frequency=data["frequency"],
         duration_days=data.get("duration_days"),
-        start_date=datetime.strptime(data["start_date"], "%Y-%m-%d") if "start_date" in data else None,
+        start_date=parse_date(data.get("start_date"), "%Y-%m-%d"),
     )
-    db.session.add(prescription)
-    db.session.commit()
-    return prescription
 
 
 def get_prescriptions():
-    return Prescription.query.all()
+    return get_all(Prescription)
 
 
 def get_prescription(prescription_id):
-    return Prescription.query.get(prescription_id)
+    return get_by_id(Prescription, prescription_id)
 
 
 def update_prescription(prescription_id, data):
-    prescription = Prescription.query.get(prescription_id)
-    if prescription:
-        prescription.visit_id = data["visit_id"]
-        prescription.medication_id = data["medication_id"]
-        prescription.dosage = data["dosage"]
-        prescription.frequency = data["frequency"]
-        prescription.duration_days = data.get("duration_days")
-        prescription.start_date = datetime.strptime(data["start_date"], "%Y-%m-%d") if "start_date" in data else None
-        db.session.commit()
-    return prescription
+    prescription = get_by_id(Prescription, prescription_id)
+    return update_record(prescription,
+        visit_id=data["visit_id"],
+        medication_id=data["medication_id"],
+        dosage=data["dosage"],
+        frequency=data["frequency"],
+        duration_days=data.get("duration_days"),
+        start_date=parse_date(data.get("start_date"), "%Y-%m-%d"),
+    )
 
 
 def delete_prescription(prescription_id):
-    prescription = Prescription.query.get(prescription_id)
-    if prescription:
-        db.session.delete(prescription)
-        db.session.commit()
-    return prescription
+    prescription = get_by_id(Prescription, prescription_id)
+    return delete_record(prescription)

@@ -1,43 +1,36 @@
-from app.models import db, Admission
-from datetime import datetime
+from app.models import Admission
+from app.services.base import parse_date, create_record, get_all, get_by_id, update_record, delete_record
 
 
 def create_admission(data):
-    admission = Admission(
+    return create_record(Admission,
         patient_id=data["patient_id"],
         room_id=data["room_id"],
-        admission_date=datetime.strptime(data["admission_date"], "%Y-%m-%d %H:%M:%S") if "admission_date" in data else None,
-        expected_discharge_date=datetime.strptime(data["expected_discharge_date"], "%Y-%m-%d") if "expected_discharge_date" in data else None,
-        actual_discharge_date=datetime.strptime(data["actual_discharge_date"], "%Y-%m-%d") if "actual_discharge_date" in data else None,
+        admission_date=parse_date(data.get("admission_date"), "%Y-%m-%d %H:%M:%S"),
+        expected_discharge_date=parse_date(data.get("expected_discharge_date"), "%Y-%m-%d"),
+        actual_discharge_date=parse_date(data.get("actual_discharge_date"), "%Y-%m-%d"),
     )
-    db.session.add(admission)
-    db.session.commit()
-    return admission
 
 
 def get_admissions():
-    return Admission.query.all()
+    return get_all(Admission)
 
 
 def get_admission(admission_id):
-    return Admission.query.get(admission_id)
+    return get_by_id(Admission, admission_id)
 
 
 def update_admission(admission_id, data):
-    admission = Admission.query.get(admission_id)
-    if admission:
-        admission.patient_id = data["patient_id"]
-        admission.room_id = data["room_id"]
-        admission.admission_date = datetime.strptime(data["admission_date"], "%Y-%m-%d %H:%M:%S") if "admission_date" in data else None
-        admission.expected_discharge_date = datetime.strptime(data["expected_discharge_date"], "%Y-%m-%d") if "expected_discharge_date" in data else None
-        admission.actual_discharge_date = datetime.strptime(data["actual_discharge_date"], "%Y-%m-%d") if "actual_discharge_date" in data else None
-        db.session.commit()
-    return admission
+    admission = get_by_id(Admission, admission_id)
+    return update_record(admission,
+        patient_id=data["patient_id"],
+        room_id=data["room_id"],
+        admission_date=parse_date(data.get("admission_date"), "%Y-%m-%d %H:%M:%S"),
+        expected_discharge_date=parse_date(data.get("expected_discharge_date"), "%Y-%m-%d"),
+        actual_discharge_date=parse_date(data.get("actual_discharge_date"), "%Y-%m-%d"),
+    )
 
 
 def delete_admission(admission_id):
-    admission = Admission.query.get(admission_id)
-    if admission:
-        db.session.delete(admission)
-        db.session.commit()
-    return admission
+    admission = get_by_id(Admission, admission_id)
+    return delete_record(admission)

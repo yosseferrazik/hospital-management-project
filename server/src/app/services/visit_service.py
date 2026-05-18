@@ -1,47 +1,39 @@
 from app.models import db, ScheduledAppointment, Visit
-from sqlalchemy import and_
-from datetime import datetime
+from app.services.base import parse_date, create_record, get_all, get_by_id, update_record, delete_record
 
 
 def create_visit(data):
-    visit = Visit(
+    return create_record(Visit,
         patient_id=data["patient_id"],
         doctor_id=data["doctor_id"],
-        visit_timestamp=datetime.strptime(data["visit_timestamp"], "%Y-%m-%d %H:%M:%S") if "visit_timestamp" in data else None,
+        visit_timestamp=parse_date(data.get("visit_timestamp"), "%Y-%m-%d %H:%M:%S"),
         diagnosis=data.get("diagnosis"),
         notes=data.get("notes"),
     )
-    db.session.add(visit)
-    db.session.commit()
-    return visit
 
 
 def get_visits():
-    return Visit.query.all()
+    return get_all(Visit)
 
 
 def get_visit(visit_id):
-    return Visit.query.get(visit_id)
+    return get_by_id(Visit, visit_id)
 
 
 def update_visit(visit_id, data):
-    visit = Visit.query.get(visit_id)
-    if visit:
-        visit.patient_id = data["patient_id"]
-        visit.doctor_id = data["doctor_id"]
-        visit.visit_timestamp = datetime.strptime(data["visit_timestamp"], "%Y-%m-%d %H:%M:%S") if "visit_timestamp" in data else None
-        visit.diagnosis = data.get("diagnosis")
-        visit.notes = data.get("notes")
-        db.session.commit()
-    return visit
+    visit = get_by_id(Visit, visit_id)
+    return update_record(visit,
+        patient_id=data["patient_id"],
+        doctor_id=data["doctor_id"],
+        visit_timestamp=parse_date(data.get("visit_timestamp"), "%Y-%m-%d %H:%M:%S"),
+        diagnosis=data.get("diagnosis"),
+        notes=data.get("notes"),
+    )
 
 
 def delete_visit(visit_id):
-    visit = Visit.query.get(visit_id)
-    if visit:
-        db.session.delete(visit)
-        db.session.commit()
-    return visit
+    visit = get_by_id(Visit, visit_id)
+    return delete_record(visit)
 
 
 def get_scheduled_visits_by_date(date):
@@ -52,16 +44,16 @@ def get_scheduled_visits_by_date(date):
     )
     result = []
     for app in appointments:
-        visit = Visit.query.get(app.visit_id)
+        visit = get_by_id(Visit, app.visit_id)
         if visit:
-            result.append(
-                {
-                    "appointment_id": app.appointment_id,
-                    "time": str(app.appointment_time),
-                    "patient": f"{visit.patient.first_name} {visit.patient.last_name}",
-                    "doctor": f"{visit.doctor.staff.first_name} {visit.doctor.staff.last_name}",
-                    "diagnosis": visit.diagnosis,
-                    "status": app.status,
-                }
-            )
+            patient = visit.patient
+            doctor_staff = visit.doctor.staff if visit.doctor else None
+            result.append({
+                "appointment_id": app.appointment_id,
+                "time": str(app.appointment_time),
+                "patient": f"{patient.first_name} {patient.last_name}" if patient else "Unknown",
+                "doctor": f"{doctor_staff.first_name} {doctor_staff.last_name}" if doctor_staff else "Unknown",
+                "diagnosis": visit.diagnosis,
+                "status": app.status,
+            })
     return result

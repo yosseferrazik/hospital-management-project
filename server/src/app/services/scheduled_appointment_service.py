@@ -1,41 +1,34 @@
-from app.models import db, ScheduledAppointment
-from datetime import datetime
+from app.models import ScheduledAppointment
+from app.services.base import parse_date, parse_time, create_record, get_all, get_by_id, update_record, delete_record
 
 
 def create_scheduled_appointment(data):
-    appointment = ScheduledAppointment(
+    return create_record(ScheduledAppointment,
         visit_id=data["visit_id"],
-        appointment_date=datetime.strptime(data["appointment_date"], "%Y-%m-%d"),
-        appointment_time=datetime.strptime(data["appointment_time"], "%H:%M:%S").time(),
+        appointment_date=parse_date(data["appointment_date"], "%Y-%m-%d"),
+        appointment_time=parse_time(data["appointment_time"]),
         status=data.get("status", "SCHEDULED"),
     )
-    db.session.add(appointment)
-    db.session.commit()
-    return appointment
 
 
 def get_scheduled_appointments():
-    return ScheduledAppointment.query.all()
+    return get_all(ScheduledAppointment)
 
 
 def get_scheduled_appointment(appointment_id):
-    return ScheduledAppointment.query.get(appointment_id)
+    return get_by_id(ScheduledAppointment, appointment_id)
 
 
 def update_scheduled_appointment(appointment_id, data):
-    appointment = ScheduledAppointment.query.get(appointment_id)
-    if appointment:
-        appointment.visit_id = data["visit_id"]
-        appointment.appointment_date = datetime.strptime(data["appointment_date"], "%Y-%m-%d")
-        appointment.appointment_time = datetime.strptime(data["appointment_time"], "%H:%M:%S").time()
-        appointment.status = data.get("status", "SCHEDULED")
-        db.session.commit()
-    return appointment
+    appointment = get_by_id(ScheduledAppointment, appointment_id)
+    return update_record(appointment,
+        visit_id=data["visit_id"],
+        appointment_date=parse_date(data["appointment_date"], "%Y-%m-%d"),
+        appointment_time=parse_time(data["appointment_time"]),
+        status=data.get("status", "SCHEDULED"),
+    )
 
 
 def delete_scheduled_appointment(appointment_id):
-    appointment = ScheduledAppointment.query.get(appointment_id)
-    if appointment:
-        db.session.delete(appointment)
-        db.session.commit()
-    return appointment
+    appointment = get_by_id(ScheduledAppointment, appointment_id)
+    return delete_record(appointment)

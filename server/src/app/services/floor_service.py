@@ -1,32 +1,24 @@
-from app.models import db, Floor
+from app.models import Floor
+from app.services.base import create_record, get_all, get_by_id, update_record, delete_record
 
 
 def create_floor(data):
-    floor = Floor(floor_number=data["floor_number"])
-    db.session.add(floor)
-    db.session.commit()
-    return floor
+    return create_record(Floor, floor_number=data["floor_number"])
 
 
 def get_floors():
-    return Floor.query.all()
+    return get_all(Floor)
 
 
 def get_floor(floor_id):
-    return Floor.query.get(floor_id)
+    return get_by_id(Floor, floor_id)
 
 
 def update_floor(floor_id, data):
-    floor = Floor.query.get(floor_id)
-    if floor:
-        floor.floor_number = data["floor_number"]
-        db.session.commit()
-    return floor
+    floor = get_by_id(Floor, floor_id)
+    return update_record(floor, floor_number=data["floor_number"])
 
 
 def delete_floor(floor_id):
-    floor = Floor.query.get(floor_id)
-    if floor:
-        db.session.delete(floor)
-        db.session.commit()
-    return floor
+    floor = get_by_id(Floor, floor_id)
+    return delete_record(floor)

@@ -1,4 +1,5 @@
 from app.models import db, SurgeryAssistant
+from app.services.base import get_all
 
 
 def create_surgery_assistant(data):
@@ -9,7 +10,7 @@ def create_surgery_assistant(data):
 
 
 def get_surgery_assistants():
-    return SurgeryAssistant.query.all()
+    return get_all(SurgeryAssistant)
 
 
 def get_surgery_assistant(surgery_id, nurse_id):
