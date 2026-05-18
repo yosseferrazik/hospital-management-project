@@ -214,8 +214,8 @@ class SurgeryAssistant(db.Model):
     )
     role = db.Column(db.String(100), nullable=False)
 
-    surgery = db.relationship("Surgery", backref="assistants")
-    nurse = db.relationship("NursingStaff", backref="assisted_surgeries")
+    surgery = db.relationship("Surgery", backref=db.backref("assistants", cascade="all, delete-orphan"))
+    nurse = db.relationship("NursingStaff", backref=db.backref("assisted_surgeries", cascade="all, delete-orphan"))
 
 
 class Medication(db.Model):
