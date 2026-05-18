@@ -13,23 +13,23 @@
 -- --------------------------------------------------------------------
 
 -- Administrative role (full access)
-CREATE ROLE IF NOT EXISTS app_admin WITH LOGIN CONNECTION LIMIT 5;
+CREATE ROLE app_admin WITH LOGIN CONNECTION LIMIT 5;
 COMMENT ON ROLE app_admin IS 'Application role for system administrators';
 
 -- Medical staff role (doctors, surgeons)
-CREATE ROLE IF NOT EXISTS app_doctor WITH LOGIN CONNECTION LIMIT 50;
+CREATE ROLE app_doctor WITH LOGIN CONNECTION LIMIT 50;
 COMMENT ON ROLE app_doctor IS 'Application role for doctors and medical staff';
 
 -- Nursing staff role
-CREATE ROLE IF NOT EXISTS app_nurse WITH LOGIN CONNECTION LIMIT 100;
+CREATE ROLE app_nurse WITH LOGIN CONNECTION LIMIT 100;
 COMMENT ON ROLE app_nurse IS 'Application role for nursing staff';
 
 -- Receptionist role (front-desk)
-CREATE ROLE IF NOT EXISTS app_receptionist WITH LOGIN CONNECTION LIMIT 10;
+CREATE ROLE app_receptionist WITH LOGIN CONNECTION LIMIT 10;
 COMMENT ON ROLE app_receptionist IS 'Application role for receptionists';
 
 -- General staff role (pharmacy, maintenance, etc.)
-CREATE ROLE IF NOT EXISTS app_staff WITH LOGIN CONNECTION LIMIT 30;
+CREATE ROLE app_staff WITH LOGIN CONNECTION LIMIT 30;
 COMMENT ON ROLE app_staff IS 'Application role for general hospital staff';
 
 -- --------------------------------------------------------------------
