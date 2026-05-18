@@ -150,6 +150,7 @@ class Patient(db.Model):
     emergency_contact_phone = db.Column(db.String(20))
     blood_type = db.Column(db.String(5))
     allergies = db.Column(db.Text)
+    health_card = db.Column(db.String(50))
 
 
 class Visit(db.Model):

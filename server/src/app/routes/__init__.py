@@ -18,3 +18,5 @@ from .pharmacy_dispensation import pharmacy_dispensation_bp
 from .dispensation_item import dispensation_item_bp
 from .radiology_exam import radiology_exam_bp
 from .staff import staff_bp
+from .export import export_bp
+from .dashboard import dashboard_bp

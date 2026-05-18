@@ -13,6 +13,7 @@ Canonical index for all documentation artifacts.
 - [Functional Requirements](../01_Planning/Functional_Requirements.md) — Features and user stories.
 - [Non-Functional Requirements](../01_Planning/Non_Functional_Requirements.md) — Security, performance, availability targets.
 - [Technology Stack](../01_Planning/Tech_Stack.md) — Languages, frameworks and runtime assumptions.
+- [Export and Dashboard](../01_Planning/Export_and_Dashboard.md) — Data export, external API integration, and BI dashboard.
 
 ## 02 Data
 - [Relational Model](../02_Data/Relational_Model.md) — Core entities and relationships.

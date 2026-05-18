@@ -28,6 +28,8 @@ from app.routes import (
     dispensation_item_bp,
     radiology_exam_bp,
     staff_bp,
+    export_bp,
+    dashboard_bp,
 )
 
 
@@ -98,6 +100,8 @@ def create_app():
     app.register_blueprint(dispensation_item_bp)
     app.register_blueprint(radiology_exam_bp)
     app.register_blueprint(staff_bp)
+    app.register_blueprint(export_bp)
+    app.register_blueprint(dashboard_bp)
 
     with app.app_context():
         db.create_all()

@@ -16,6 +16,7 @@ def create_patient(data):
         emergency_contact_phone=data.get("emergency_contact_phone"),
         blood_type=data.get("blood_type"),
         allergies=data.get("allergies"),
+        health_card=data.get("health_card"),
     )
 
 
@@ -42,6 +43,7 @@ def update_patient(patient_id, data):
         emergency_contact_phone=data.get("emergency_contact_phone"),
         blood_type=data.get("blood_type"),
         allergies=data.get("allergies"),
+        health_card=data.get("health_card"),
     )
 
 

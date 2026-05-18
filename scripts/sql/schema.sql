@@ -110,7 +110,8 @@ CREATE TABLE PATIENTS (
     emergency_contact_name VARCHAR(200),
     emergency_contact_phone VARCHAR(20),
     blood_type VARCHAR(5) CHECK (blood_type IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
-    allergies TEXT
+    allergies TEXT,
+    health_card VARCHAR(50)
 );
 
 -- VISITS table

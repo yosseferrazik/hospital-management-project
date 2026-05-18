@@ -90,6 +90,14 @@ curl -X POST http://localhost:5000/api/maintenance/patients \
 | `/api/scheduled_appointments` | GET, POST                     | List / create appointments |
 | `/api/surgery_assistants`   | GET, POST                       | List / create assistants   |
 
+### Export and Dashboard Endpoints
+
+| Endpoint                                           | Description                                  |
+|----------------------------------------------------|----------------------------------------------|
+| `GET /api/export/visits?start_date=&end_date=&format=` | Download visits in XML/JSON (no auth)    |
+| `POST /api/export/send`                            | Send visits to external API                  |
+| `GET /api/dashboard/stats`                         | Today's visits by specialty (for Power BI)   |
+
 ### Protected Endpoints (require JWT token)
 
 | Endpoint                                           | Description                       |

@@ -15,5 +15,6 @@ patient_bp = make_crud_blueprint(
         "emergency_contact_name": p.emergency_contact_name,
         "emergency_contact_phone": p.emergency_contact_phone,
         "blood_type": p.blood_type, "allergies": p.allergies,
+        "health_card": p.health_card,
     },
 )

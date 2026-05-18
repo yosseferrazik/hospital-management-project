@@ -206,6 +206,7 @@ def _create_patients():
             emergency_contact_phone=fake.phone_number(),
             blood_type=random.choice(["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]),
             allergies=random.choice(["", "Penicillin", "Latex", "Dust"]),
+            health_card=fake.unique.numerify(text="##########"),
         )
         db.session.add(patient)
         db.session.flush()
