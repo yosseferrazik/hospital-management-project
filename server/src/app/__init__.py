@@ -2,8 +2,9 @@ from datetime import datetime, timezone
 
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager, get_jwt_identity, get_jwt
 from flask_cors import CORS
+from sqlalchemy import text
 from app.config import Config
 from app.models import db
 from app.routes import (
@@ -49,12 +50,31 @@ def _register_health_endpoint(app):
         ), status_code
 
 
+def _set_session_vars():
+    from flask import g
+    try:
+        claims = get_jwt()
+        if claims:
+            uid = claims.get("sub")
+            sid = claims.get("staff_id")
+            if uid:
+                db.session.execute(text("SELECT set_config('app.current_user_id', :uid, true)"), {"uid": uid})
+            if sid:
+                db.session.execute(text("SELECT set_config('app.current_staff_id', :sid, true)"), {"sid": str(sid)})
+    except Exception:
+        pass
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     db.init_app(app)
-    JWTManager(app)
+    jwt = JWTManager(app)
     CORS(app)
+
+    @app.before_request
+    def before_request():
+        _set_session_vars()
 
     _register_health_endpoint(app)
 

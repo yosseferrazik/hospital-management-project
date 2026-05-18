@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import bcrypt
 from app.models import db, AppUser, Staff
 from flask_jwt_extended import create_access_token
+from sqlalchemy import text
 
 
 def register_user(username, password, staff_id, role):
@@ -27,10 +28,12 @@ def login_user(username, password):
     if not bcrypt.checkpw(password.encode(), user.password_hash.encode()):
         return None, "Invalid credentials"
     token = create_access_token(
-        identity=str(user.user_id), additional_claims={"role": user.role}
+        identity=str(user.user_id), additional_claims={"role": user.role, "staff_id": user.staff_id}
     )
     user.last_login = datetime.now(timezone.utc)
     try:
+        db.session.execute(text("SELECT set_config('app.current_user_id', :uid, true)"), {"uid": str(user.user_id)})
+        db.session.execute(text("SELECT set_config('app.current_staff_id', :sid, true)"), {"sid": str(user.staff_id)})
         db.session.commit()
     except Exception:
         db.session.rollback()

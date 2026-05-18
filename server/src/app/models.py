@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timezone
+from sqlalchemy.dialects.postgresql import INET
 
 db = SQLAlchemy()
 
@@ -15,7 +16,7 @@ class AppUser(db.Model):
     role = db.Column(db.String(50), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     last_login = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class Staff(db.Model):
@@ -29,7 +30,7 @@ class Staff(db.Model):
     ssn = db.Column(db.String(20), unique=True)
     email = db.Column(db.String(255), unique=True)
     address = db.Column(db.Text)
-    hire_date = db.Column(db.Date, default=datetime.utcnow)
+    hire_date = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date())
     staff_type = db.Column(db.String(50), nullable=False)
 
 
@@ -160,7 +161,7 @@ class Visit(db.Model):
     doctor_id = db.Column(
         db.Integer, db.ForeignKey("medical_staff.staff_id"), nullable=False
     )
-    visit_timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    visit_timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     diagnosis = db.Column(db.Text)
     notes = db.Column(db.Text)
 
@@ -235,7 +236,7 @@ class Prescription(db.Model):
     dosage = db.Column(db.String(100), nullable=False)
     frequency = db.Column(db.String(100), nullable=False)
     duration_days = db.Column(db.Integer)
-    start_date = db.Column(db.Date, default=datetime.utcnow)
+    start_date = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date())
 
     visit = db.relationship("Visit", backref="prescriptions")
     medication = db.relationship("Medication", backref="prescriptions")
@@ -248,7 +249,7 @@ class Admission(db.Model):
         db.Integer, db.ForeignKey("patients.patient_id"), nullable=False
     )
     room_id = db.Column(db.Integer, db.ForeignKey("rooms.room_id"), nullable=False)
-    admission_date = db.Column(db.DateTime, default=datetime.utcnow)
+    admission_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     expected_discharge_date = db.Column(db.Date)
     actual_discharge_date = db.Column(db.Date)
 
@@ -262,7 +263,7 @@ class PharmacyDispensation(db.Model):
     admission_id = db.Column(
         db.Integer, db.ForeignKey("admissions.admission_id"), nullable=False
     )
-    dispensed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    dispensed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     total_cost = db.Column(db.Numeric(10, 2), default=0)
     notes = db.Column(db.Text)
 
@@ -297,7 +298,7 @@ class RadiologyExam(db.Model):
         db.Integer, db.ForeignKey("medical_staff.staff_id"), nullable=False
     )
     exam_type = db.Column(db.String(100), nullable=False)
-    requested_at = db.Column(db.DateTime, default=datetime.utcnow)
+    requested_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     performed_at = db.Column(db.DateTime)
     result_image_url = db.Column(db.Text)
     radiologist_report = db.Column(db.Text)
@@ -311,13 +312,13 @@ class AuditLog(db.Model):
     __tablename__ = "audit_logs"
     log_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("app_users.user_id"))
-    action_timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    action_timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     action_type = db.Column(db.String(50), nullable=False)
     table_name = db.Column(db.String(100))
     record_id = db.Column(db.Integer)
     old_data = db.Column(db.Text)
     new_data = db.Column(db.Text)
-    ip_address = db.Column(db.String(45))
+    ip_address = db.Column(INET)
     notes = db.Column(db.Text)
 
     user = db.relationship("AppUser", backref="audit_logs")
@@ -328,4 +329,4 @@ class DummyRegistry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     table_name = db.Column(db.String(100), nullable=False)
     record_id = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

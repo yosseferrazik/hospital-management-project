@@ -91,7 +91,7 @@ CREATE TABLE MEDICAL_STAFF_SPECIALTIES (
     medical_staff_specialty_id SERIAL PRIMARY KEY,
     staff_id INTEGER NOT NULL,
     specialty_id INTEGER NOT NULL,
-    FOREIGN KEY (staff_id) REFERENCES STAFF(staff_id) ON DELETE CASCADE,
+    FOREIGN KEY (staff_id) REFERENCES MEDICAL_STAFF(staff_id) ON DELETE CASCADE,
     FOREIGN KEY (specialty_id) REFERENCES MEDICAL_SPECIALTIES(specialty_id) ON DELETE CASCADE,
     UNIQUE(staff_id, specialty_id)
 );
