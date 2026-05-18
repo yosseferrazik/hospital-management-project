@@ -193,9 +193,9 @@ CREATE POLICY doctor_admin_admission_access ON admissions
 CREATE OR REPLACE FUNCTION get_current_app_user_id()
 RETURNS INTEGER AS $$
 BEGIN
-    RETURN COALESCE(NULLIF(current_setting('app.current_user_id', true), '')::INTEGER, -1);
+    RETURN NULLIF(current_setting('app.current_user_id', true), '')::INTEGER;
 EXCEPTION
-    WHEN OTHERS THEN RETURN -1;
+    WHEN OTHERS THEN RETURN NULL;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -204,9 +204,9 @@ COMMENT ON FUNCTION get_current_app_user_id() IS 'Returns the user_id from app_u
 CREATE OR REPLACE FUNCTION get_current_staff_id()
 RETURNS INTEGER AS $$
 BEGIN
-    RETURN COALESCE(NULLIF(current_setting('app.current_staff_id', true), '')::INTEGER, -1);
+    RETURN NULLIF(current_setting('app.current_staff_id', true), '')::INTEGER;
 EXCEPTION
-    WHEN OTHERS THEN RETURN -1;
+    WHEN OTHERS THEN RETURN NULL;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
