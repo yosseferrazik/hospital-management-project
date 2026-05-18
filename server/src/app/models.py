@@ -55,7 +55,7 @@ class MedicalStaff(db.Model):
     license_number = db.Column(db.String(50), unique=True, nullable=False)
     curriculum = db.Column(db.Text)
 
-    staff = db.relationship("Staff", backref=db.backref("medical_staff", uselist=False))
+    staff = db.relationship("Staff", backref=db.backref("medical_staff", uselist=False, cascade="all, delete-orphan"))
 
     specialties = db.relationship(
         "MedicalSpecialty",
@@ -87,7 +87,7 @@ class NursingStaff(db.Model):
     assigned_floor_id = db.Column(db.Integer, db.ForeignKey("floors.floor_id"))
     certifications = db.Column(db.Text)
 
-    staff = db.relationship("Staff", backref=db.backref("nursing_staff", uselist=False))
+    staff = db.relationship("Staff", backref=db.backref("nursing_staff", uselist=False, cascade="all, delete-orphan"))
 
 
 class GeneralStaff(db.Model):
@@ -95,7 +95,7 @@ class GeneralStaff(db.Model):
     staff_id = db.Column(db.Integer, db.ForeignKey("staff.staff_id"), primary_key=True)
     job_type = db.Column(db.String(100), nullable=False)
 
-    staff = db.relationship("Staff", backref=db.backref("general_staff", uselist=False))
+    staff = db.relationship("Staff", backref=db.backref("general_staff", uselist=False, cascade="all, delete-orphan"))
 
 
 class Floor(db.Model):
