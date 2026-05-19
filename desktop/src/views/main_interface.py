@@ -1,3 +1,4 @@
+import os
 import threading
 import tkinter as tk
 from tkinter import messagebox
@@ -5,6 +6,12 @@ from tkinter import messagebox
 from services.api_client import APIClient
 from utils.session import Session
 from utils.ui_style import UIStyle
+
+try:
+    from PIL import Image, ImageTk
+    _HAS_PIL = True
+except ImportError:
+    _HAS_PIL = False
 from views.dashboard_view import DashboardView
 from views.maintenance_view import MaintenanceView
 from views.queries_reports_view import QueriesReportsView
@@ -36,16 +43,25 @@ class MainInterface:
         self.frame.rowconfigure(1, weight=1)
         self.frame.columnconfigure(1, weight=1)
 
-        self.sidebar = tk.Frame(self.frame, bg=UIStyle.HEADER_BG, width=270)
+        self.sidebar = tk.Frame(self.frame, bg=UIStyle.HEADER_BG, width=210)
         self.sidebar.grid(row=0, column=0, rowspan=2, sticky="nsew")
         self.sidebar.grid_propagate(False)
 
         header = tk.Frame(self.sidebar, bg=UIStyle.HEADER_BG)
-        header.pack(fill="x", padx=20, pady=(24, 20))
+        header.pack(fill="x", padx=12, pady=(12, 8))
+        logo_path = os.path.join(os.path.dirname(__file__), "..", "assets", "logo.png")
+        if os.path.isfile(logo_path):
+            if _HAS_PIL:
+                img = Image.open(logo_path).resize((40, 40), Image.LANCZOS)
+                self._logo_img = ImageTk.PhotoImage(img)
+            else:
+                self._logo_img = tk.PhotoImage(file=logo_path).subsample(26, 26)
+            logo = tk.Label(header, image=self._logo_img, bg=UIStyle.HEADER_BG)
+            logo.pack(anchor="w", pady=(0, 4))
         tk.Label(
             header,
             text="Sa Palomera",
-            font=UIStyle.HEADER_FONT,
+            font=UIStyle.SUBTITLE_FONT,
             bg=UIStyle.HEADER_BG,
             fg=UIStyle.HEADER_TEXT,
         ).pack(anchor="w")
@@ -58,7 +74,7 @@ class MainInterface:
         ).pack(anchor="w", pady=(4, 0))
 
         nav_group = tk.Frame(self.sidebar, bg=UIStyle.HEADER_BG)
-        nav_group.pack(fill="x", padx=12, pady=(8, 0))
+        nav_group.pack(fill="x", padx=8, pady=(4, 0))
 
         base_items = [
             ("Dashboard", "dashboard"),
@@ -79,12 +95,12 @@ class MainInterface:
             self._add_nav_button(nav_group, text, key)
         if self.session.role == "ADMIN":
             sep = tk.Frame(nav_group, bg="#2a4a6a", height=1)
-            sep.pack(fill="x", pady=8)
+            sep.pack(fill="x", pady=4)
             for text, key in admin_items:
                 self._add_nav_button(nav_group, text, key, admin=True)
 
         footer = tk.Frame(self.sidebar, bg=UIStyle.HEADER_BG)
-        footer.pack(side="bottom", fill="x", padx=12, pady=18)
+        footer.pack(side="bottom", fill="x", padx=8, pady=10)
         info = f"User: {self.session.username or 'User'} | {self.session.role or 'N/A'}"
         tk.Label(
             footer,
@@ -106,19 +122,19 @@ class MainInterface:
         button = tk.Button(
             parent,
             text=text,
-            font=UIStyle.FONT,
+            font=UIStyle.SMALL_FONT,
             bg=UIStyle.HEADER_BG,
             fg=fg_color,
             activebackground=UIStyle.HEADER_BG_ALT,
             activeforeground=fg_color,
             relief="flat",
             anchor="w",
-            padx=18,
-            pady=12,
+            padx=12,
+            pady=6,
             cursor="hand2",
             command=lambda value=key: self.navigate(value),
         )
-        button.pack(fill="x", pady=3)
+        button.pack(fill="x", pady=2)
         self.nav_buttons[key] = button
 
         topbar = tk.Frame(

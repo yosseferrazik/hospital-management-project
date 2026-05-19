@@ -14,8 +14,9 @@
 5. [Data Workspace](#5-data-workspace)
 6. [Operational Reports](#6-operational-reports)
 7. [Statistics](#7-statistics)
-8. [Dummy Data](#8-dummy-data)
-9. [Change Password & Logout](#9-change-password--logout)
+8. [Advanced Reports](#8-advanced-reports)
+9. [Dummy Data](#9-dummy-data)
+10. [Change Password & Logout](#10-change-password--logout)
 
 ---
 
@@ -48,11 +49,13 @@ The sidebar on the left provides navigation to all modules:
 | Data Workspace      | CRUD access to operational database resources    | ✓         |
 | Operational Reports | Visits and surgeries by date                     | ✓         |
 | Statistics          | Hospital operational insights and metrics        | ✓         |
+| Advanced Reports    | Multi-section summary report with PDF download   | ✓         |
 | Dummy Data          | Generate and clean sample records safely         | ✓         |
 | Users               | Account management (ADMIN only)                  | —         |
 | Audit Logs          | Database change log viewer (ADMIN only)          | —         |
 
-The footer shows your **username**, **role**, and action buttons.
+The header shows the **Sa Palomera Hospital logo** and name.  
+The footer shows your **username**, **role**, and action buttons (**Change Password**, **Logout**).
 
 ---
 
@@ -104,19 +107,60 @@ View hospital performance metrics, trends, and charts powered by Chart.js (rende
 
 ---
 
-## 8. Dummy Data
+## 8. Advanced Reports
 
-Generate or delete sample data for testing purposes:
+Generates a comprehensive multi-section PDF report of hospital activity for a given period.
 
-- Select a table and specify the number of records
-- Click **Generate** to create sample records
-- Click **Clean All Dummy Data** to remove all generated records
+### 8.1 Usage
+
+1. Navigate to **Advanced Reports** in the sidebar.
+2. Optionally set a **From** and **To** date (leave blank for all available data).
+3. Click **Load Report** to preview summary data in the panel.
+4. Click **Download PDF** to save the report as a PDF file.
+
+### 8.2 PDF Report Contents
+
+The PDF contains three pages:
+
+| Page | Section | Contents |
+|:-----|:--------|:---------|
+| 1 | Executive Dashboard | KPI cards (patients, staff, occupancy, visits, surgeries, admissions, costs), top diagnoses, surgeries by type |
+| 2 | Clinical Activity | Physician workload, prescribed medications, radiology exam summary |
+| 3 | Financial & Operations | Pharmacy dispensations, admissions (active/discharged), recent surgeries |
+
+### 8.3 Access Control
+
+| Role     | PDF Download |
+|:---------|:-------------|
+| ADMIN    | ✓            |
+| DOCTOR   | ✓            |
+| NURSE    | ✓            |
+| STAFF    | —            |
+| RECEPTIONIST | —        |
 
 ---
 
-## 9. Change Password & Logout
+## 9. Dummy Data
 
-### 9.1 Change Password
+Generate or delete sample data for testing purposes.
+
+### 9.1 Generate
+
+1. Enter the number of patients (default 20, max 50000).
+2. Click **Generate** to create sample records including: patients, staff (doctors, nurses, general), visits, appointments, surgeries with assistants, admissions, prescriptions, pharmacy dispensations with items, and radiology exams.
+3. A result log shows the generation progress.
+
+### 9.2 Clean
+
+Click **Clean All Dummy Data** to remove all generated records. This deletes only records tracked by the DummyRegistry — real data is never affected.
+
+> The dummy data is now more realistic: 16 medical specialties with 10 diagnoses each, 25 medications with real dosages, 26 surgical procedures, 24 radiology exam types with clinical findings, and coherent relationships between diagnoses, prescriptions, and doctor specialties.
+
+---
+
+## 10. Change Password & Logout
+
+### 10.1 Change Password
 
 Available to **all users** from the sidebar footer:
 
@@ -126,6 +170,6 @@ Available to **all users** from the sidebar footer:
 4. Confirm the new password.
 5. Click OK. A confirmation message appears on success.
 
-### 9.2 Logout
+### 10.2 Logout
 
 Click **Logout** in the sidebar footer. A confirmation dialog appears — click **Yes** to return to the login screen. Your session is cleared.

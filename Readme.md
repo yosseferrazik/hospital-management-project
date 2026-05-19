@@ -15,6 +15,8 @@
 | [Installation Guide](./docs/04_Operations/Installation_Guide.md) | Step-by-step setup from scratch |
 | [Configuration Guide](./docs/04_Operations/Configuration_Guide.md) | Environment variables, database, ports, logging |
 | [Deployment Guide](./docs/03_Infrastructure_Security/Deployment_Guide.md) | Production deployment on real servers |
+| [User Manual](./docs/04_Operations/User_Manual.md) | Desktop client features for end users |
+| [Administrator Manual](./docs/04_Operations/Administrator_Manual.md) | User management, audit logs, maintenance |
 | [Usage Guide](./docs/04_Operations/Usage_Guide.md) | API endpoints with real request/response examples |
 
 ### Reference Documentation (detailed)

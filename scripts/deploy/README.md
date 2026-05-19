@@ -34,6 +34,9 @@ sudo bash scripts/deploy/deploy.sh --force
 
 # Rollback to previous release
 sudo bash scripts/deploy/deploy.sh --rollback
+
+# Dev deploy — syncs repo, updates /opt/hms/current symlink to repo, no release
+sudo bash scripts/deploy/deploy.sh --dev
 ```
 
 ### First-Time Setup
@@ -44,7 +47,7 @@ git clone https://github.com/yosseferrazik/hospital-management-project.git /opt/
 bash /opt/hms/repo/scripts/deploy/deploy.sh --force
 ```
 
-### Deploy Flow
+### Deploy Flow (release)
 
 1. Install system packages (python3-venv, build-essential, libpq-dev, git, rsync)
 2. Create `hms` system user
@@ -60,6 +63,16 @@ bash /opt/hms/repo/scripts/deploy/deploy.sh --force
 12. Smoke test (curl `/health` with 5 retries)
 13. On success: save metadata, clean old releases
 14. On failure: rollback symlink, restart previous release
+
+### Deploy Flow (dev — `--dev` flag)
+
+1. Ensure system packages, user, and directories
+2. Pull latest from repo
+3. Point `/opt/hms/current` symlink directly to `/opt/hms/repo`
+4. Setup venv + install requirements
+5. Install systemd unit + logrotate config
+6. Restart service + smoke test
+7. No release versioning, no time-window check
 
 ## Standby Setup: `deploy_standby.sh`
 

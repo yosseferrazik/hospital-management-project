@@ -90,6 +90,36 @@ Records are displayed **most recent first** (sorted by `log_id DESC`).
 - Navigate with `< Prev` and `Next >` buttons
 - Total record count and current page indicator shown in the footer
 
+### 2.4 Diagnostics & Retention
+
+The footer also displays:
+
+- **Total records** in the audit log
+- **Retention period** (default: 90 days before automatic cleanup)
+- **Diagnostics** button — runs `GET /api/audit-logs/diagnostics` to check:
+  - Whether the PostgreSQL audit trigger exists
+  - Whether the trigger is active
+  - Total log count
+  - Sample of recent log entries
+
+### 2.5 Purge Old Logs (ADMIN only)
+
+Click **Purge Old** to delete records older than the retention period. A confirmation dialog appears before deletion. This uses `DELETE /api/audit-logs/cleanup?before=<date>`.
+
+### 2.6 Test Endpoint
+
+`POST /api/audit-logs/test` creates a test audit entry by inserting, updating, then deleting a record in a test table. Returns a JSON summary of the three actions performed.
+
+### 2.7 API Endpoints
+
+| Method | Endpoint | Auth | Description |
+|:-------|:---------|:-----|:------------|
+| GET | `/api/audit-logs` | No | List logs with optional `table`, `action`, `user_id`, `start_date`, `end_date`, `page`, `per_page` query params |
+| GET | `/api/audit-logs/diagnostics` | No | Check trigger status and log count |
+| POST | `/api/audit-logs/test` | No | Create a test audit entry |
+| GET | `/api/audit-logs/retention` | No | Get current retention setting (days) |
+| DELETE | `/api/audit-logs/cleanup` | No | Delete logs older than `before` date |
+
 ---
 
 ## 3. Password Management
@@ -110,8 +140,9 @@ Available from the **Users** tab. Select a user and click **Reset Password** —
 
 ## 4. Sidebar Navigation
 
-- **All users** see: Dashboard, Maintenance, Data Workspace, Operational Reports, Statistics, Dummy Data
+- **All users** see: Dashboard, Maintenance, Data Workspace, Operational Reports, Statistics, Advanced Reports, Dummy Data
 - **ADMIN only** additionally sees: Users, Audit Logs (separated by a divider)
+- **Header** shows: Sa Palomera Hospital logo and name
 - **Footer** shows: current username and role, plus **Change Password** and **Logout** buttons side by side
 
 ---

@@ -90,6 +90,40 @@ curl -X POST http://localhost:5000/api/maintenance/patients \
 | `/api/scheduled_appointments` | GET, POST                     | List / create appointments |
 | `/api/surgery_assistants`   | GET, POST                       | List / create assistants   |
 
+### Reports Endpoints (JWT required — ADMIN, DOCTOR, NURSE)
+
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| GET | `/api/reports/summary` | Summary report (totals, activity, occupancy, top diagnoses, surgeries by type) |
+| GET | `/api/reports/visits` | Visit report grouped by date |
+| GET | `/api/reports/surgeries` | Surgery report grouped by date |
+| GET | `/api/reports/admissions` | Admission report with stay duration |
+| GET | `/api/reports/medications` | Prescribed medications grouped by name |
+| GET | `/api/reports/financial` | Pharmacy dispensation costs |
+| GET | `/api/reports/radiology` | Radiology exam counts by type |
+| GET | `/api/reports/doctor-workload` | Physician visit/surgery counts |
+| GET | `/api/reports/summary/pdf` | **Download** a 3-page PDF report with KPIs, clinical activity, and financial data |
+
+All report endpoints accept optional `start_date` and `end_date` query parameters (ISO format, e.g. `?start_date=2026-01-01&end_date=2026-03-31`).
+
+#### PDF Download Example
+
+```bash
+curl -o report.pdf \
+  -H "Authorization: Bearer <token>" \
+  "http://localhost:5000/api/reports/summary/pdf?start_date=2026-01-01&end_date=2026-05-19"
+```
+
+### Audit Log Endpoints
+
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| GET | `/api/audit-logs` | List logs with optional `table`, `action`, `user_id`, `start_date`, `end_date`, `page`, `per_page` query params |
+| GET | `/api/audit-logs/diagnostics` | Check PostgreSQL trigger status and log count |
+| POST | `/api/audit-logs/test` | Create a test audit entry (INSERT+UPDATE+DELETE on a temp record) |
+| GET | `/api/audit-logs/retention` | Get current retention setting in days |
+| DELETE | `/api/audit-logs/cleanup` | Delete logs older than `before` query param (ISO date) |
+
 ### Export and Dashboard Endpoints
 
 | Endpoint                                           | Description                                  |
@@ -176,6 +210,14 @@ curl -X POST http://localhost:5000/api/maintenance/staff/medical \
   }'
 ```
 
+### Download PDF Report (requires JWT — ADMIN, DOCTOR, or NURSE)
+
+```bash
+curl -o hospital_report.pdf \
+  -H "Authorization: Bearer <token>" \
+  "http://localhost:5000/api/reports/summary/pdf?start_date=2026-01-01&end_date=2026-05-19"
+```
+
 ---
 
 ## Desktop Client
@@ -191,6 +233,7 @@ The Tkinter desktop application provides a GUI for all CRUD operations.
 | Data Workspace      | Browse and edit all entities (CRUD)             |
 | Operational Reports | View visits and surgeries filtered by date      |
 | Statistics          | Hospital operational metrics (use cases)        |
+| Advanced Reports    | Multi-section PDF report with download button   |
 | Dummy Data          | Generate or clean up test data                  |
 
 ### Login
@@ -203,7 +246,7 @@ Default admin credentials (after running `initial_script.sql`):
 
 ## Generating Test Data
 
-From the desktop client: navigate to **Dummy Data** → click **Generate**.
+From the desktop client: navigate to **Dummy Data** → enter patient count → click **Generate**.
 
 From the API:
 
@@ -218,3 +261,5 @@ To clean up:
 curl -X DELETE http://localhost:5000/api/dummy/cleanup \
   -H "Authorization: Bearer <token>"
 ```
+
+> Generated data now includes realistic Spanish medical content: 16 specialties with 160 diagnoses, 25 medications with real dosages, 26 surgical procedures, 24 radiology exam types with clinical findings, and coherent diagnosis-prescription-specialty relationships.
