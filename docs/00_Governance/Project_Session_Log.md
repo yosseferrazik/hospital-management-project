@@ -6,8 +6,8 @@
 |:-------------- |:------------ |
 | Document Owner | Project Team |
 | Status         | Active       |
-| Version        | 2.0          |
-| Last Updated   | 2026-05-05   |
+| Version        | 2.1          |
+| Last Updated   | 2026-05-19   |
 
 ## Purpose
 
@@ -35,3 +35,6 @@ This log records working sessions completed during the project. It provides trac
 | 2026-04-27 | 4h       | Closed the maintenance block and started high-availability planning.                                                     |
 | 2026-05-04 | 3h       | Reorganized the documentation information architecture, standardized naming, and created the documentation backlog.      |
 | 2026-05-05 | 4h       | Comprehensive documentation review and update to reflect implemented features; finalized documentation set for delivery. |
+| 2026-05-12 | 5h       | Implemented role-based login (server returns `role`/`staff_id`); removed register button; added User Management view (create, toggle active, reset password) and Audit Log view with filters/pagination; added client-side filter to Resource Browser; implemented Change Password for all roles and admin password reset; added `is_active` check at login; role-based sidebar (Users/Audit Logs only for ADMIN). |
+| 2026-05-14 | 2h       | Fixed client timeout from 10s to 300s; fixed audit log per_page default; reverted scroll per-page wrappers to fix visual artifacts. |
+| 2026-05-19 | 2h       | Redesigned User Management layout (create + manage in same right panel); made Change Password and Logout buttons horizontal; optimized Audit Log view (20 per page, loading indicator, deferred initial load, error handling); updated User Manual, Administrator Manual, and Project Session Log. |

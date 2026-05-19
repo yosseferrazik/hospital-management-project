@@ -101,15 +101,15 @@ hospital-management-project/
 │       └── app/
 │           ├── __init__.py       # create_app() factory, /health endpoint
 │           ├── config.py         # DATABASE_URL, JWT_SECRET_KEY from env
-│           ├── models.py         # 18 SQLAlchemy models
-│           ├── routes/           # 20 Blueprints (auth, CRUD for all entities)
+│           ├── models.py         # 24 SQLAlchemy models
+│           ├── routes/           # 23 Blueprints (auth, CRUD for all entities)
 │           ├── services/         # Business logic per entity
 │           └── utils/            # Utility modules
 ├── desktop/
 │   └── src/
 │       ├── main.py               # Tkinter entry point
 │       ├── .env                  # API_BASE_URL=http://100.78.155.2:5000/api
-│       ├── views/                # 12+ UI views
+│       ├── views/                # 13+ UI views
 │       └── services/             # API client with caching
 ├── scripts/
 │   ├── deploy/
@@ -176,7 +176,7 @@ Defined in `server/src/app/__init__.py`:
 
 - `create_app()` instantiates Flask with `Config`, initializes `SQLAlchemy`, `JWTManager`, `CORS`.
 - Registers a `/health` endpoint directly on the app (not behind `/api` prefix).
-- Registers 20 route Blueprints under `/api/` prefix.
+- Registers 23 route Blueprints under `/api/` prefix: auth, maintenance, dummy, floor, room, operating_theater, medical_device, medical_specialty, patient, visit, scheduled_appointment, medication, prescription, admission, surgery, surgery_assistant, pharmacy_dispensation, dispensation_item, radiology_exam, staff, export, dashboard, audit.
 - Calls `db.create_all()` at startup to auto-create tables from SQLAlchemy models.
 
 ### 4.3 Entry Points
@@ -208,11 +208,11 @@ On database failure returns 503 with `status: "degraded"`, `database: "disconnec
 
 ### 4.5 API Routes
 
-20 Blueprints registered with URL prefix `/api`:
+23 Blueprints registered with URL prefix `/api`:
 
 | Blueprint          | Prefix                       | Auth Required |
 |:-------------------|:-----------------------------|:--------------|
-| auth_bp            | `/api/auth`                  | No (login/register) |
+| auth_bp            | `/api/auth`                  | Mixed (login/register open; user management JWT+ADMIN) |
 | maintenance_bp     | `/api/maintenance`           | Yes (JWT)     |
 | dummy_bp           | `/api/dummy`                 | Yes (JWT)     |
 | floor_bp           | `/api/floors`                | No            |
@@ -232,8 +232,23 @@ On database failure returns 503 with `status: "degraded"`, `database: "disconnec
 | dispensation_item_bp | `/api/dispensation_items`  | No            |
 | radiology_exam_bp  | `/api/radiology_exams`       | No            |
 | staff_bp           | `/api/staff`                 | No            |
+| export_bp          | `/api/export`                | No            |
+| dashboard_bp       | `/api/dashboard`             | No            |
+| audit_bp           | `/api/audit-logs`            | No            |
 
-**Note on auth enforcement:** Only `maintenance` and `dummy` blueprints currently enforce `@jwt_required()`. Other routes are open. This is a known gap for future hardening.
+**Note on auth enforcement:** `maintenance` and `dummy` enforce `@jwt_required()`. `auth_bp` enforces `@jwt_required()` on user management endpoints (`GET /api/auth/users`, `PUT /api/auth/change-password`, `PUT /api/auth/users/<id>/password`, `PUT /api/auth/users/<id>/toggle-active`), with ADMIN role required for the latter two. Other CRUD routes are open. This is a known gap for future hardening.
+
+**Key auth endpoints:**
+
+| Method | Endpoint                               | Auth     | Description                          |
+|:-------|:---------------------------------------|:---------|:-------------------------------------|
+| POST   | `/api/auth/login`                      | No       | Authenticate, returns `access_token`, `role`, `staff_id` |
+| POST   | `/api/auth/register`                   | No       | Create new user                      |
+| GET    | `/api/auth/users`                      | JWT      | List all users                       |
+| PUT    | `/api/auth/change-password`            | JWT      | Change own password                  |
+| PUT    | `/api/auth/users/<id>/password`        | JWT+ADMIN| Reset another user's password        |
+| PUT    | `/api/auth/users/<id>/toggle-active`   | JWT+ADMIN| Enable/disable user account          |
+| GET    | `/api/audit-logs`                      | No       | List audit logs (supports `table`, `action`, `user_id`, `start_date`, `end_date`, `page`, `per_page` query params). Results sorted by `log_id DESC` (most recent first). |
 
 ### 4.6 Dependencies
 
@@ -486,11 +501,18 @@ sudo ufw allow from 100.64.0.0/10 to any port 5000 proto tcp   # Tailscale
 
 ### 8.4 Authentication
 
-- JWT tokens issued at `/api/auth/login`
-- Token required for protected routes (`maintenance`, `dummy`)
-- Password hashing via `bcrypt`
+- JWT tokens issued at `POST /api/auth/login` — response includes `access_token`, `role`, and `staff_id`.
+- JWT payload includes `role` and `staff_id` claims for client-side role checking.
+- Token required for protected routes (`maintenance`, `dummy`, and auth management endpoints).
+- `auth_bp` user management endpoints enforce role-based access:
+  - `GET /api/auth/users` — requires JWT (any authenticated user)
+  - `PUT /api/auth/change-password` — requires JWT (any authenticated user)
+  - `PUT /api/auth/users/<id>/password` — requires JWT + ADMIN role
+  - `PUT /api/auth/users/<id>/toggle-active` — requires JWT + ADMIN role
+- Disabled accounts (`is_active = False`) are rejected at login with `"Account is disabled"`.
+- Password hashing via `bcrypt`.
 - Default admin seed: `scripts/sql/initial_script.sql`
-- **Known gap:** JWT enforcement is not applied to 18 of 20 route blueprints. This is acceptable for the current internal-network deployment posture but should be addressed before any public exposure.
+- **Known gap:** JWT enforcement is not applied to most CRUD route blueprints (17 of 23). This is acceptable for the current internal-network deployment posture but should be addressed before any public exposure.
 
 ---
 
@@ -610,11 +632,18 @@ sudo nano /etc/hms.env   # fill DATABASE_URL and JWT_SECRET_KEY
 | Document | Status | Purpose |
 |:---------|:-------|:--------|
 | `TECHNICAL_SPECIFICATION.md` | **Canonical** | Single source of truth for architecture, deploy, operations |
-| `docs/` (reference) | Supplementary | Detailed specs, runbooks, data dictionary |
-| `docs/INSTALLATION.md` | Active | Quick-start step-by-step setup |
-| `docs/CONFIGURATION.md` | Active | Environment variables, database, ports, logging |
-| `docs/DEPLOYMENT.md` | Active | Production deployment guide |
-| `docs/USAGE.md` | Active | API endpoints with examples |
+| `docs/README.md` | Active | Documentation index and navigation |
+| `docs/04_Operations/Installation_Guide.md` | Active | Quick-start step-by-step setup |
+| `docs/04_Operations/Configuration_Guide.md` | Active | Environment variables, database, ports, logging |
+| `docs/03_Infrastructure_Security/Deployment_Guide.md` | Active | Production deployment guide |
+| `docs/04_Operations/User_Manual.md` | Active | End-user desktop client workflows |
+| `docs/04_Operations/Administrator_Manual.md` | Active | Admin tasks: user management, audit logs |
+| `docs/04_Operations/Usage_Guide.md` | Active | API endpoints with real request/response examples |
+| `docs/02_Data/Data_Dictionary.md` | Active | Database field definitions |
+| `docs/02_Data/Relational_Model.md` | Active | Entity-relationship design |
+| `docs/02_Data/Access_Control_Matrix.md` | Active | Role-based permissions |
+| `docs/03_Infrastructure_Security/` | Supplementary | TLS, network architecture, HA, backup, GDPR |
+| `docs/00_Governance/` | Supplementary | Session log, reference sources, backlog |
 | `scripts/deploy/README.md` | Active | Deploy script usage |
 | `scripts/ops/README.md` | Active | Operations helper usage |
 | `scripts/README.md` | Active | Scripts directory overview |

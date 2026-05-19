@@ -1,6 +1,8 @@
+import threading
 import tkinter as tk
 from tkinter import messagebox
 
+from services.api_client import APIClient
 from utils.session import Session
 from utils.ui_style import UIStyle
 from views.dashboard_view import DashboardView
@@ -89,8 +91,13 @@ class MainInterface:
             bg=UIStyle.HEADER_BG,
             fg="#bfd2e2",
             anchor="w",
-        ).pack(fill="x", pady=(0, 10))
-        UIStyle.danger_button(footer, "Logout", self.logout).pack(fill="x")
+        ).pack(fill="x", pady=(0, 6))
+        btn_row = tk.Frame(footer, bg=UIStyle.HEADER_BG)
+        btn_row.pack(fill="x", pady=(6, 0))
+        btn_row.columnconfigure(0, weight=1)
+        btn_row.columnconfigure(1, weight=1)
+        UIStyle.secondary_button(btn_row, "Change Password", self._change_password).grid(row=0, column=0, sticky="ew", padx=(0, 3))
+        UIStyle.danger_button(btn_row, "Logout", self.logout).grid(row=0, column=1, sticky="ew", padx=(3, 0))
 
     def _add_nav_button(self, parent, text, key, admin=False):
         fg_color = "#fbbf24" if admin else UIStyle.HEADER_TEXT
@@ -203,6 +210,30 @@ class MainInterface:
             self.current_view.destroy()
             self.current_view = None
         self.current_view = view_class(self.content, self.app)
+
+    def _change_password(self):
+        from tkinter import simpledialog
+        old = simpledialog.askstring("Change Password", "Current password:", parent=self.frame, show="*")
+        if not old:
+            return
+        new = simpledialog.askstring("Change Password", "New password:", parent=self.frame, show="*")
+        if not new:
+            return
+        confirm = simpledialog.askstring("Change Password", "Confirm new password:", parent=self.frame, show="*")
+        if new != confirm:
+            messagebox.showerror("Error", "Passwords do not match")
+            return
+        def worker():
+            client = APIClient(self.session)
+            response, error = client.change_own_password(old, new)
+            self.frame.after(0, lambda: self._finish_change_pw(response, error))
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _finish_change_pw(self, response, error):
+        if error:
+            messagebox.showerror("Error", f"Failed to change password: {error}")
+            return
+        messagebox.showinfo("Success", "Password changed successfully")
 
     def logout(self):
         if messagebox.askyesno("Logout", "Are you sure you want to logout?"):

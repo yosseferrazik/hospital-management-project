@@ -12,10 +12,10 @@
 
 | Guide | Description |
 |:------|:------------|
-| [docs/INSTALLATION.md](./docs/INSTALLATION.md) | Step-by-step setup from scratch |
-| [docs/CONFIGURATION.md](./docs/CONFIGURATION.md) | Environment variables, database, ports, logging |
-| [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) | Production deployment on real servers |
-| [docs/USAGE.md](./docs/USAGE.md) | API endpoints with real request/response examples |
+| [Installation Guide](./docs/04_Operations/Installation_Guide.md) | Step-by-step setup from scratch |
+| [Configuration Guide](./docs/04_Operations/Configuration_Guide.md) | Environment variables, database, ports, logging |
+| [Deployment Guide](./docs/03_Infrastructure_Security/Deployment_Guide.md) | Production deployment on real servers |
+| [Usage Guide](./docs/04_Operations/Usage_Guide.md) | API endpoints with real request/response examples |
 
 ### Reference Documentation (detailed)
 

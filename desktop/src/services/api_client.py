@@ -224,3 +224,12 @@ class APIClient:
 
     def get_staff_list(self):
         return self.list_resource("/staff", force_refresh=True)
+
+    def change_own_password(self, old_password, new_password):
+        return self._request("PUT", "/auth/change-password", data={"old_password": old_password, "new_password": new_password})
+
+    def admin_reset_password(self, user_id, new_password):
+        return self._request("PUT", f"/auth/users/{user_id}/password", data={"new_password": new_password})
+
+    def admin_toggle_active(self, user_id):
+        return self._request("PUT", f"/auth/users/{user_id}/toggle-active")

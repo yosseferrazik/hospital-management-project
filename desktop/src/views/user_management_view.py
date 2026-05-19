@@ -1,6 +1,6 @@
 import threading
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 
 from services.api_client import APIClient
 from utils.session import Session
@@ -44,19 +44,27 @@ class UserManagementView:
         list_body.rowconfigure(0, weight=1)
         list_body.columnconfigure(0, weight=1)
 
-        self.user_tree = ttk.Treeview(list_body, columns=("user_id", "username", "role"), show="headings")
+        columns = ("user_id", "username", "role", "active")
+        self.user_tree = ttk.Treeview(list_body, columns=columns, show="headings")
         self.user_tree.grid(row=0, column=0, sticky="nsew", padx=12, pady=12)
         self.user_tree.heading("user_id", text="ID")
         self.user_tree.heading("username", text="Username")
         self.user_tree.heading("role", text="Role")
+        self.user_tree.heading("active", text="Active")
         self.user_tree.column("user_id", width=50)
-        self.user_tree.column("username", width=160)
-        self.user_tree.column("role", width=120)
+        self.user_tree.column("username", width=140)
+        self.user_tree.column("role", width=100)
+        self.user_tree.column("active", width=60, anchor="center")
+        self.user_tree.bind("<<TreeviewSelect>>", self._on_user_select)
 
         right = tk.Frame(main, bg=UIStyle.BG)
         right.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
+        right.columnconfigure(0, weight=1)
+        right.rowconfigure(0, weight=1)
+        right.rowconfigure(1, weight=1)
+
         form_shell, form_body = UIStyle.panel(right, padx=18, pady=18)
-        form_shell.pack(fill="both", expand=True)
+        form_shell.grid(row=0, column=0, sticky="nsew", pady=(0, 8))
 
         tk.Label(form_body, text="Create New User", font=UIStyle.CARD_TITLE, bg=UIStyle.CARD_BG, fg=UIStyle.TEXT_DARK).pack(anchor="w")
         tk.Label(form_body, text="Fill all fields to register a new system account.", font=UIStyle.SUBTITLE_FONT, bg=UIStyle.CARD_BG, fg=UIStyle.TEXT_LIGHT).pack(anchor="w", pady=(4, 16))
@@ -90,13 +98,82 @@ class UserManagementView:
         btn_frame.pack(fill="x", pady=(16, 0))
         UIStyle.filled_button(btn_frame, "Create User", self.create_user).pack(side="left")
 
+        manage_shell, manage_body = UIStyle.panel(right, padx=18, pady=18)
+        manage_shell.grid(row=1, column=0, sticky="nsew", pady=(8, 0))
+
+        tk.Label(manage_body, text="Manage Selected User", font=UIStyle.CARD_TITLE, bg=UIStyle.CARD_BG, fg=UIStyle.TEXT_DARK).pack(anchor="w")
+        self.selected_user_label = tk.Label(
+            manage_body, text="No user selected", font=UIStyle.SUBTITLE_FONT,
+            bg=UIStyle.CARD_BG, fg=UIStyle.TEXT_LIGHT,
+        )
+        self.selected_user_label.pack(anchor="w", pady=(4, 12))
+        manage_btn_row = tk.Frame(manage_body, bg=UIStyle.CARD_BG)
+        manage_btn_row.pack(fill="x")
+        self.toggle_btn = UIStyle.secondary_button(manage_btn_row, "Toggle Active", self._toggle_active)
+        self.toggle_btn.pack(side="left", padx=(0, 8))
+        self.reset_pw_btn = UIStyle.filled_button(manage_btn_row, "Reset Password", self._reset_password)
+        self.reset_pw_btn.pack(side="left")
+        self.toggle_btn.config(state="disabled")
+        self.reset_pw_btn.config(state="disabled")
+
+    def _on_user_select(self, _event=None):
+        selection = self.user_tree.selection()
+        if not selection:
+            self.toggle_btn.config(state="disabled")
+            self.reset_pw_btn.config(state="disabled")
+            self.selected_user_label.config(text="No user selected")
+            return
+        values = self.user_tree.item(selection[0], "values")
+        if not values:
+            return
+        active_text = "Yes" if values[3] == "Yes" else "No"
+        self.selected_user_label.config(text=f"User #{values[0]}: {values[1]} ({values[2]}) - Active: {active_text}")
+        self.toggle_btn.config(state="normal")
+        self.reset_pw_btn.config(state="normal")
+        self._selected_user_id = int(values[0])
+
+    def _toggle_active(self):
+        if not hasattr(self, "_selected_user_id"):
+            return
+        def worker():
+            response, error = self.api_client.admin_toggle_active(self._selected_user_id)
+            if self._is_destroyed:
+                return
+            self.page.after(0, lambda: self._finish_toggle(response, error))
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _finish_toggle(self, response, error):
+        if error:
+            messagebox.showerror("Error", f"Failed to toggle: {error}")
+            return
+        messagebox.showinfo("Success", response.get("message", "Account toggled"))
+        self.load_users()
+
+    def _reset_password(self):
+        if not hasattr(self, "_selected_user_id"):
+            return
+        new_pw = simpledialog.askstring("Reset Password", "Enter new password:", parent=self.page, show="*")
+        if not new_pw:
+            return
+        def worker():
+            response, error = self.api_client.admin_reset_password(self._selected_user_id, new_pw)
+            if self._is_destroyed:
+                return
+            self.page.after(0, lambda: self._finish_reset_pw(response, error))
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _finish_reset_pw(self, response, error):
+        if error:
+            messagebox.showerror("Error", f"Failed to reset password: {error}")
+            return
+        messagebox.showinfo("Success", "Password reset successfully")
+
     def load_users(self):
         def worker():
             response, error = self.api_client.get_users()
             if self._is_destroyed:
                 return
             self.page.after(0, lambda: self._display_users(response, error))
-
         threading.Thread(target=worker, daemon=True).start()
 
     def _display_users(self, response, error):
@@ -106,24 +183,22 @@ class UserManagementView:
             self.user_tree.delete(item)
         users = response.get("users", []) if response else []
         for u in users:
-            self.user_tree.insert("", "end", values=(u.get("user_id"), u.get("username"), u.get("role")))
+            active = "Yes" if u.get("is_active", True) else "No"
+            self.user_tree.insert("", "end", values=(u.get("user_id"), u.get("username"), u.get("role"), active))
 
     def create_user(self):
         username = self.username_var.get().strip()
         password = self.password_var.get()
         role = self.role_var.get()
         staff_id = self.staff_id_var.get().strip()
-
         if not username or not password or not staff_id:
             messagebox.showerror("Error", "All fields are required.")
             return
-
         def worker():
             response, error = self.api_client.register_user(username, password, staff_id, role)
             if self._is_destroyed:
                 return
             self.page.after(0, lambda: self._finish_create(response, error))
-
         threading.Thread(target=worker, daemon=True).start()
 
     def _finish_create(self, response, error):
