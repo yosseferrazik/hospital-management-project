@@ -98,6 +98,23 @@ def retention_info():
         return jsonify({"error": str(e)}), 400
 
 
+@audit_bp.route("/test", methods=["POST"])
+def test_audit():
+    from app.services.audit_log_service import log_audit
+    try:
+        log = log_audit(
+            action_type="TEST",
+            table_name="audit_logs",
+            record_id=None,
+            notes="Test audit entry created at " + datetime.utcnow().isoformat(),
+        )
+        db.session.commit()
+        return jsonify({"log_id": log.log_id, "status": "created"}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 400
+
+
 @audit_bp.route("/cleanup", methods=["DELETE"])
 def cleanup():
     days = request.args.get("days", 90, type=int)
