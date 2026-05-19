@@ -228,6 +228,9 @@ class APIClient:
     def cleanup_audit_logs(self, days=90):
         return self._request("DELETE", f"/audit-logs/cleanup?days={days}")
 
+    def get_audit_diagnostics(self):
+        return self._request("GET", "/audit-logs/diagnostics")
+
     def get_staff_list(self):
         return self.list_resource("/staff", force_refresh=True)
 

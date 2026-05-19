@@ -21,14 +21,14 @@ general_row AS (
 INSERT INTO APP_USERS (username, password_hash, staff_id, role, is_active, created_at)
 SELECT
 	'yossef',
-	crypt('ChangeMePleaseChange!', gen_salt('bf')),
+	crypt('yossef', gen_salt('bf')),
 	ns.staff_id,
 	'ADMIN',
 	TRUE,
 	CURRENT_TIMESTAMP
 FROM new_staff ns;
 
--- NOTE: The inserted password is the bcrypt hash of 'ChangeMePleaseChange!'.
+-- NOTE: The inserted password is the bcrypt hash of 'yossef'.
 -- Change the password on first login or update the script to use a different secret.
 
 SELECT * FROM audit_logs;

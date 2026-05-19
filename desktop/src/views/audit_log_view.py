@@ -21,8 +21,7 @@ class AuditLogView:
         self._loading = False
 
         self.create_widgets()
-        self.load_retention()
-        self.page.after(100, self.load_logs)
+        self.page.after(100, self._initial_load)
 
     def create_widgets(self):
         self.page = UIStyle.page(self.parent)
@@ -178,6 +177,7 @@ class AuditLogView:
     def refresh(self):
         self.load_logs()
         self.load_retention()
+        self.load_diagnostics()
 
     def load_retention(self):
         def worker():
@@ -230,10 +230,38 @@ class AuditLogView:
 
         threading.Thread(target=worker, args=(params,), daemon=True).start()
 
+    def _initial_load(self):
+        self.load_diagnostics()
+        self.load_retention()
+        self.load_logs()
+
+    def load_diagnostics(self):
+        def worker():
+            try:
+                data, error = self.api_client.get_audit_diagnostics()
+                if not error and data and not self._is_destroyed:
+                    self.page.after(0, lambda: self._display_diagnostics(data))
+            except Exception:
+                pass
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _display_diagnostics(self, data):
+        msg = data.get("message", "")
+        total = data.get("total_logs", 0)
+        has_triggers = data.get("triggers_installed", False)
+        if total == 0 and msg:
+            self.total_label.config(text=f"Diagnostic: {msg}")
+            self.total_label.config(fg=UIStyle.WARNING_ORANGE)
+            if not has_triggers:
+                self.purge_btn.config(state="disabled")
+        else:
+            self.total_label.config(fg=UIStyle.TEXT_LIGHT)
+
     def _display_logs(self, response, error):
         self._loading = False
         if error:
             self.total_label.config(text=f"Error: {error}")
+            self.total_label.config(fg=UIStyle.ERROR_RED)
             return
         for item in self.tree.get_children():
             self.tree.delete(item)

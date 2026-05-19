@@ -26,7 +26,7 @@ def list_audit_logs():
         AuditLog.table_name,
         AuditLog.record_id,
         AuditLog.notes,
-    ).join(AppUser, AppUser.user_id == AuditLog.user_id)
+    ).outerjoin(AppUser, AppUser.user_id == AuditLog.user_id)
 
     if table:
         query = query.filter(AuditLog.table_name == table)
@@ -47,7 +47,7 @@ def list_audit_logs():
             {
                 "log_id": r.log_id,
                 "user_id": r.user_id,
-                "username": r.username,
+                "username": r.username or "SYSTEM",
                 "timestamp": r.action_timestamp.isoformat() if r.action_timestamp else None,
                 "action": r.action_type,
                 "table": r.table_name,
@@ -60,6 +60,34 @@ def list_audit_logs():
         "page": page,
         "per_page": per_page,
     }), 200
+
+
+@audit_bp.route("/diagnostics", methods=["GET"])
+def diagnostics():
+    try:
+        total_logs = AuditLog.query.count()
+        triggers_installed = False
+        try:
+            result = db.session.execute(db.text(
+                "SELECT COUNT(*) FROM pg_trigger "
+                "WHERE tgname LIKE 'audit_%'"
+            )).scalar()
+            triggers_installed = result > 0
+        except Exception:
+            pass
+
+        return jsonify({
+            "total_logs": total_logs,
+            "triggers_installed": triggers_installed,
+            "message": (
+                "Audit logs found" if total_logs > 0 else
+                ("Triggers installed but no logs yet. Perform some CRUD operations to generate audit entries."
+                 if triggers_installed else
+                 "No audit triggers found in the database. Run scripts/sql/security.sql to install them.")
+            ),
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @audit_bp.route("/retention", methods=["GET"])
