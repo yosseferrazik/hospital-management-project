@@ -1,8 +1,8 @@
-# Bloque de Exportación de Datos y Cuadro de Mando
+# Data Export and Dashboard Module
 
-## 1. Exportación de Visitas
+## 1. Visit Export
 
-El sistema permite descargar las visitas hospitalarias en un rango de fechas en formato XML o JSON, validados contra un esquema XSD / JSON Schema.
+The system allows downloading hospital visits within a date range in XML or JSON format, validated against an XSD / JSON Schema.
 
 ### Endpoint
 
@@ -10,16 +10,16 @@ El sistema permite descargar las visitas hospitalarias en un rango de fechas en 
 GET /api/export/visits?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&format=xml|json
 ```
 
-- **start_date**, **end_date**: obligatorios, formato ISO (YYYY-MM-DD).
-- **format**: opcional, `xml` o `json` (por defecto `json`).
-- **Respuesta**: descarga del archivo con `Content-Disposition: attachment`.
+- **start_date**, **end_date**: required, ISO format (YYYY-MM-DD).
+- **format**: optional, `xml` or `json` (default `json`).
+- **Response**: file download with `Content-Disposition: attachment`.
 
-### Esquemas de validación
+### Validation schemas
 
 - **XSD**: `server/src/app/schemas/visits.xsd`
 - **JSON Schema**: `server/src/app/schemas/visits.schema.json`
 
-### Estructura del archivo exportado (XML)
+### Exported file structure (XML)
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -28,22 +28,22 @@ GET /api/export/visits?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&format=xml|json
     <visit_id>1</visit_id>
     <date>2026-05-19</date>
     <doctor>
-      <name>Dr. Nombre Apellido</name>
+      <name>Dr. FirstName LastName</name>
       <license>DOC-123456</license>
     </doctor>
     <patient>
       <dni>12345678A</dni>
-      <first_name>Nombre</first_name>
-      <last_name>Apellido</last_name>
+      <first_name>FirstName</first_name>
+      <last_name>LastName</last_name>
       <health_card>1234567890</health_card>
     </patient>
   </visit>
 </visits>
 ```
 
-## 2. Envío a API Externa
+## 2. External API Submission
 
-Para el volcado mensual a la Seguridad Social (API externa):
+For the monthly dump to Social Security (external API):
 
 ### Endpoint
 
@@ -58,47 +58,47 @@ Content-Type: application/json
 }
 ```
 
-### Configuración (variables de entorno)
+### Configuration (environment variables)
 
-| Variable | Descripción |
+| Variable | Description |
 |----------|-------------|
-| `EXTERNAL_API_URL` | URL de la API externa |
-| `EXTERNAL_API_USERNAME` | Usuario para autenticación HTTP Basic |
-| `EXTERNAL_API_PASSWORD` | Contraseña para autenticación HTTP Basic |
+| `EXTERNAL_API_URL` | External API URL |
+| `EXTERNAL_API_USERNAME` | Username for HTTP Basic authentication |
+| `EXTERNAL_API_PASSWORD` | Password for HTTP Basic authentication |
 
-## 3. Cuadro de Mando (Dashboard)
+## 3. Dashboard
 
-### 3.1 Dashboard Web Interactivo
+### 3.1 Interactive Web Dashboard
 
-El sistema incluye un dashboard web visual accesible desde el navegador:
+The system includes a visual web dashboard accessible from the browser:
 
 ```
 GET /api/dashboard/view
 ```
 
-También redirige automáticamente desde la raíz: `http://localhost:5000/`
+It also automatically redirects from the root: `http://localhost:5000/`
 
-Características:
-- KPI: total de visitas del día y número de especialidades
-- Gráfico de barras: visitas por especialidad médica
-- Gráfico de donut: distribución porcentual
-- Tabla detallada con porcentajes
-- Auto-refresh cada 60 segundos
-- Tema oscuro profesional
+Features:
+- KPI: total visits today and number of specialties
+- Bar chart: visits by medical specialty
+- Donut chart: percentage distribution
+- Detailed table with percentages
+- Auto-refresh every 60 seconds
+- Professional dark theme
 
-Tecnología: HTML + Chart.js (CDN), sin dependencias adicionales.
+Technology: HTML + Chart.js (CDN), no additional dependencies.
 
-### 3.2 API JSON (para Power BI)
+### 3.2 JSON API (for Power BI)
 
-Endpoint JSON consumible por Power BI o cualquier herramienta de BI:
+JSON endpoint consumable by Power BI or any BI tool:
 
 ```
 GET /api/dashboard/stats
 ```
 
-Sin autenticación requerida para facilitar la integración con Power BI.
+No authentication required to facilitate Power BI integration.
 
-#### Respuesta
+#### Response
 
 ```json
 {
@@ -111,24 +111,24 @@ Sin autenticación requerida para facilitar la integración con Power BI.
 }
 ```
 
-- **total_visits**: visitas del día actual.
-- **by_specialty**: desglose por área médica (especialidad del doctor).
+- **total_visits**: current day visits.
+- **by_specialty**: breakdown by medical area (doctor's specialty).
 
 #### Power BI
 
-1. Power BI Desktop → **Obtener datos** → **Web**
+1. Power BI Desktop → **Get data** → **Web**
 2. URL: `http://localhost:5000/api/dashboard/stats`
-3. Power BI detecta JSON automáticamente y lo expande en columnas
-4. Para desglose por especialidad: expandir `by_specialty` → **Expand to New Rows**
+3. Power BI auto-detects JSON and expands it into columns
+4. For specialty breakdown: expand `by_specialty` → **Expand to New Rows**
 
-## 4. Dependencias
+## 4. Dependencies
 
-Añadidas al `requirements.txt`:
+Added to `requirements.txt`:
 
-- `jsonschema` — validación JSON Schema
-- `xmlschema` — validación XSD
-- `requests` — llamadas HTTP a API externa
+- `jsonschema` — JSON Schema validation
+- `xmlschema` — XSD validation
+- `requests` — HTTP calls to external API
 
-## 5. Esquema de bases de datos
+## 5. Database schema
 
-Se ha añadido el campo `health_card` (`VARCHAR(50)`) a la tabla `patients` para almacenar el número de tarjeta sanitaria / SIP del paciente.
+Added the `health_card` (`VARCHAR(50)`) field to the `patients` table to store the patient's health card / SIP number.
