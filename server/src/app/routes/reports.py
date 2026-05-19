@@ -1,4 +1,6 @@
-from flask import Blueprint, request, jsonify
+from io import BytesIO
+from flask import Blueprint, request, jsonify, send_file
+from flask_jwt_extended import jwt_required, get_jwt
 
 from app.services.report_service import (
     visits_report,
@@ -10,6 +12,7 @@ from app.services.report_service import (
     doctor_workload_report,
     summary_report,
 )
+from app.services.pdf_service import make_summary_pdf
 
 reports_bp = Blueprint("reports", __name__, url_prefix="/api/reports")
 
@@ -91,5 +94,26 @@ def report_doctor_workload():
 def report_summary():
     try:
         return jsonify(summary_report(**_date_params())), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@reports_bp.route("/summary/pdf", methods=["GET"])
+@jwt_required()
+def report_summary_pdf():
+    claims = get_jwt()
+    role = claims.get("role", "").upper()
+    allowed_roles = {"ADMIN", "DOCTOR", "NURSE"}
+    if role not in allowed_roles:
+        return jsonify({"error": "Access denied. Insufficient permissions."}), 403
+    try:
+        params = _date_params()
+        pdf_bytes = make_summary_pdf(**params)
+        return send_file(
+            BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name="hospital_summary_report.pdf",
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 400

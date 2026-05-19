@@ -1,6 +1,6 @@
 import threading
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from datetime import datetime, timedelta
 
 from services.api_client import APIClient
@@ -43,6 +43,9 @@ class AdvancedReportsView:
         self.end_entry.insert(0, datetime.now().strftime("%Y-%m-%d"))
 
         UIStyle.filled_button(inner, "Refresh All Reports", self.refresh_all).pack(side="left", padx=(6, 0))
+        sep = tk.Frame(inner, bg=UIStyle.BORDER, width=1, height=24)
+        sep.pack(side="left", padx=10)
+        UIStyle.secondary_button(inner, "Download PDF", self.download_pdf).pack(side="left", padx=(0, 6))
         tk.Label(inner, text="(YYYY-MM-DD)", bg=UIStyle.CARD_BG, fg=UIStyle.TEXT_LIGHT, font=UIStyle.SMALL_FONT).pack(side="left", padx=(6, 0))
 
         self.notebook = ttk.Notebook(self.page)
@@ -168,6 +171,35 @@ class AdvancedReportsView:
 
     def refresh_all(self):
         self._load_all()
+
+    def download_pdf(self):
+        start = self.start_entry.get().strip()
+        end = self.end_entry.get().strip()
+        path = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("PDF files", "*.pdf")],
+            initialfile="hospital_summary_report.pdf",
+        )
+        if not path:
+            return
+
+        def worker():
+            try:
+                result, error = self.api_client.download_summary_pdf(
+                    start_date=start or None,
+                    end_date=end or None,
+                    save_path=path,
+                )
+                if self._is_destroyed:
+                    return
+                if error:
+                    self.page.after(0, lambda: messagebox.showerror("Download Error", error))
+                else:
+                    self.page.after(0, lambda: messagebox.showinfo("Download Complete", f"PDF saved to:\n{result}"))
+            except Exception as e:
+                self.page.after(0, lambda: messagebox.showerror("Error", str(e)))
+
+        threading.Thread(target=worker, daemon=True).start()
 
     def _load_all(self):
         dates = self._capture_date_params()

@@ -296,3 +296,27 @@ class APIClient:
         if start_date: params["start_date"] = start_date
         if end_date: params["end_date"] = end_date
         return self._request("GET", "/reports/summary", params=params)
+
+    def download_summary_pdf(self, start_date=None, end_date=None, save_path=None):
+        params = {}
+        if start_date: params["start_date"] = start_date
+        if end_date: params["end_date"] = end_date
+        url = f"{API_BASE_URL}/reports/summary/pdf"
+        headers = self.session.get_headers()
+        try:
+            resp = self.http.get(url, headers=headers, params=params, timeout=60)
+            if resp.status_code == 200:
+                if save_path:
+                    with open(save_path, "wb") as f:
+                        f.write(resp.content)
+                    return save_path, None
+                return resp.content, None
+            try:
+                payload = resp.json()
+                return None, payload.get("error", f"Error {resp.status_code}")
+            except Exception:
+                return None, f"Error {resp.status_code}"
+        except requests.exceptions.ConnectionError:
+            return None, "Could not connect to server."
+        except Exception as e:
+            return None, str(e)
