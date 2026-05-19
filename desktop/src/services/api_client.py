@@ -222,6 +222,12 @@ class APIClient:
     def get_audit_logs(self, params=None):
         return self._request("GET", "/audit-logs", params=params)
 
+    def get_audit_retention(self):
+        return self._request("GET", "/audit-logs/retention")
+
+    def cleanup_audit_logs(self, days=90):
+        return self._request("DELETE", f"/audit-logs/cleanup?days={days}")
+
     def get_staff_list(self):
         return self.list_resource("/staff", force_refresh=True)
 
@@ -233,3 +239,57 @@ class APIClient:
 
     def admin_toggle_active(self, user_id):
         return self._request("PUT", f"/auth/users/{user_id}/toggle-active")
+
+    def get_report_visits(self, start_date=None, end_date=None, specialty=None, doctor_id=None):
+        params = {}
+        if start_date: params["start_date"] = start_date
+        if end_date: params["end_date"] = end_date
+        if specialty: params["specialty"] = specialty
+        if doctor_id: params["doctor_id"] = doctor_id
+        return self._request("GET", "/reports/visits", params=params)
+
+    def get_report_surgeries(self, start_date=None, end_date=None, procedure_type=None, surgeon_id=None):
+        params = {}
+        if start_date: params["start_date"] = start_date
+        if end_date: params["end_date"] = end_date
+        if procedure_type: params["procedure_type"] = procedure_type
+        if surgeon_id: params["surgeon_id"] = surgeon_id
+        return self._request("GET", "/reports/surgeries", params=params)
+
+    def get_report_admissions(self, start_date=None, end_date=None, floor_id=None):
+        params = {}
+        if start_date: params["start_date"] = start_date
+        if end_date: params["end_date"] = end_date
+        if floor_id: params["floor_id"] = floor_id
+        return self._request("GET", "/reports/admissions", params=params)
+
+    def get_report_medications(self, start_date=None, end_date=None):
+        params = {}
+        if start_date: params["start_date"] = start_date
+        if end_date: params["end_date"] = end_date
+        return self._request("GET", "/reports/medications", params=params)
+
+    def get_report_financial(self, start_date=None, end_date=None):
+        params = {}
+        if start_date: params["start_date"] = start_date
+        if end_date: params["end_date"] = end_date
+        return self._request("GET", "/reports/financial", params=params)
+
+    def get_report_radiology(self, start_date=None, end_date=None, status=None):
+        params = {}
+        if start_date: params["start_date"] = start_date
+        if end_date: params["end_date"] = end_date
+        if status: params["status"] = status
+        return self._request("GET", "/reports/radiology", params=params)
+
+    def get_report_doctor_workload(self, start_date=None, end_date=None):
+        params = {}
+        if start_date: params["start_date"] = start_date
+        if end_date: params["end_date"] = end_date
+        return self._request("GET", "/reports/doctor-workload", params=params)
+
+    def get_report_summary(self, start_date=None, end_date=None):
+        params = {}
+        if start_date: params["start_date"] = start_date
+        if end_date: params["end_date"] = end_date
+        return self._request("GET", "/reports/summary", params=params)

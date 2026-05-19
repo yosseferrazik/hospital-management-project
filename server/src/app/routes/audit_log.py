@@ -2,6 +2,7 @@ from datetime import datetime
 
 from flask import Blueprint, request, jsonify
 from app.models import db, AuditLog, AppUser
+from app.services.audit_log_service import trim_audit_logs, get_retention_info
 
 audit_bp = Blueprint("audit", __name__, url_prefix="/api/audit-logs")
 
@@ -59,3 +60,21 @@ def list_audit_logs():
         "page": page,
         "per_page": per_page,
     }), 200
+
+
+@audit_bp.route("/retention", methods=["GET"])
+def retention_info():
+    try:
+        return jsonify(get_retention_info()), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@audit_bp.route("/cleanup", methods=["DELETE"])
+def cleanup():
+    days = request.args.get("days", 90, type=int)
+    try:
+        deleted = trim_audit_logs(days=days)
+        return jsonify({"deleted": deleted, "retention_days": days}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

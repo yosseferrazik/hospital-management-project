@@ -11,6 +11,7 @@ from views.queries_reports_view import QueriesReportsView
 from views.resource_browser import ResourceBrowser
 from views.test_data_view import TestDataView
 from views.statistics_view import StatisticsView
+from views.advanced_reports_view import AdvancedReportsView
 from views.user_management_view import UserManagementView
 from views.audit_log_view import AuditLogView
 
@@ -65,6 +66,7 @@ class MainInterface:
             ("Data Workspace", "data"),
             ("Operational Reports", "queries"),
             ("Statistics", "statistics"),
+            ("Advanced Reports", "reports"),
             ("Dummy Data", "test"),
         ]
         admin_items = [
@@ -177,6 +179,11 @@ class MainInterface:
                 "Statistics",
                 "Hospital operational insights and performance metrics",
                 StatisticsView,
+            ),
+            "reports": (
+                "Advanced Reports",
+                "Comprehensive analytics: visits, surgeries, financial, and more",
+                AdvancedReportsView,
             ),
             "test": (
                 "Dummy Data",
