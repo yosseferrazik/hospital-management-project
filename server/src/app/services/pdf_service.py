@@ -8,8 +8,8 @@ from app.services.report_service import (
     financial_report, radiology_report, admissions_report, surgeries_report,
 )
 
-LM = 25
-RM = 25
+LM = 22
+RM = 22
 PW = 210
 TW = PW - LM - RM
 BLUE = (37, 99, 235)
@@ -83,18 +83,19 @@ class ReportPDF(FPDF):
         self.ln()
 
     def kpi_card(self, label, value, x, y, w, color=None):
-        self.set_fill_color(*LGRAY)
+        self.set_fill_color(*WHITE)
         self.set_draw_color(209, 213, 219)
         self.set_line_width(0.3)
         self.rect(x, y, w, 28, "DF")
         c = color or DARK
-        self.set_xy(x, y + 3)
-        self.set_font("Helvetica", "", 7)
+        self.set_xy(x + 1, y + 3)
+        self.set_font("Helvetica", "", 6.5)
         self.set_text_color(*GRAY)
-        self.cell(w, 4, label.upper(), align="C", ln=True)
-        self.set_font("Helvetica", "B", 16)
+        self.cell(w - 2, 4, label.upper(), align="C", ln=True)
+        self.set_x(x + 1)
+        self.set_font("Helvetica", "B", 15)
         self.set_text_color(*c)
-        self.cell(w, 10, str(value), align="C", ln=True)
+        self.cell(w - 2, 9, str(value), align="C", ln=True)
 
     def space_for(self, needed):
         return self.get_y() + needed < self.h - self.b_margin
@@ -139,18 +140,18 @@ def make_summary_pdf(start_date=None, end_date=None):
     #  PAGE 1  -  EXECUTIVE DASHBOARD
     # ----------------------------------------------------------------
     pdf.add_page()
-    pdf.dark_bar(58)
-    pdf.set_y(16)
-    pdf.set_font("Helvetica", "B", 24)
+    pdf.dark_bar(56)
+    pdf.set_y(14)
+    pdf.set_font("Helvetica", "B", 22)
     pdf.set_text_color(*WHITE)
     pdf.cell(0, 10, "Sa Palomera Hospital", align="C", ln=True)
     pdf.set_font("Helvetica", "", 10)
     pdf.cell(0, 6, f"{ps}  -  {pe}", align="C", ln=True)
     pdf.set_font("Helvetica", "", 7)
-    pdf.set_text_color(200, 210, 220)
+    pdf.set_text_color(190, 200, 210)
     pdf.cell(0, 5, f"Generated {now}", align="C", ln=True)
 
-    pdf.set_y(68)
+    pdf.set_y(66)
     pdf.section("Executive Summary")
     overview = (
         f"Hospital activity for the period {ps} - {pe}: "
@@ -170,7 +171,7 @@ def make_summary_pdf(start_date=None, end_date=None):
     pdf.ln(4)
 
     ky = max(pdf.get_y(), 98)
-    gap = 6
+    gap = 5
     cw = (TW - 3 * gap) / 4
     x0 = LM
     x1 = x0 + cw + gap
@@ -184,15 +185,13 @@ def make_summary_pdf(start_date=None, end_date=None):
     pdf.kpi_card("Occupancy", f"{occ_r}%", x2, ky, cw, occ_c)
     pdf.kpi_card("Active Adm.", o.get("active_admissions", 0), x3, ky, cw, ORANGE)
 
-    ky2 = ky + 34
+    ky2 = ky + 33
     pdf.kpi_card("Visits", a.get("visits", 0), x0, ky2, cw)
     pdf.kpi_card("Surgeries", a.get("surgeries", 0), x1, ky2, cw, PURPLE)
     pdf.kpi_card("Admissions", a.get("admissions", 0), x2, ky2, cw, ORANGE)
     pdf.kpi_card("Pharmacy Cost", f"${total_cost:,.0f}", x3, ky2, cw, GREEN)
 
-    after_kpi = ky2 + 34
-    if pdf.space_for(50):
-        pdf.set_y(after_kpi)
+    pdf.set_y(max(pdf.get_y(), ky2 + 34))
 
     dd = data.get("top_diagnoses", [])
     dd_rows = [[d.get("diagnosis", ""), str(d.get("count", 0))] for d in dd[:10]]
