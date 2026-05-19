@@ -7,6 +7,7 @@
 #   sudo bash scripts/deploy/deploy.sh            # normal deploy (window-checked)
 #   sudo bash scripts/deploy/deploy.sh --force    # bypass time window
 #   sudo bash scripts/deploy/deploy.sh --rollback # revert to previous release
+#   sudo bash scripts/deploy/deploy.sh --dev      # sync repo + update symlink (no release)
 
 set -euo pipefail
 
@@ -226,6 +227,31 @@ do_rollback() {
     fi
 }
 
+do_dev_deploy() {
+    log_info "=== HMS Dev Deploy (no release) ==="
+    install_system_packages
+    ensure_hms_user
+    ensure_directories
+
+    local repo_dir; repo_dir=$(ensure_repo)
+
+    log_info "Updating current symlink to repo: $repo_dir"
+    ln -sfn "$repo_dir" "$CURRENT_LINK"
+    chown -h hms:hms "$CURRENT_LINK"
+
+    setup_venv
+    install_service
+    install_logrotate
+    restart_service
+
+    if smoke_test; then
+        log_info "=== Dev deploy completed successfully ==="
+    else
+        log_error "=== Dev deploy FAILED ==="
+        return 1
+    fi
+}
+
 # --- main --------------------------------------------------------------------
 main() {
     if [[ "$*" == *--help* ]] || [[ "$*" == *-h* ]]; then usage; fi
@@ -234,16 +260,22 @@ main() {
     if [ "$EUID" -ne 0 ]; then log_error "Please run as root"; exit 1; fi
 
     # Parse flags
-    local ROLLBACK=false FORCE=false
+    local ROLLBACK=false FORCE=false DEV=false
     for arg in "$@"; do
         case "$arg" in
             --rollback) ROLLBACK=true ;;
             --force)    FORCE=true ;;
+            --dev)      DEV=true ;;
         esac
     done
 
     if $ROLLBACK; then
         do_rollback
+        exit $?
+    fi
+
+    if $DEV; then
+        do_dev_deploy
         exit $?
     fi
 
