@@ -129,7 +129,7 @@ def make_summary_pdf(start_date=None, end_date=None):
     pdf.set_text_color(*WHITE)
     pdf.cell(0, 10, "Sa Palomera Hospital", align="C", ln=True)
     pdf.set_font("Helvetica", "", 9)
-    pdf.cell(0, 5, f"{ps}  \u2013  {pe}", align="C", ln=True)
+    pdf.cell(0, 5, f"{ps}  -  {pe}", align="C", ln=True)
     pdf.set_font("Helvetica", "", 7)
     pdf.cell(0, 4, f"Generated {now}", align="C", ln=True)
 
@@ -140,7 +140,7 @@ def make_summary_pdf(start_date=None, end_date=None):
     pdf.set_font("Helvetica", "", 8)
     pdf.set_text_color(*GRAY)
     overview = (
-        f"Hospital activity for the period {ps} \u2013 {pe}: "
+        f"Hospital activity for the period {ps} - {pe}: "
         f"{a.get('visits',0)} visits, {a.get('surgeries',0)} surgeries, "
         f"{a.get('admissions',0)} admissions. "
         f"Patient base: {t.get('patients',0)}. "
@@ -234,7 +234,7 @@ def make_summary_pdf(start_date=None, end_date=None):
     _section(pdf, "Pharmacy Dispensations")
     pdf.set_font("Helvetica", "B", 10)
     pdf.set_text_color(*GREEN)
-    pdf.cell(0, 6, f"Total: ${total_cost:,.2f}  \u2022  {fin.get('total', 0)} dispensation(s)", ln=True)
+    pdf.cell(0, 6, f"Total: ${total_cost:,.2f}  -  {fin.get('total', 0)} dispensation(s)", ln=True)
     pdf.ln(2)
     fins = fin.get("records", [])
     if fins:
@@ -251,8 +251,8 @@ def make_summary_pdf(start_date=None, end_date=None):
     disch = sum(1 for r in ar if r.get("actual_discharge"))
     pdf.set_font("Helvetica", "", 8)
     pdf.set_text_color(*GRAY)
-    pdf.cell(0, 5, f"Period: {adm.get('total', 0)}  \u2022  Active: {active}  \u2022  "
-                   f"Discharged: {disch}  \u2022  Avg stay: {avg_st}d", ln=True)
+    pdf.cell(0, 5, f"Period: {adm.get('total', 0)}  -  Active: {active}  -  "
+                   f"Discharged: {disch}  -  Avg stay: {avg_st}d", ln=True)
     pdf.ln(2)
     if ar:
         _th(pdf, ["Date", "Patient", "Room", "Floor", "Stay"],
