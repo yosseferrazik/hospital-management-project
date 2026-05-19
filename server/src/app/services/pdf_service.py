@@ -8,9 +8,9 @@ from app.services.report_service import (
     financial_report, radiology_report, admissions_report, surgeries_report,
 )
 
-M = 20
+MARGIN = 20
 PW = 210
-TW = PW - 2 * M
+TW = PW - 2 * MARGIN
 BLUE = (37, 99, 235)
 DARK = (15, 23, 42)
 GRAY = (100, 116, 139)
@@ -22,80 +22,93 @@ PURPLE = (124, 58, 237)
 RED = (220, 38, 38)
 
 
-def _section(pdf, title, y=None):
-    if y:
-        pdf.set_y(y)
-    pdf.set_x(M)
-    pdf.set_fill_color(*BLUE)
-    pdf.rect(M, pdf.get_y(), 3, 7, "F")
-    pdf.set_x(M + 8)
-    pdf.set_font("Helvetica", "B", 12)
-    pdf.set_text_color(*DARK)
-    pdf.cell(0, 7, title, ln=True)
-    pdf.set_draw_color(209, 213, 219)
-    pdf.set_line_width(0.3)
-    pdf.line(M, pdf.get_y() + 2, PW - M, pdf.get_y() + 2)
-    pdf.ln(5)
-
-
-def _th(pdf, cols, ws):
-    pdf.set_fill_color(*DARK)
-    pdf.set_text_color(*WHITE)
-    pdf.set_font("Helvetica", "B", 7)
-    pdf.set_draw_color(*DARK)
-    for i, c in enumerate(cols):
-        pdf.cell(ws[i], 6, c, border=1, fill=True, align="C")
-    pdf.ln()
-
-
-def _tr(pdf, vs, ws, alt=False):
-    if alt:
-        pdf.set_fill_color(*LGRAY)
-    else:
-        pdf.set_fill_color(*WHITE)
-    pdf.set_text_color(*DARK)
-    pdf.set_font("Helvetica", "", 7.5)
-    pdf.set_draw_color(209, 213, 219)
-    for i, v in enumerate(vs):
-        pdf.cell(ws[i], 5.5, str(v), border=1, fill=True, align="C" if i else "L")
-    pdf.ln()
-
-
-def _kpi(pdf, label, value, x, y, w, color=None):
-    pdf.set_xy(x, y)
-    pdf.set_fill_color(*WHITE)
-    pdf.set_draw_color(209, 213, 219)
-    pdf.rect(x, y, w, 26, "DF")
-    c = color or DARK
-    pdf.set_xy(x, y + 2.5)
-    pdf.set_font("Helvetica", "", 7)
-    pdf.set_text_color(*GRAY)
-    pdf.cell(w, 4, label.upper(), align="C", ln=True)
-    pdf.set_font("Helvetica", "B", 14)
-    pdf.set_text_color(*c)
-    pdf.cell(w, 8, str(value), align="C", ln=True)
-
-
 def _avg_stay(recs):
     ds = [r.get("stay_days") for r in recs if r.get("stay_days") is not None]
     return round(sum(ds) / len(ds), 1) if ds else 0
 
 
-def _page_header(pdf, title, h=36):
-    pdf.set_fill_color(*DARK)
-    pdf.rect(0, 0, PW, h, "F")
-    if title:
-        pdf.set_y(h - 10)
-        pdf.set_font("Helvetica", "B", 10)
-        pdf.set_text_color(*WHITE)
-        pdf.cell(0, 6, title, align="C", ln=True)
+class ReportPDF(FPDF):
+    def header(self):
+        pass
 
+    def footer(self):
+        self.set_y(-15)
+        self.set_font("Helvetica", "", 7)
+        self.set_text_color(*GRAY)
+        self.cell(0, 10, f"Sa Palomera Hospital  |  {self.page_no()}/{{nb}}", align="C")
 
-def _page_number(pdf):
-    pdf.set_y(-15)
-    pdf.set_font("Helvetica", "", 7)
-    pdf.set_text_color(*GRAY)
-    pdf.cell(0, 10, f"Sa Palomera Hospital  |  {pdf.page_no()}/{{nb}}", align="C")
+    def dark_bar(self, h):
+        self.set_fill_color(*DARK)
+        self.rect(0, 0, PW, h, "F")
+        self.set_y(h - 10)
+        self.set_font("Helvetica", "B", 10)
+        self.set_text_color(*WHITE)
+        self.cell(0, 6, "", align="C", ln=True)
+
+    def section(self, title):
+        self.ln(3)
+        self.set_x(MARGIN)
+        self.set_fill_color(*BLUE)
+        self.rect(MARGIN, self.get_y(), 3, 7, "F")
+        self.set_x(MARGIN + 8)
+        self.set_font("Helvetica", "B", 11)
+        self.set_text_color(*DARK)
+        self.cell(0, 7, title, ln=True)
+        self.set_draw_color(209, 213, 219)
+        self.set_line_width(0.3)
+        self.line(MARGIN, self.get_y() + 2, PW - MARGIN, self.get_y() + 2)
+        self.ln(4)
+
+    def th(self, cols, ws):
+        self.set_fill_color(*DARK)
+        self.set_text_color(*WHITE)
+        self.set_font("Helvetica", "B", 7)
+        self.set_draw_color(*DARK)
+        for i, c in enumerate(cols):
+            self.cell(ws[i], 6, c, border=1, fill=True, align="C")
+        self.ln()
+
+    def tr(self, vs, ws, alt=False):
+        if alt:
+            self.set_fill_color(*LGRAY)
+        else:
+            self.set_fill_color(*WHITE)
+        self.set_text_color(*DARK)
+        self.set_font("Helvetica", "", 7.5)
+        self.set_draw_color(209, 213, 219)
+        for i, v in enumerate(vs):
+            self.cell(ws[i], 5.5, str(v), border=1, fill=True, align="C" if i else "L")
+        self.ln()
+
+    def kpi(self, label, value, x, y, w, color=None):
+        self.set_fill_color(*WHITE)
+        self.set_draw_color(209, 213, 219)
+        self.set_line_width(0.3)
+        self.rect(x, y, w, 26, "DF")
+        c = color or DARK
+        self.set_xy(x, y + 3)
+        self.set_font("Helvetica", "", 7)
+        self.set_text_color(*GRAY)
+        self.cell(w, 4, label.upper(), align="C", ln=True)
+        self.set_font("Helvetica", "B", 14)
+        self.set_text_color(*c)
+        self.cell(w, 8, str(value), align="C", ln=True)
+
+    def space_for(self, needed):
+        return self.get_y() + needed < self.h - self.b_margin
+
+    def table_block(self, title, headers, widths, rows, limit=15):
+        if not rows:
+            return
+        row_h = 5.5
+        hdr_h = 6
+        est = 12 + hdr_h + min(len(rows), limit) * row_h
+        if not self.space_for(est):
+            self.add_page()
+        self.section(title)
+        self.th(headers, widths)
+        for i, r in enumerate(rows[:limit]):
+            self.tr(r, widths, i % 2)
 
 
 def make_summary_pdf(start_date=None, end_date=None):
@@ -107,7 +120,7 @@ def make_summary_pdf(start_date=None, end_date=None):
     adm = admissions_report(start_date, end_date)
     surg = surgeries_report(start_date, end_date)
 
-    pdf = FPDF()
+    pdf = ReportPDF()
     pdf.set_auto_page_break(auto=True, margin=22)
     pdf.alias_nb_pages()
 
@@ -121,10 +134,10 @@ def make_summary_pdf(start_date=None, end_date=None):
     total_cost = fin.get("total_cost", 0)
     avg_st = _avg_stay(adm.get("records", []))
 
-    # ── PAGE 1 ──
+    # ---------- PAGE 1 ----------
     pdf.add_page()
-    _page_header(pdf, "EXECUTIVE SUMMARY")
-    pdf.set_y(10)
+    pdf.dark_bar(50)
+    pdf.set_y(12)
     pdf.set_font("Helvetica", "B", 22)
     pdf.set_text_color(*WHITE)
     pdf.cell(0, 10, "Sa Palomera Hospital", align="C", ln=True)
@@ -133,12 +146,10 @@ def make_summary_pdf(start_date=None, end_date=None):
     pdf.set_font("Helvetica", "", 7)
     pdf.cell(0, 4, f"Generated {now}", align="C", ln=True)
 
-    pdf.set_y(44)
-    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_y(56)
+    pdf.set_font("Helvetica", "B", 9)
     pdf.set_text_color(*DARK)
     pdf.cell(0, 5, "Hospital at a Glance", ln=True)
-    pdf.set_font("Helvetica", "", 8)
-    pdf.set_text_color(*GRAY)
     overview = (
         f"Hospital activity for the period {ps} - {pe}: "
         f"{a.get('visits',0)} visits, {a.get('surgeries',0)} surgeries, "
@@ -151,137 +162,108 @@ def make_summary_pdf(start_date=None, end_date=None):
         f"Avg stay: {avg_st} days. "
         f"Pharmacy costs: ${total_cost:,.2f}."
     )
+    pdf.set_font("Helvetica", "", 8)
+    pdf.set_text_color(*GRAY)
     pdf.multi_cell(0, 4.5, overview, align="J")
-    pdf.ln(2)
+    pdf.ln(3)
 
+    ky = max(pdf.get_y(), 78)
     cw = TW / 4
-    ky = pdf.get_y()
     occ_c = GREEN if occ_r < 80 else ORANGE if occ_r < 95 else RED
-    _kpi(pdf, "Patients", t.get("patients", 0), M, ky, cw)
-    _kpi(pdf, "Staff", t.get("staff", 0), M + cw, ky, cw)
-    _kpi(pdf, "Occupancy", f"{occ_r}%", M + cw * 2, ky, cw, occ_c)
-    _kpi(pdf, "Active Adm.", o.get("active_admissions", 0), M + cw * 3, ky, cw, ORANGE)
+    pdf.kpi("Patients", t.get("patients", 0), MARGIN, ky, cw)
+    pdf.kpi("Staff", t.get("staff", 0), MARGIN + cw, ky, cw)
+    pdf.kpi("Occupancy", f"{occ_r}%", MARGIN + cw * 2, ky, cw, occ_c)
+    pdf.kpi("Active Adm.", o.get("active_admissions", 0), MARGIN + cw * 3, ky, cw, ORANGE)
     ky2 = ky + 30
-    _kpi(pdf, "Visits", a.get("visits", 0), M, ky2, cw)
-    _kpi(pdf, "Surgeries", a.get("surgeries", 0), M + cw, ky2, cw, PURPLE)
-    _kpi(pdf, "Admissions", a.get("admissions", 0), M + cw * 2, ky2, cw, ORANGE)
-    _kpi(pdf, "Disp. Costs", f"${total_cost:,.0f}", M + cw * 3, ky2, cw, GREEN)
+    pdf.kpi("Visits", a.get("visits", 0), MARGIN, ky2, cw)
+    pdf.kpi("Surgeries", a.get("surgeries", 0), MARGIN + cw, ky2, cw, PURPLE)
+    pdf.kpi("Admissions", a.get("admissions", 0), MARGIN + cw * 2, ky2, cw, ORANGE)
+    pdf.kpi("Disp. Costs", f"${total_cost:,.0f}", MARGIN + cw * 3, ky2, cw, GREEN)
 
-    pdf.set_y(ky2 + 34)
-    _section(pdf, "Top Diagnoses")
+    content_top = ky2 + 34
+    if pdf.space_for(70):
+        pdf.set_y(content_top)
+
     dd = data.get("top_diagnoses", [])
-    if dd:
-        _th(pdf, ["Diagnosis", "Cases"], [TW * 0.7, TW * 0.3])
-        for i, d in enumerate(dd[:10]):
-            _tr(pdf, [d.get("diagnosis", ""), d.get("count", 0)], [TW * 0.7, TW * 0.3], i % 2)
-    pdf.ln(2)
+    dd_rows = [[d.get("diagnosis", ""), d.get("count", 0)] for d in dd[:10]]
+    pdf.table_block("Top Diagnoses", ["Diagnosis", "Cases"], [TW * 0.7, TW * 0.3], dd_rows, 10)
 
-    _section(pdf, "Surgeries by Type")
     st = data.get("surgeries_by_type", [])
-    if st:
-        _th(pdf, ["Procedure Type", "Count"], [TW * 0.7, TW * 0.3])
-        for i, s in enumerate(st[:10]):
-            _tr(pdf, [s.get("procedure", ""), s.get("count", 0)], [TW * 0.7, TW * 0.3], i % 2)
+    st_rows = [[s.get("procedure", ""), s.get("count", 0)] for s in st[:10]]
+    pdf.table_block("Surgeries by Type", ["Procedure Type", "Count"], [TW * 0.7, TW * 0.3], st_rows, 10)
 
-    _page_number(pdf)
-
-    # ── PAGE 2 ──
+    # ---------- PAGE 2 ----------
     pdf.add_page()
-    _page_header(pdf, "CLINICAL ACTIVITY", 14)
+    pdf.dark_bar(14)
 
-    pdf.set_y(20)
-    _section(pdf, "Physician Workload")
     docs = wl.get("records", [])
-    if docs:
-        _th(pdf, ["Physician", "Specialty", "Visits", "Surg.", "Patients"],
-            [TW * 0.3, TW * 0.2, TW * 0.15, TW * 0.15, TW * 0.2])
-        for i, d in enumerate(docs[:15]):
-            _tr(pdf, [d.get("doctor", ""), d.get("specialty", ""),
-                      d.get("visits", 0), d.get("surgeries", 0), d.get("patients", 0)],
-                [TW * 0.3, TW * 0.2, TW * 0.15, TW * 0.15, TW * 0.2], i % 2)
+    doc_rows = [[d.get("doctor", ""), d.get("specialty", ""),
+                 d.get("visits", 0), d.get("surgeries", 0), d.get("patients", 0)]
+                for d in docs[:15]]
+    pdf.table_block("Physician Workload",
+                    ["Physician", "Specialty", "Visits", "Surg.", "Patients"],
+                    [TW * 0.3, TW * 0.2, TW * 0.15, TW * 0.15, TW * 0.2],
+                    doc_rows, 15)
 
-    pdf.set_y(pdf.get_y() + 5)
-    _section(pdf, "Prescribed Medications")
     mds = med.get("records", [])
-    if mds:
-        _th(pdf, ["Medication", "Prescriptions", "Visits"], [TW * 0.5, TW * 0.25, TW * 0.25])
-        for i, m in enumerate(mds[:15]):
-            _tr(pdf, [m.get("medication", ""), m.get("prescriptions", 0), m.get("visits", 0)],
-                [TW * 0.5, TW * 0.25, TW * 0.25], i % 2)
+    md_rows = [[m.get("medication", ""), m.get("prescriptions", 0), m.get("visits", 0)]
+               for m in mds[:15]]
+    pdf.table_block("Prescribed Medications",
+                    ["Medication", "Prescriptions", "Visits"],
+                    [TW * 0.5, TW * 0.25, TW * 0.25],
+                    md_rows, 15)
 
-    pdf.set_y(pdf.get_y() + 5)
-    _section(pdf, "Radiology Exams")
     rr = rad.get("records", [])
     if rr:
         sc = {}
         for r in rr:
             s = r.get("status", "UNKNOWN")
             sc[s] = sc.get(s, 0) + 1
-        _th(pdf, ["Status", "Count"], [TW * 0.7, TW * 0.3])
-        for i, (st, cnt) in enumerate(sorted(sc.items())):
-            _tr(pdf, [st, cnt], [TW * 0.7, TW * 0.3], i % 2)
-        pdf.set_font("Helvetica", "", 7.5)
-        pdf.set_text_color(*GRAY)
-        pdf.cell(0, 5, f"Total exams in period: {rad.get('total', 0)}", ln=True)
+        rad_rows = [[st, cnt] for st, cnt in sorted(sc.items())]
+        pdf.table_block("Radiology Exams", ["Status", "Count"],
+                        [TW * 0.7, TW * 0.3], rad_rows, 10)
+        if pdf.space_for(8):
+            pdf.set_font("Helvetica", "", 7.5)
+            pdf.set_text_color(*GRAY)
+            pdf.cell(0, 5, f"Total exams in period: {rad.get('total', 0)}", ln=True)
 
-    _page_number(pdf)
-
-    # ── PAGE 3 ──
+    # ---------- PAGE 3 ----------
     pdf.add_page()
-    _page_header(pdf, "FINANCIAL & OPERATIONS", 14)
+    pdf.dark_bar(14)
 
-    pdf.set_y(20)
-    _section(pdf, "Pharmacy Dispensations")
+    pdf.section("Pharmacy Dispensations")
     pdf.set_font("Helvetica", "B", 10)
     pdf.set_text_color(*GREEN)
     pdf.cell(0, 6, f"Total: ${total_cost:,.2f}  -  {fin.get('total', 0)} dispensation(s)", ln=True)
-    pdf.ln(2)
     fins = fin.get("records", [])
-    if fins:
-        _th(pdf, ["Date", "Patient", "Amount"], [TW * 0.2, TW * 0.5, TW * 0.3])
-        for i, r in enumerate(fins[:15]):
-            _tr(pdf, [r.get("date", ""), r.get("patient", ""),
-                      f"${r.get('total_cost', 0):.2f}"],
-                [TW * 0.2, TW * 0.5, TW * 0.3], i % 2)
+    fin_rows = [[r.get("date", ""), r.get("patient", ""), f"${r.get('total_cost', 0):.2f}"]
+                for r in fins[:15]]
+    pdf.table_block("", ["Date", "Patient", "Amount"],
+                    [TW * 0.2, TW * 0.5, TW * 0.3], fin_rows, 15)
 
-    pdf.ln(4)
-    _section(pdf, "Admissions")
     ar = adm.get("records", [])
     active = sum(1 for r in ar if not r.get("actual_discharge"))
     disch = sum(1 for r in ar if r.get("actual_discharge"))
+    pdf.section("Admissions")
     pdf.set_font("Helvetica", "", 8)
     pdf.set_text_color(*GRAY)
     pdf.cell(0, 5, f"Period: {adm.get('total', 0)}  -  Active: {active}  -  "
                    f"Discharged: {disch}  -  Avg stay: {avg_st}d", ln=True)
-    pdf.ln(2)
-    if ar:
-        _th(pdf, ["Date", "Patient", "Room", "Floor", "Stay"],
-            [TW * 0.2, TW * 0.3, TW * 0.15, TW * 0.1, TW * 0.1])
-        for i, r in enumerate(ar[:15]):
-            _tr(pdf, [r.get("admission_date", ""), r.get("patient", ""), r.get("room", ""),
-                      r.get("floor", ""), r.get("stay_days", "") or ""],
-                [TW * 0.2, TW * 0.3, TW * 0.15, TW * 0.1, TW * 0.1], i % 2)
+    adm_rows = [[r.get("admission_date", ""), r.get("patient", ""), r.get("room", ""),
+                 r.get("floor", ""), r.get("stay_days", "") or ""]
+                for r in ar[:15]]
+    pdf.table_block("", ["Date", "Patient", "Room", "Floor", "Stay"],
+                    [TW * 0.2, TW * 0.3, TW * 0.15, TW * 0.1, TW * 0.1],
+                    adm_rows, 15)
 
-    pdf.set_y(pdf.get_y() + 4)
-    _section(pdf, "Recent Surgeries")
     sr = surg.get("records", [])
-    if sr:
-        _th(pdf, ["Date", "Procedure", "Patient", "Surgeon", "Dur."],
-            [TW * 0.15, TW * 0.3, TW * 0.2, TW * 0.2, TW * 0.15])
-        for i, r in enumerate(sr[:15]):
-            _tr(pdf, [r.get("date", ""), r.get("procedure", ""), r.get("patient", ""),
-                      r.get("surgeon", ""), r.get("duration", "")],
-                [TW * 0.15, TW * 0.3, TW * 0.2, TW * 0.2, TW * 0.15], i % 2)
-
-    _page_number(pdf)
-
-    for i in range(1, pdf.pages_count + 1):
-        pdf.page = i
-        if i < 4:
-            pdf.set_y(-15)
-            pdf.set_font("Helvetica", "", 7)
-            pdf.set_text_color(*GRAY)
-            pdf.cell(0, 10, f"Sa Palomera Hospital  |  {i}/{{nb}}", align="C")
+    sr_rows = [[r.get("date", ""), r.get("procedure", ""), r.get("patient", ""),
+                r.get("surgeon", ""), r.get("duration", "")]
+               for r in sr[:15]]
+    pdf.table_block("Recent Surgeries",
+                    ["Date", "Procedure", "Patient", "Surgeon", "Dur."],
+                    [TW * 0.15, TW * 0.3, TW * 0.2, TW * 0.2, TW * 0.15],
+                    sr_rows, 15)
 
     buf = BytesIO()
     pdf.output(buf)
