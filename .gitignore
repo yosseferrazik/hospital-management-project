@@ -71,3 +71,8 @@ Thumbs.db
 
 drawio/
 desktop/main.spec
+desktop/setup.iss
+desktop/src/assets/icon.ico
+desktop/src/assets/logo.png
+desktop/src/assets/icon64x64.ico
+desktop/HMS_Client.spec
