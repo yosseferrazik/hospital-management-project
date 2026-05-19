@@ -325,8 +325,7 @@ def doctor_workload_report(start_date=None, end_date=None):
         .join(MedicalSpecialty, MedicalSpecialty.specialty_id == MedicalStaff.specialty_id)
         .outerjoin(visit_subq, visit_subq.c.doctor_id == MedicalStaff.staff_id)
         .outerjoin(surgery_subq, surgery_subq.c.primary_surgeon_id == MedicalStaff.staff_id)
-        .group_by(Staff.staff_id, MedicalSpecialty.name)
-        .order_by(db.desc("visit_count"))
+        .order_by(db.text("visit_count DESC"))
         .all()
     )
     records = [
