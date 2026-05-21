@@ -55,11 +55,12 @@ STANDBY_DIR = os.getenv('HMS_STANDBY_DIR', '/backups/local')
 BACKUP_PATTERN = f"{DB_NAME}_*.dump"
 TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
 
-STATIC_TABLES = [
-    "staff", "medical_staff", "nursing_staff", "general_staff",
-    "medical_staff_specialties", "floors", "rooms", "operating_theaters",
+# Tables that can be safely excluded from frequent backups because they are
+# pre-populated by initial SQL scripts and rarely change.
+# WARNING: Do NOT add app_users, staff, or any personnel table here.
+FREQUENT_EXCLUDE_TABLES = [
+    "floors", "rooms", "operating_theaters",
     "medical_devices", "medical_specialties", "medications",
-    "app_users", "dummy_registry",
 ]
 
 
@@ -171,9 +172,9 @@ def run_backup(exclude_static_data=False):
     ]
 
     if exclude_static_data:
-        for table in STATIC_TABLES:
+        for table in FREQUENT_EXCLUDE_TABLES:
             cmd.extend(['--exclude-table-data', table])
-        logger.info("Incremental mode: excluding data from %d static/reference tables", len(STATIC_TABLES))
+        logger.info("Frequent mode: excluding data from %d reference tables (users, staff, and transactions are always included)", len(FREQUENT_EXCLUDE_TABLES))
 
     try:
         logger.info("Starting backup to %s...", backup_filepath)
