@@ -27,7 +27,7 @@ Environment Variables:
     HMS_RETENTION_DAYS  - Local backup retention days (default: 5)
     HMS_DB_PASSWORD     - PostgreSQL password (default: none — uses .pgpass or prompts)
     HMS_STANDBY_HOST    - Standby node hostname/IP for rsync (default: none)
-    HMS_STANDBY_USER    - SSH user on standby (default: yerrazik)
+    HMS_STANDBY_USER    - SSH user on standby (default: ubuntu)
     HMS_STANDBY_DIR     - Backup directory on standby (default: /backups/local)
 """
 
@@ -50,7 +50,7 @@ BACKUP_DIR = os.getenv('HMS_BACKUP_DIR', '/backups/local')
 LOG_FILE = os.getenv('HMS_LOG_FILE', '/tmp/hms_backup.log')
 RETENTION_DAYS = int(os.getenv('HMS_RETENTION_DAYS', '5'))
 STANDBY_HOST = os.getenv('HMS_STANDBY_HOST', '100.98.214.53')
-STANDBY_USER = os.getenv('HMS_STANDBY_USER', 'yerrazik')
+STANDBY_USER = os.getenv('HMS_STANDBY_USER', 'ubuntu')
 STANDBY_DIR = os.getenv('HMS_STANDBY_DIR', '/backups/local')
 
 BACKUP_PATTERN = f"{DB_NAME}_*.dump"

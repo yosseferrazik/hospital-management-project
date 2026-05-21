@@ -340,20 +340,16 @@ What the backup does:
 > # ssh -i <your.pem> ubuntu@100.98.214.53 "echo '<paste_key>' | sudo tee -a /home/ubuntu/.ssh/authorized_keys"
 > ```
 >
-> **Run with rsync enabled:**
+> **Run with rsync enabled** (STANDBY_USER defaults to `ubuntu` now):
 > ```bash
-> sudo HMS_STANDBY_USER=ubuntu HMS_STANDBY_HOST=100.98.214.53 python3 scripts/backup_database.py
+> sudo HMS_STANDBY_HOST=100.98.214.53 python3 scripts/backup_database.py
 > ```
 >
 > **Persist in crontab** (replace `<password>`):
 > ```bash
 > sudo crontab -e
 > # Add:
-> 0 2 * * * HMS_DB_PASSWORD='<password>' HMS_STANDBY_USER=ubuntu HMS_STANDBY_HOST=100.98.214.53 cd /opt/hms/current && python3 scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
-> ```
-> Or use `.pgpass` and skip the password var:
-> ```bash
-> 0 2 * * * HMS_STANDBY_USER=ubuntu HMS_STANDBY_HOST=100.98.214.53 cd /opt/hms/current && python3 scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
+> 0 2 * * * HMS_DB_PASSWORD='<password>' HMS_STANDBY_HOST=100.98.214.53 cd /opt/hms/current && python3 scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
 > ```
 >
 > **Verify:**

@@ -548,14 +548,14 @@ sudo cat /root/.ssh/id_ed25519.pub
 **3. Run or schedule with the env vars (replace `<password>`):**
 
 ```bash
-# Manual
-sudo HMS_DB_PASSWORD='<password>' HMS_STANDBY_USER=ubuntu HMS_STANDBY_HOST=100.98.214.53 python3 scripts/backup_database.py
+# Manual (STANDBY_USER defaults to ubuntu)
+sudo HMS_DB_PASSWORD='<password>' HMS_STANDBY_HOST=100.98.214.53 python3 scripts/backup_database.py
 
 # Cron (with password)
-0 2 * * * HMS_DB_PASSWORD='<password>' HMS_STANDBY_USER=ubuntu HMS_STANDBY_HOST=100.98.214.53 cd /opt/hms/current && python3 scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
+0 2 * * * HMS_DB_PASSWORD='<password>' HMS_STANDBY_HOST=100.98.214.53 cd /opt/hms/current && python3 scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
 
 # Cron (using .pgpass — no password in command line)
-0 2 * * * HMS_STANDBY_USER=ubuntu HMS_STANDBY_HOST=100.98.214.53 cd /opt/hms/current && python3 scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
+0 2 * * * HMS_STANDBY_HOST=100.98.214.53 cd /opt/hms/current && python3 scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
 ```
 
 **Verify:**
