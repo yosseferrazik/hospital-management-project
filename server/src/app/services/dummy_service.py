@@ -776,7 +776,7 @@ def generate_dummy_data(patient_count=20):
         Admission.admission_date < (datetime.now(timezone.utc) - timedelta(days=3))
     ).all()
     for adm in older:
-        if random.random() < 0.7 and not adm.actual_discharge:
+        if random.random() < 0.7 and not adm.actual_discharge_date:
             adm.actual_discharge_date = adm.admission_date + timedelta(
                 days=random.randint(1, 10)
             )
