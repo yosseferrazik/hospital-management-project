@@ -261,6 +261,10 @@ hostssl hsp_db          app_doctor      127.0.0.1/32            scram-sha-256
 hostssl hsp_db          app_nurse       127.0.0.1/32            scram-sha-256
 hostssl hsp_db          app_receptionist 127.0.0.1/32           scram-sha-256
 hostssl hsp_db          app_staff       127.0.0.1/32            scram-sha-256
+
+# Backup user (from Briar itself — no SSL required for local backup connections)
+host    hsp_db          backup_user     127.0.0.1/32            scram-sha-256
+host    hsp_db          backup_user     ::1/128                 scram-sha-256
 ```
 
 All remote connections use **SSL** (`hostssl`). Connections over Tailscale have both Tailscale's own encryption **plus** PostgreSQL SSL (double layer).
@@ -508,11 +512,65 @@ To make this easier, I prepared an installer with Inno Setup (the `.exe` already
 
 ```bash
 sudo crontab -e
-# Add the line:
-0 2 * * * cd /opt/hms/current && python scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
+# Add the lines (replace <password>):
+# Daily full backup (with verify + rsync)
+0 2 * * * HMS_DB_PASSWORD='<password>' cd /opt/hms/current && python scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
+
+# Every 15 min — quick backup for minute-level RPO
+*/15 * * * * HMS_DB_PASSWORD='<password>' cd /opt/hms/current && python scripts/backup_database.py --frequent >> /tmp/hms_backup_frequent.log 2>&1
 ```
 
-The script runs `pg_dump -Fc`, saves to `/var/backups/postgresql/`, keeps the last 5, verifies integrity, and syncs to Sion via rsync.
+> To avoid putting the password in the command line, use `.pgpass`:
+> 
+> ```bash
+> echo 'localhost:5432:hsp_db:backup_user:<password>' | sudo tee -a /root/.pgpass
+> sudo chmod 600 /root/.pgpass
+> ```
+
+The script runs `pg_dump -Fc`, saves to `/backups/local/`, keeps the last 5, and verifies integrity. Rsync to Sion is **disabled by default** — to enable it:
+
+**1. On Sion** — prepare the directory:
+
+```bash
+sudo mkdir -p /backups/local
+sudo chown ubuntu:ubuntu /backups/local
+```
+
+**2. On Briar** — generate SSH key and copy to Sion:
+
+```bash
+sudo ssh-keygen -t ed25519 -f /root/.ssh/id_ed25519 -N ""
+sudo cat /root/.ssh/id_ed25519.pub
+# Copy the output, then from your admin machine with the .pem file:
+# ssh -i <your.pem> ubuntu@100.98.214.53 "echo '<paste_key>' | sudo tee -a /home/ubuntu/.ssh/authorized_keys"
+```
+
+**3. Run or schedule with the env vars (replace `<password>`):**
+
+```bash
+# Manual
+sudo HMS_DB_PASSWORD='<password>' HMS_STANDBY_USER=ubuntu HMS_STANDBY_HOST=100.98.214.53 python3 scripts/backup_database.py
+
+# Cron (with password)
+0 2 * * * HMS_DB_PASSWORD='<password>' HMS_STANDBY_USER=ubuntu HMS_STANDBY_HOST=100.98.214.53 cd /opt/hms/current && python3 scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
+
+# Cron (using .pgpass — no password in command line)
+0 2 * * * HMS_STANDBY_USER=ubuntu HMS_STANDBY_HOST=100.98.214.53 cd /opt/hms/current && python3 scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
+```
+
+**Verify:**
+
+```bash
+echo "STANDBY_HOST=$HMS_STANDBY_HOST"   # empty = disabled
+# On Sion:
+ls -la /backups/local/                  # should show .dump files
+```
+
+Verify if it's active:
+
+```bash
+echo "STANDBY_HOST=$HMS_STANDBY_HOST"   # empty = disabled
+```
 
 ### Restore
 

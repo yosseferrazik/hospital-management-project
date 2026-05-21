@@ -21,9 +21,11 @@ Environment Variables:
     HMS_DB_HOST         - PostgreSQL host (default: localhost)
     HMS_DB_PORT         - PostgreSQL port (default: 5432)
     HMS_DB_USER         - PostgreSQL backup user (default: backup_user)
+    HMS_DB_PASSWORD     - PostgreSQL password (default: none — prompts or uses .pgpass)
     HMS_BACKUP_DIR      - Local backup directory (default: /backups/local)
     HMS_LOG_FILE        - Log file path (default: /tmp/hms_backup.log)
     HMS_RETENTION_DAYS  - Local backup retention days (default: 5)
+    HMS_DB_PASSWORD     - PostgreSQL password (default: none — uses .pgpass or prompts)
     HMS_STANDBY_HOST    - Standby node hostname/IP for rsync (default: none)
     HMS_STANDBY_USER    - SSH user on standby (default: yerrazik)
     HMS_STANDBY_DIR     - Backup directory on standby (default: /backups/local)
@@ -43,6 +45,7 @@ DB_NAME = os.getenv('HMS_DB_NAME', 'hsp_db')
 DB_HOST = os.getenv('HMS_DB_HOST', 'localhost')
 DB_PORT = os.getenv('HMS_DB_PORT', '5432')
 DB_USER = os.getenv('HMS_DB_USER', 'backup_user')
+DB_PASSWORD = os.getenv('HMS_DB_PASSWORD', '')
 BACKUP_DIR = os.getenv('HMS_BACKUP_DIR', '/backups/local')
 LOG_FILE = os.getenv('HMS_LOG_FILE', '/tmp/hms_backup.log')
 RETENTION_DAYS = int(os.getenv('HMS_RETENTION_DAYS', '5'))
@@ -52,6 +55,13 @@ STANDBY_DIR = os.getenv('HMS_STANDBY_DIR', '/backups/local')
 
 BACKUP_PATTERN = f"{DB_NAME}_*.dump"
 TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
+
+
+def pg_env():
+    env = os.environ.copy()
+    if DB_PASSWORD:
+        env['PGPASSWORD'] = DB_PASSWORD
+    return env
 
 
 def setup_logging():
@@ -156,7 +166,7 @@ def run_backup():
 
     try:
         logger.info("Starting backup to %s...", backup_filepath)
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True, env=pg_env())
 
         if not os.path.exists(backup_filepath):
             raise FileNotFoundError(f"Backup file not created: {backup_filepath}")
@@ -219,13 +229,13 @@ def restore_database(backup_filepath, dry_run=False):
 
     try:
         logger.info("Dropping database %s ...", DB_NAME)
-        subprocess.run(dropdb_cmd, check=True, capture_output=True, text=True)
+        subprocess.run(dropdb_cmd, check=True, capture_output=True, text=True, env=pg_env())
 
         logger.info("Creating database %s ...", DB_NAME)
-        subprocess.run(createdb_cmd, check=True, capture_output=True, text=True)
+        subprocess.run(createdb_cmd, check=True, capture_output=True, text=True, env=pg_env())
 
         logger.info("Running pg_restore ...")
-        result = subprocess.run(pgrestore_cmd, check=True, capture_output=True, text=True)
+        result = subprocess.run(pgrestore_cmd, check=True, capture_output=True, text=True, env=pg_env())
 
         logger.info("Restore completed successfully")
         return True
@@ -341,6 +351,10 @@ def parse_args():
     parser.add_argument('--dry-run', action='store_true',
                         help='Show what restore would do without executing it')
     parser.add_argument('--json', action='store_true', help='Output list in JSON format')
+    parser.add_argument('--frequent', action='store_true',
+                        help='Quick frequent backup mode: skips verify + rsync, '
+                             'uses hourly retention (default 24h). '
+                             'Ideal for every-15-min cron jobs to achieve minute-level RPO.')
     return parser.parse_args()
 
 
@@ -384,10 +398,14 @@ def main():
         success = restore_database(backup_filepath)
         sys.exit(0 if success else 1)
 
-    # --- BACKUP mode (default) ---
+    # --- BACKUP mode ---
     logger.info("=== HMS Backup Script Started ===")
     logger.info("Database: %s @ %s:%s", DB_NAME, DB_HOST, DB_PORT)
     logger.info("Backup directory: %s", BACKUP_DIR)
+
+    if args.frequent:
+        logger.info("Frequent mode: skipping verify + rsync")
+        freq_hours = int(os.getenv('FREQUENT_RETENTION_HOURS', '24'))
 
     backup_filepath, backup_success = run_backup()
 
@@ -395,12 +413,24 @@ def main():
         logger.error("Backup execution failed - aborting cleanup and archive")
         sys.exit(1)
 
-    verify_success = verify_backup(backup_filepath)
-    if not verify_success:
-        logger.warning("Backup verification failed - proceeding with caution")
+    if not args.frequent:
+        verify_success = verify_backup(backup_filepath)
+        if not verify_success:
+            logger.warning("Backup verification failed - proceeding with caution")
 
-    rsync_to_standby(backup_filepath)
-    cleanup_old_backups()
+        rsync_to_standby(backup_filepath)
+        cleanup_old_backups()
+    else:
+        cutoff = datetime.now() - timedelta(hours=freq_hours)
+        deleted = 0
+        for f in Path(BACKUP_DIR).glob(BACKUP_PATTERN):
+            try:
+                if parse_timestamp(f.name) < cutoff:
+                    f.unlink()
+                    deleted += 1
+            except ValueError:
+                continue
+        logger.info("Frequent cleanup: removed %d backup(s) older than %d hours", deleted, freq_hours)
 
     logger.info("=== HMS Backup Script Completed Successfully ===")
     sys.exit(0)

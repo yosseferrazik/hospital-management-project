@@ -35,9 +35,9 @@ All changes to sensitive tables (patients, visits, prescriptions, admissions, su
 
 Backups run automatically at 02:00 daily via a cron job (`scripts/backup_database.py`):
 
-- Custom-format `pg_dump` saved locally
+- Custom-format `pg_dump` saved locally to `/backups/local/`
 - 5 most recent backups retained
-- One copy synced to the standby server
+- Rsync to standby (Sion) is **disabled by default** — enable via `HMS_STANDBY_HOST`
 - Backup integrity verified automatically
 
 ### Manual restore

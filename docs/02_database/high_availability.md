@@ -172,6 +172,10 @@ hostssl hsp_db          app_doctor      127.0.0.1/32            scram-sha-256
 hostssl hsp_db          app_nurse       127.0.0.1/32            scram-sha-256
 hostssl hsp_db          app_receptionist 127.0.0.1/32           scram-sha-256
 hostssl hsp_db          app_staff       127.0.0.1/32            scram-sha-256
+
+# Backup user (from Briar itself — no SSL required for local backup connections)
+host    hsp_db          backup_user     127.0.0.1/32            scram-sha-256
+host    hsp_db          backup_user     ::1/128                 scram-sha-256
 ```
 
 All remote connections use **SSL** (`hostssl`). Connections over Tailscale have both Tailscale's own encryption **plus** PostgreSQL SSL (double layer).
@@ -288,23 +292,75 @@ Or using the script:
 Runs on **Briar** (it has the primary database):
 
 ```bash
-# Manual backup
+# Manual backup (will prompt for password)
 python scripts/backup_database.py
 
-# Cron (daily at 02:00)
-sudo crontab -e
-# Add:
-0 2 * * * cd /opt/hms/current && python scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
+# Manual backup with password (no prompt)
+HMS_DB_PASSWORD='<password>' python scripts/backup_database.py
+
+# Daily full backup (with verify + rsync)
+0 2 * * * HMS_DB_PASSWORD='<password>' cd /opt/hms/current && python scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
+
+# Frequent backup every 15 min (minute-level RPO, skips verify + rsync)
+*/15 * * * * HMS_DB_PASSWORD='<password>' cd /opt/hms/current && python scripts/backup_database.py --frequent >> /tmp/hms_backup_frequent.log 2>&1
 ```
+
+> To avoid putting the password in the command line, create a `.pgpass` file:
+> ```bash
+> echo 'localhost:5432:hsp_db:backup_user:<password>' | sudo tee -a /root/.pgpass
+> sudo chmod 600 /root/.pgpass
+> ```
 
 What the backup does:
 
 1. Connects to `hsp_db`
-2. `pg_dump -Fc` → `/var/backups/postgresql/hsp_db_YYYYMMDD_HHMMSS.dump`
+2. `pg_dump -Fc` → `/backups/local/hsp_db_YYYYMMDD_HHMMSS.dump`
 3. Verifies with `pg_restore -l`
 4. Saves JSON metadata (date, size, checksum, result)
 5. Cleans backups older than 5 days
-6. Rsync to Sion: `rsync -avz /var/backups/postgresql/ 100.98.214.53:/var/backups/postgresql/`
+6. Optionally rsyncs a copy to Sion (disabled by default — see below)
+
+> **rsync to Sion is disabled by default.** To enable it you need:
+> 1. SSH key access from Briar (root) to Sion
+> 2. `HMS_STANDBY_HOST` and optionally `HMS_STANDBY_USER` set
+>
+> ### Setup
+>
+> **On Sion** — create the backup directory and fix ownership:
+> ```bash
+> sudo mkdir -p /backups/local
+> sudo chown ubuntu:ubuntu /backups/local
+> ```
+>
+> **On Briar** — generate SSH key and copy it to Sion:
+> ```bash
+> sudo ssh-keygen -t ed25519 -f /root/.ssh/id_ed25519 -N ""
+> sudo cat /root/.ssh/id_ed25519.pub
+> # Copy the output, then from your admin machine:
+> # ssh -i <your.pem> ubuntu@100.98.214.53 "echo '<paste_key>' | sudo tee -a /home/ubuntu/.ssh/authorized_keys"
+> ```
+>
+> **Run with rsync enabled:**
+> ```bash
+> sudo HMS_STANDBY_USER=ubuntu HMS_STANDBY_HOST=100.98.214.53 python3 scripts/backup_database.py
+> ```
+>
+> **Persist in crontab** (replace `<password>`):
+> ```bash
+> sudo crontab -e
+> # Add:
+> 0 2 * * * HMS_DB_PASSWORD='<password>' HMS_STANDBY_USER=ubuntu HMS_STANDBY_HOST=100.98.214.53 cd /opt/hms/current && python3 scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
+> ```
+> Or use `.pgpass` and skip the password var:
+> ```bash
+> 0 2 * * * HMS_STANDBY_USER=ubuntu HMS_STANDBY_HOST=100.98.214.53 cd /opt/hms/current && python3 scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
+> ```
+>
+> **Verify:**
+> ```bash
+> echo "STANDBY_HOST=$HMS_STANDBY_HOST"        # empty = disabled
+> ls -la /backups/local/                       # on Sion — should show .dump files
+> ```
 
 ### Restore (on Briar)
 
