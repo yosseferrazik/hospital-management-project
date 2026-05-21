@@ -586,15 +586,42 @@ def _create_patients(count):
     return patient_ids
 
 
+AUDIT_TRIGGER_TABLES = [
+    "patients", "visits", "prescriptions", "admissions",
+    "surgeries", "radiology_exams", "pharmacy_dispensations",
+    "scheduled_appointments",
+]
+
+def _suppress_audit_triggers():
+    for table in AUDIT_TRIGGER_TABLES:
+        try:
+            db.session.execute(db.text(f"ALTER TABLE {table} DISABLE TRIGGER audit_{table}"))
+        except Exception:
+            pass
+
+def _restore_audit_triggers():
+    for table in AUDIT_TRIGGER_TABLES:
+        try:
+            db.session.execute(db.text(f"ALTER TABLE {table} ENABLE TRIGGER audit_{table}"))
+        except Exception:
+            pass
+
+
 def generate_dummy_data(patient_count=20):
     patient_count = max(1, min(patient_count, 50000))
-    cleanup_dummy()
-    fake.unique.clear()
+    _suppress_audit_triggers()
+    try:
+        cleanup_dummy()
+        fake.unique.clear()
+        specialty_map, floors, rooms, theaters, medications = _ensure_support_data()
+        doctors, nurses, _general = _create_staff_batch(specialty_map, patient_count, floors)
+        patients = _create_patients(patient_count)
+        _generate_all(patient_count, floors, rooms, theaters, medications, doctors, nurses, patients)
+    finally:
+        _restore_audit_triggers()
 
-    specialty_map, floors, rooms, theaters, medications = _ensure_support_data()
-    doctors, nurses, _general = _create_staff_batch(specialty_map, patient_count, floors)
-    patients = _create_patients(patient_count)
 
+def _generate_all(patient_count, floors, rooms, theaters, medications, doctors, nurses, patients):
     specialty_names = {s.specialty_id: s.name for s in MedicalSpecialty.query.all()}
 
     visit_count = max(patient_count * 2, 30)
@@ -625,6 +652,7 @@ def generate_dummy_data(patient_count=20):
             db.session.commit()
     db.session.commit()
 
+    batch = 0
     for visit_id, visit_ts in visits[:max(10, len(visits) // 2)]:
         appt = ScheduledAppointment(
             visit_id=visit_id,
@@ -640,6 +668,9 @@ def generate_dummy_data(patient_count=20):
         db.session.add(appt)
         db.session.flush()
         _register("scheduled_appointments", appt.appointment_id)
+        batch += 1
+        if batch % 500 == 0:
+            db.session.commit()
     db.session.commit()
 
     surgery_count = max(patient_count // 2, 10)
@@ -667,6 +698,7 @@ def generate_dummy_data(patient_count=20):
             db.session.commit()
     db.session.commit()
 
+    batch = 0
     for surgery_id in surgeries:
         for nurse in random.sample(nurses, k=min(2, len(nurses))):
             assistant = SurgeryAssistant(
@@ -677,6 +709,9 @@ def generate_dummy_data(patient_count=20):
             db.session.add(assistant)
             db.session.flush()
             _register("surgery_assistants", surgery_id)
+            batch += 1
+            if batch % 500 == 0:
+                db.session.commit()
     db.session.commit()
 
     admission_count = max(patient_count // 2, 10)
@@ -698,6 +733,7 @@ def generate_dummy_data(patient_count=20):
             db.session.commit()
     db.session.commit()
 
+    batch = 0
     for visit_id, _ in visits[:min(visit_count, len(visits))]:
         med = random.choice(medications)
         dosage_map = {m.medication_name: m for m in medications}
@@ -739,8 +775,12 @@ def generate_dummy_data(patient_count=20):
         db.session.add(prescription)
         db.session.flush()
         _register("prescriptions", prescription.prescription_id)
+        batch += 1
+        if batch % 500 == 0:
+            db.session.commit()
     db.session.commit()
 
+    batch = 0
     for admission_id in admissions:
         disp = PharmacyDispensation(
             admission_id=admission_id,
@@ -751,6 +791,7 @@ def generate_dummy_data(patient_count=20):
         db.session.add(disp)
         db.session.flush()
         _register("pharmacy_dispensations", disp.dispensation_id)
+        batch += 1
 
         for _ in range(random.randint(1, 4)):
             med = random.choice(medications)
@@ -763,6 +804,10 @@ def generate_dummy_data(patient_count=20):
             db.session.add(item)
             db.session.flush()
             _register("dispensation_items", item.item_id)
+            batch += 1
+
+        if batch % 500 == 0:
+            db.session.commit()
     db.session.commit()
 
     exam_count = max(patient_count, 15)

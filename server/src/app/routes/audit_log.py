@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
 from app.models import db, AuditLog, AppUser
 from app.services.audit_log_service import trim_audit_logs, get_retention_info
 
@@ -116,6 +117,7 @@ def test_audit():
 
 
 @audit_bp.route("/cleanup", methods=["DELETE"])
+@jwt_required()
 def cleanup():
     days = request.args.get("days", 90, type=int)
     try:
