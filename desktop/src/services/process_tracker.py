@@ -33,6 +33,5 @@ class ProcessTracker:
             return done[-n:]
 
     def clean_old(self, max_age=30):
-        with self._lock:
-            now = time.time()
-            self._processes = [p for p in self._processes if now - p["started"] < max_age]
+        now = time.time()
+        self._processes = [p for p in self._processes if p["status"] == "running" or now - p["started"] < max_age]

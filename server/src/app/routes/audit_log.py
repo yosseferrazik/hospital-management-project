@@ -3,7 +3,7 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from app.models import db, AuditLog, AppUser
-from app.services.audit_log_service import trim_audit_logs, get_retention_info
+from app.services.audit_log_service import log_audit, trim_audit_logs, get_retention_info
 
 audit_bp = Blueprint("audit", __name__, url_prefix="/api/audit-logs")
 
@@ -101,7 +101,6 @@ def retention_info():
 
 @audit_bp.route("/test", methods=["POST"])
 def test_audit():
-    from app.services.audit_log_service import log_audit
     try:
         log = log_audit(
             action_type="TEST",

@@ -441,7 +441,7 @@ def _ensure_support_data():
 
     theaters = OperatingTheater.query.all()
     if not theaters:
-        for floor in floors[:3]:
+        for floor in floors:
             theater = OperatingTheater(theater_code=f"QUIRO-{floor.floor_number}", floor_id=floor.floor_id)
             db.session.add(theater)
             db.session.flush()
@@ -676,16 +676,28 @@ def _generate_all(patient_count, floors, rooms, theaters, medications, doctors, 
     surgery_count = max(patient_count // 2, 10)
     surgeries = []
     batch = 0
+    thea_ids = [t.theater_id for t in theaters]
+    used_slots = set()
     for _ in range(surgery_count):
-        start_hour = random.randint(7, 17)
-        end_hour = start_hour + random.randint(1, 4)
+        for _ in range(100):
+            start_hour = random.randint(7, 17)
+            dur = random.randint(1, 4)
+            theater_id = random.choice(thea_ids)
+            sdate = datetime.now(timezone.utc).date() + timedelta(days=random.randint(-365, 365))
+            hours = range(start_hour, start_hour + dur)
+            if not any((theater_id, sdate, h) in used_slots for h in hours):
+                for h in hours:
+                    used_slots.add((theater_id, sdate, h))
+                break
+        else:
+            continue
         surgery = Surgery(
             patient_id=random.choice(patients),
-            theater_id=random.choice(theaters).theater_id,
+            theater_id=theater_id,
             primary_surgeon_id=random.choice(doctors).staff_id,
-            surgery_date=datetime.now(timezone.utc).date() + timedelta(days=random.randint(-30, 10)),
+            surgery_date=sdate,
             start_time=(datetime.min + timedelta(hours=start_hour)).time(),
-            end_time=(datetime.min + timedelta(hours=end_hour)).time(),
+            end_time=(datetime.min + timedelta(hours=start_hour + dur)).time(),
             procedure_type=random.choice(SURGERY_PROCEDURES),
             notes=f"Intervencion quirurgica programada. {fake.sentence(nb_words=10)}",
         )

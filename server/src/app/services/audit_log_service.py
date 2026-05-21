@@ -65,7 +65,7 @@ def log_audit(action_type, table_name, record_id, old_record=None, new_record=No
 def trim_audit_logs(days=None):
     if days is None:
         days = RETENTION_DAYS
-    cutoff = datetime.utcnow() - timedelta(days=days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     deleted = AuditLog.query.filter(AuditLog.action_timestamp < cutoff).delete(synchronize_session="fetch")
     try:
         db.session.commit()

@@ -1,7 +1,6 @@
 from datetime import datetime, date, timedelta, time
-from collections import defaultdict
 
-from app.models import db, Patient, Staff, MedicalStaff, NursingStaff, Visit, ScheduledAppointment
+from app.models import db, Patient, Staff, MedicalStaff, NursingStaff, Visit
 from app.models import Surgery, SurgeryAssistant, Admission, Room, Floor, MedicalSpecialty
 from app.models import Prescription, Medication, PharmacyDispensation, DispensationItem
 from app.models import RadiologyExam, OperatingTheater

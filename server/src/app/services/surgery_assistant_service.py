@@ -1,16 +1,9 @@
-from app.models import db, SurgeryAssistant
-from app.services.base import get_all
+from app.models import SurgeryAssistant
+from app.services.base import create_record, get_all, get_by_id, update_record, delete_record
 
 
 def create_surgery_assistant(data):
-    assistant = SurgeryAssistant(surgery_id=data["surgery_id"], nurse_id=data["nurse_id"], role=data["role"])
-    db.session.add(assistant)
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
-    return assistant
+    return create_record(SurgeryAssistant, surgery_id=data["surgery_id"], nurse_id=data["nurse_id"], role=data["role"])
 
 
 def get_surgery_assistants():
@@ -18,28 +11,14 @@ def get_surgery_assistants():
 
 
 def get_surgery_assistant(surgery_id, nurse_id):
-    return SurgeryAssistant.query.get((surgery_id, nurse_id))
+    return get_by_id(SurgeryAssistant, (surgery_id, nurse_id))
 
 
 def update_surgery_assistant(surgery_id, nurse_id, data):
-    assistant = SurgeryAssistant.query.get((surgery_id, nurse_id))
-    if assistant:
-        assistant.role = data["role"]
-        try:
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-            raise
-    return assistant
+    assistant = get_by_id(SurgeryAssistant, (surgery_id, nurse_id))
+    return update_record(assistant, role=data["role"])
 
 
 def delete_surgery_assistant(surgery_id, nurse_id):
-    assistant = SurgeryAssistant.query.get((surgery_id, nurse_id))
-    if assistant:
-        db.session.delete(assistant)
-        try:
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-            raise
-    return assistant
+    assistant = get_by_id(SurgeryAssistant, (surgery_id, nurse_id))
+    return delete_record(assistant)

@@ -13,13 +13,8 @@ from app.services.report_service import (
     surgeries_report,
 )
 
-# ── Page geometry ──────────────────────────────────────────────────────────────
-LM = 22          # left margin
-RM = 22          # right margin
-PW = 210         # page width  (A4)
-TW = PW - LM - RM
 
-# ── Palette ────────────────────────────────────────────────────────────────────
+
 BLUE   = (37,  99,  235)
 DARK   = (15,  23,   42)
 GRAY   = (100, 116, 139)
@@ -30,7 +25,6 @@ ORANGE = (245, 158,  11)
 PURPLE = (124,  58, 237)
 RED    = (220,  38,  38)
 
-# ── Typography ─────────────────────────────────────────────────────────────────
 FONT_XS   = 6.5
 FONT_SM   = 7.5
 FONT_BASE = 8.5
@@ -38,7 +32,6 @@ FONT_MD   = 10
 FONT_LG   = 15
 FONT_XL   = 22
 
-# ── Spacing ────────────────────────────────────────────────────────────────────
 ROW_H    = 6.5   # table row height
 HEADER_H = 7     # table header height
 KPI_H    = 28    # KPI card height
@@ -46,18 +39,15 @@ KPI_GAP  = 5     # gap between KPI cards
 SECTION_GAP = 3  # vertical gap before a section title
 
 
-# ──────────────────────────────────────────────────────────────────────────────
 def _avg_stay(records: list[dict]) -> float:
     """Return the average stay in days for a list of admission records."""
     days = [r["stay_days"] for r in records if r.get("stay_days") is not None]
     return round(sum(days) / len(days), 1) if days else 0
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+
 class ReportPDF(FPDF):
     """Custom FPDF subclass with reusable layout helpers."""
-
-    # ── Built-in overrides ────────────────────────────────────────────────────
 
     def header(self) -> None:
         """No automatic page header (handled manually per page)."""
@@ -68,8 +58,6 @@ class ReportPDF(FPDF):
         self.set_font("Helvetica", "", FONT_XS)
         self.set_text_color(*GRAY)
         self.cell(0, 10, f"Sa Palomera Hospital  |  {self.page_no()}/{{nb}}", align="C")
-
-    # ── Layout primitives ─────────────────────────────────────────────────────
 
     def dark_bar(self, height: int) -> None:
         """Dark banner at the top of a page."""
@@ -101,8 +89,6 @@ class ReportPDF(FPDF):
         self.line(LM, self.get_y() + 2, PW - RM, self.get_y() + 2)
         self.ln(5)
 
-    # ── Table helpers ─────────────────────────────────────────────────────────
-
     def table_header(self, columns: list[str], widths: list[float]) -> None:
         """Render a dark table header row."""
         self.set_fill_color(*DARK)
@@ -123,8 +109,6 @@ class ReportPDF(FPDF):
             align = "C" if i > 0 else "L"
             self.cell(width, ROW_H, str(value), border=1, fill=True, align=align)
         self.ln()
-
-    # ── KPI card ─────────────────────────────────────────────────────────────
 
     def kpi_card(
         self,
@@ -152,8 +136,6 @@ class ReportPDF(FPDF):
         self.set_font("Helvetica", "B", FONT_LG)
         self.set_text_color(*(color or DARK))
         self.cell(width - 2, 9, str(value), align="C", ln=True)
-
-    # ── Utility ───────────────────────────────────────────────────────────────
 
     def has_room_for(self, needed_height: float) -> bool:
         """Return True when *needed_height* mm still fits on the current page."""
@@ -186,7 +168,7 @@ class ReportPDF(FPDF):
             self.table_row(row, widths, alternate=bool(i % 2))
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+
 def _kpi_row(pdf: ReportPDF, cards: list[tuple], y: float, cw: float) -> None:
     """
     Render a horizontal row of KPI cards.
@@ -200,11 +182,10 @@ def _kpi_row(pdf: ReportPDF, cards: list[tuple], y: float, cw: float) -> None:
         pdf.kpi_card(card[0], card[1], x, y, cw, color)
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+
 def make_summary_pdf(start_date=None, end_date=None) -> bytes:
     """Build and return the full hospital summary report as raw PDF bytes."""
 
-    # ── Fetch data ────────────────────────────────────────────────────────────
     data = summary_report(start_date, end_date)
     wl   = doctor_workload_report(start_date, end_date)
     med  = medications_report(start_date, end_date)
@@ -213,7 +194,6 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
     adm  = admissions_report(start_date, end_date)
     surg = surgeries_report(start_date, end_date)
 
-    # ── Derived values ────────────────────────────────────────────────────────
     period     = data.get("period", {})
     ps, pe     = period.get("start", ""), period.get("end", "")
     generated  = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
@@ -227,7 +207,6 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
 
     occ_color  = GREEN if occ_rate < 80 else (ORANGE if occ_rate < 95 else RED)
 
-    # ── PDF setup ─────────────────────────────────────────────────────────────
     pdf = ReportPDF()
     pdf.set_auto_page_break(auto=True, margin=22)
     pdf.alias_nb_pages()
@@ -235,9 +214,7 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
     # KPI card geometry (4 cards per row)
     cw = (TW - 3 * KPI_GAP) / 4
 
-    # ─────────────────────────────────────────────────────────────────────────
-    #  PAGE 1 – EXECUTIVE DASHBOARD
-    # ─────────────────────────────────────────────────────────────────────────
+
     pdf.add_page()
 
     # Cover banner
@@ -317,9 +294,7 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
         limit=10,
     )
 
-    # ─────────────────────────────────────────────────────────────────────────
-    #  PAGE 2 – CLINICAL ACTIVITY
-    # ─────────────────────────────────────────────────────────────────────────
+
     pdf.add_page()
     pdf.dark_bar(14)
 
@@ -372,9 +347,7 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
             pdf.set_text_color(*GRAY)
             pdf.cell(0, 6, f"Total exams in the period: {rad.get('total', 0)}", ln=True)
 
-    # ─────────────────────────────────────────────────────────────────────────
-    #  PAGE 3 – FINANCIAL & OPERATIONS
-    # ─────────────────────────────────────────────────────────────────────────
+
     pdf.add_page()
     pdf.dark_bar(14)
 
@@ -456,7 +429,6 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
         surg_rows,
     )
 
-    # ── Serialise ─────────────────────────────────────────────────────────────
     buf = BytesIO()
     pdf.output(buf)
     buf.seek(0)

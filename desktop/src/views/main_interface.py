@@ -118,33 +118,13 @@ class MainInterface:
         UIStyle.secondary_button(btn_row, "Change Password", self._change_password).grid(row=0, column=0, sticky="ew", padx=(0, 3))
         UIStyle.danger_button(btn_row, "Logout", self.logout).grid(row=0, column=1, sticky="ew", padx=(3, 0))
 
-    def _add_nav_button(self, parent, text, key, admin=False):
-        fg_color = "#fbbf24" if admin else UIStyle.HEADER_TEXT
-        button = tk.Button(
-            parent,
-            text=text,
-            font=UIStyle.SMALL_FONT,
-            bg=UIStyle.HEADER_BG,
-            fg=fg_color,
-            activebackground=UIStyle.HEADER_BG_ALT,
-            activeforeground=fg_color,
-            relief="flat",
-            anchor="w",
-            padx=12,
-            pady=6,
-            cursor="hand2",
-            command=lambda value=key: self.navigate(value),
-        )
-        button.pack(fill="x", pady=2)
-        self.nav_buttons[key] = button
-
         topbar = tk.Frame(
             self.frame,
             bg=UIStyle.SURFACE,
             highlightbackground=UIStyle.BORDER,
             highlightthickness=1,
         )
-        topbar.grid(row=0, column=1, sticky="ew", padx=(0, 0), pady=(0, 0))
+        topbar.grid(row=0, column=1, sticky="ew")
         topbar.columnconfigure(0, weight=1)
         self.title_var = tk.StringVar(value="Dashboard")
         self.subtitle_var = tk.StringVar(value="Overview")
@@ -168,6 +148,26 @@ class MainInterface:
 
         self.notification_bar = NotificationBar(self.frame)
         self.notification_bar.frame.grid(row=2, column=1, sticky="ew")
+
+    def _add_nav_button(self, parent, text, key, admin=False):
+        fg_color = "#fbbf24" if admin else UIStyle.HEADER_TEXT
+        button = tk.Button(
+            parent,
+            text=text,
+            font=UIStyle.SMALL_FONT,
+            bg=UIStyle.HEADER_BG,
+            fg=fg_color,
+            activebackground=UIStyle.HEADER_BG_ALT,
+            activeforeground=fg_color,
+            relief="flat",
+            anchor="w",
+            padx=12,
+            pady=6,
+            cursor="hand2",
+            command=lambda value=key: self.navigate(value),
+        )
+        button.pack(fill="x", pady=2)
+        self.nav_buttons[key] = button
 
     def navigate(self, section):
         if self.current_section == section:

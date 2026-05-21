@@ -134,18 +134,6 @@ class APIClient:
             "POST", "/auth/login", data={"username": username, "password": password}
         )
 
-    def register(self, username, password, staff_id, role):
-        return self._request(
-            "POST",
-            "/auth/register",
-            data={
-                "username": username,
-                "password": password,
-                "staff_id": staff_id,
-                "role": role,
-            },
-        )
-
     def add_medical_staff(self, data):
         response, error = self._request("POST", "/maintenance/staff/medical", data=data)
         if not error:
@@ -230,9 +218,6 @@ class APIClient:
 
     def get_audit_diagnostics(self):
         return self._request("GET", "/audit-logs/diagnostics")
-
-    def get_staff_list(self):
-        return self.list_resource("/staff", force_refresh=True)
 
     def change_own_password(self, old_password, new_password):
         return self._request("PUT", "/auth/change-password", data={"old_password": old_password, "new_password": new_password})

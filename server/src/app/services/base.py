@@ -1,5 +1,5 @@
 from app.models import db
-from datetime import datetime, time
+from datetime import datetime
 
 
 def _get_pk(record):
@@ -112,9 +112,4 @@ def delete_record(record):
     return record
 
 
-def bulk_commit():
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
+

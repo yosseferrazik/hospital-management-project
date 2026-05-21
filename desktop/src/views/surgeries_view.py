@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from services.api_client import APIClient
 from utils.session import Session
-from utils.ui_style import UIStyle
 
 
 class SurgeriesView:
@@ -14,22 +13,6 @@ class SurgeriesView:
         self.create_widgets()
 
     def create_widgets(self):
-        style = ttk.Style(self.parent)
-        style.theme_use("clam")
-        style.configure(
-            "Treeview",
-            background=UIStyle.CARD_BG,
-            fieldbackground=UIStyle.CARD_BG,
-            foreground=UIStyle.TEXT_DARK,
-            rowheight=26,
-        )
-        style.configure(
-            "Treeview.Heading",
-            font=UIStyle.FONT_BOLD,
-            background=UIStyle.ACCENT,
-            foreground="white",
-        )
-
         filter_frame = ttk.Frame(self.parent)
         filter_frame.pack(fill="x", padx=10, pady=10)
 

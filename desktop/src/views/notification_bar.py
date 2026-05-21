@@ -26,31 +26,34 @@ class NotificationBar:
         self._poll()
 
     def _poll(self):
-        running = self.tracker.running()
-        self.tracker.clean_old()
+        try:
+            running = self.tracker.running()
+            self.tracker.clean_old()
 
-        if running:
-            names = ", ".join(p["name"] for p in running)
-            self.label.config(text=f"Running: {names}")
-            if self._clear_after:
-                self.frame.after_cancel(self._clear_after)
-                self._clear_after = None
-            self.frame.after(500, self._poll)
-        elif self._clear_after:
-            self.frame.after(500, self._poll)
-        else:
-            completed = self.tracker.last_completed(1)
-            if completed:
-                c = completed[-1]
-                if c["started"] != self._last_shown:
-                    msg = c.get("message") or c["name"]
-                    icon = "OK" if c["status"] == "success" else "FAIL"
-                    self.label.config(text=f"{icon} {msg}")
-                    self._last_shown = c["started"]
-                    self._clear_after = self.frame.after(5000, self._clear)
-                    self.frame.after(500, self._poll)
-                    return
-            self.label.config(text="Ready")
+            if running:
+                names = ", ".join(p["name"] for p in running)
+                self.label.config(text=f"Running: {names}")
+                if self._clear_after:
+                    self.frame.after_cancel(self._clear_after)
+                    self._clear_after = None
+                self.frame.after(500, self._poll)
+            elif self._clear_after:
+                self.frame.after(500, self._poll)
+            else:
+                completed = self.tracker.last_completed(1)
+                if completed:
+                    c = completed[-1]
+                    if c["started"] != self._last_shown:
+                        msg = c.get("message") or c["name"]
+                        icon = "OK" if c["status"] == "success" else "FAIL"
+                        self.label.config(text=f"{icon} {msg}")
+                        self._last_shown = c["started"]
+                        self._clear_after = self.frame.after(5000, self._clear)
+                        self.frame.after(500, self._poll)
+                        return
+                self.label.config(text="Ready")
+                self.frame.after(2000, self._poll)
+        except Exception:
             self.frame.after(2000, self._poll)
 
     def _clear(self):

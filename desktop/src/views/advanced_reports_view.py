@@ -68,11 +68,7 @@ class AdvancedReportsView:
             builder(frame)
             self.tabs[key] = frame
 
-        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_change)
         self._load_all()
-
-    def _date_params(self):
-        return self.start_entry.get().strip(), self.end_entry.get().strip()
 
     def _capture_date_params(self):
         return (self.start_entry.get().strip(), self.end_entry.get().strip())
@@ -166,9 +162,6 @@ class AdvancedReportsView:
         self._wl_tree = tk.Frame(parent, bg=UIStyle.BG)
         self._wl_tree.pack(fill="both", expand=True, padx=24, pady=(8, 24))
 
-    def _on_tab_change(self, event=None):
-        pass
-
     def refresh_all(self):
         self._load_all()
 
@@ -203,29 +196,33 @@ class AdvancedReportsView:
 
     def _load_all(self):
         dates = self._capture_date_params()
-        self._call_async("/reports/summary", self.api_client.get_report_summary, dates, self._render_summary)
-        self._call_async("/reports/visits", self.api_client.get_report_visits, dates, self._render_visits)
-        self._call_async("/reports/surgeries", self.api_client.get_report_surgeries, dates, self._render_surgeries)
-        self._call_async("/reports/admissions", self.api_client.get_report_admissions, dates, self._render_admissions)
-        self._call_async("/reports/medications", self.api_client.get_report_medications, dates, self._render_medications)
-        self._call_async("/reports/financial", self.api_client.get_report_financial, dates, self._render_financial)
-        self._call_async("/reports/radiology", self.api_client.get_report_radiology, dates, self._render_radiology)
-        self._call_async("/reports/doctor-workload", self.api_client.get_report_doctor_workload, dates, self._render_workload)
+        self._call_async(self.api_client.get_report_summary, dates, self._render_summary)
+        self._call_async(self.api_client.get_report_visits, dates, self._render_visits)
+        self._call_async(self.api_client.get_report_surgeries, dates, self._render_surgeries)
+        self._call_async(self.api_client.get_report_admissions, dates, self._render_admissions)
+        self._call_async(self.api_client.get_report_medications, dates, self._render_medications)
+        self._call_async(self.api_client.get_report_financial, dates, self._render_financial)
+        self._call_async(self.api_client.get_report_radiology, dates, self._render_radiology)
+        self._call_async(self.api_client.get_report_doctor_workload, dates, self._render_workload)
 
-    def _call_async(self, name, api_method, dates, render_fn):
+    def _call_async(self, api_method, dates, render_fn):
         start, end = dates
 
         def worker(s, e):
             try:
                 data, error = api_method(start_date=s, end_date=e)
-                if not error and not self._is_destroyed:
-                    self.page.after(0, lambda d=data: render_fn(d))
-            except Exception:
-                pass
+                if self._is_destroyed:
+                    return
+                if error:
+                    self.page.after(0, lambda err=error: messagebox.showerror("Report Error", err))
+                    return
+                self.page.after(0, lambda d=data: render_fn(d))
+            except Exception as e:
+                if not self._is_destroyed:
+                    self.page.after(0, lambda err=str(e): messagebox.showerror("Report Error", err))
 
         threading.Thread(target=worker, args=(start, end), daemon=True).start()
 
-    # ── Filter callbacks ──
     def _filter_visits(self):
         dates = self._capture_date_params()
         spec = self._visits_spec.get().strip() or None
@@ -283,7 +280,6 @@ class AdvancedReportsView:
 
         threading.Thread(target=worker, args=(dates[0], dates[1], status), daemon=True).start()
 
-    # ── Render helpers ──
     def _fill_tree(self, tree_frame, columns, records, col_widths=None):
         for widget in tree_frame.winfo_children():
             widget.destroy()

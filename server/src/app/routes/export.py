@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Blueprint, request, jsonify, Response
 from app.services.export_service import (
     get_visits_data,
@@ -19,7 +21,6 @@ def download_visits():
     if not start_date or not end_date:
         return jsonify({"error": "start_date and end_date are required (YYYY-MM-DD)"}), 400
     try:
-        from datetime import datetime
         start = datetime.strptime(start_date, "%Y-%m-%d")
         end = datetime.strptime(end_date, "%Y-%m-%d")
     except ValueError:
@@ -54,7 +55,6 @@ def send_export():
     if not start_date or not end_date:
         return jsonify({"error": "start_date and end_date are required"}), 400
     try:
-        from datetime import datetime
         start = datetime.strptime(start_date, "%Y-%m-%d")
         end = datetime.strptime(end_date, "%Y-%m-%d")
     except ValueError:
