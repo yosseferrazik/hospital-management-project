@@ -399,7 +399,7 @@ def _cyrillic_word():
 def _flush_batch(committed=0):
     db.session.flush()
     committed += 1
-    if committed % 20 == 0:
+    if committed % 500 == 0:
         db.session.commit()
     return committed
 
@@ -558,7 +558,7 @@ def _create_staff_batch(specialty_map, patient_count, floors):
 
 
 def _create_patients(count):
-    patients = []
+    patient_ids = []
     batch_committed = 0
     for _ in range(count):
         first_name, last_name = _cyrillic_name()
@@ -580,10 +580,10 @@ def _create_patients(count):
         db.session.add(p)
         db.session.flush()
         _register("patients", p.patient_id)
-        patients.append(p)
+        patient_ids.append(p.patient_id)
         batch_committed = _flush_batch(batch_committed)
     db.session.commit()
-    return patients
+    return patient_ids
 
 
 def generate_dummy_data(patient_count=20):
@@ -599,6 +599,7 @@ def generate_dummy_data(patient_count=20):
 
     visit_count = max(patient_count * 2, 30)
     visits = []
+    batch = 0
     for _ in range(visit_count):
         doctor = random.choice(doctors)
         spec_name = specialty_names.get(doctor.specialty_id, "Cardiologia")
@@ -609,7 +610,7 @@ def generate_dummy_data(patient_count=20):
         else:
             notes = fake.sentence(nb_words=15)
         visit = Visit(
-            patient_id=random.choice(patients).patient_id,
+            patient_id=random.choice(patients),
             doctor_id=doctor.staff_id,
             visit_timestamp=fake.date_time_between(start_date="-60d", end_date="+5d"),
             diagnosis=random.choice(diag_pool),
@@ -618,13 +619,16 @@ def generate_dummy_data(patient_count=20):
         db.session.add(visit)
         db.session.flush()
         _register("visits", visit.visit_id)
-        visits.append(visit)
+        visits.append((visit.visit_id, visit.visit_timestamp))
+        batch += 1
+        if batch % 500 == 0:
+            db.session.commit()
     db.session.commit()
 
-    for visit in visits[:max(10, len(visits) // 2)]:
+    for visit_id, visit_ts in visits[:max(10, len(visits) // 2)]:
         appt = ScheduledAppointment(
-            visit_id=visit.visit_id,
-            appointment_date=visit.visit_timestamp.date() + timedelta(days=random.randint(0, 7)),
+            visit_id=visit_id,
+            appointment_date=visit_ts.date() + timedelta(days=random.randint(0, 7)),
             appointment_time=(
                 datetime.min + timedelta(
                     hours=random.randint(8, 18),
@@ -640,11 +644,12 @@ def generate_dummy_data(patient_count=20):
 
     surgery_count = max(patient_count // 2, 10)
     surgeries = []
+    batch = 0
     for _ in range(surgery_count):
         start_hour = random.randint(7, 17)
         end_hour = start_hour + random.randint(1, 4)
         surgery = Surgery(
-            patient_id=random.choice(patients).patient_id,
+            patient_id=random.choice(patients),
             theater_id=random.choice(theaters).theater_id,
             primary_surgeon_id=random.choice(doctors).staff_id,
             surgery_date=datetime.now(timezone.utc).date() + timedelta(days=random.randint(-30, 10)),
@@ -656,26 +661,30 @@ def generate_dummy_data(patient_count=20):
         db.session.add(surgery)
         db.session.flush()
         _register("surgeries", surgery.surgery_id)
-        surgeries.append(surgery)
+        surgeries.append(surgery.surgery_id)
+        batch += 1
+        if batch % 500 == 0:
+            db.session.commit()
     db.session.commit()
 
-    for surgery in surgeries:
+    for surgery_id in surgeries:
         for nurse in random.sample(nurses, k=min(2, len(nurses))):
             assistant = SurgeryAssistant(
-                surgery_id=surgery.surgery_id,
+                surgery_id=surgery_id,
                 nurse_id=nurse.staff_id,
                 role=random.choice(["Instrumentista", "Circulante"]),
             )
             db.session.add(assistant)
             db.session.flush()
-            _register("surgery_assistants", surgery.surgery_id)
+            _register("surgery_assistants", surgery_id)
     db.session.commit()
 
     admission_count = max(patient_count // 2, 10)
     admissions = []
-    for patient in patients[:admission_count]:
+    batch = 0
+    for patient_id in patients[:admission_count]:
         a = Admission(
-            patient_id=patient.patient_id,
+            patient_id=patient_id,
             room_id=random.choice(rooms).room_id,
             admission_date=fake.date_time_between(start_date="-30d", end_date="now"),
             expected_discharge_date=datetime.now(timezone.utc).date() + timedelta(days=random.randint(2, 15)),
@@ -683,10 +692,13 @@ def generate_dummy_data(patient_count=20):
         db.session.add(a)
         db.session.flush()
         _register("admissions", a.admission_id)
-        admissions.append(a)
+        admissions.append(a.admission_id)
+        batch += 1
+        if batch % 500 == 0:
+            db.session.commit()
     db.session.commit()
 
-    for visit in visits[:min(visit_count, len(visits))]:
+    for visit_id, _ in visits[:min(visit_count, len(visits))]:
         med = random.choice(medications)
         dosage_map = {m.medication_name: m for m in medications}
         chosen = dosage_map.get(med.medication_name, med)
@@ -717,7 +729,7 @@ def generate_dummy_data(patient_count=20):
         freq = random.choice(["Cada 8 horas", "Cada 12 horas", "Cada 24 horas", "Cada 6 horas"])
         duration = random.choice([5, 7, 10, 14, 21])
         prescription = Prescription(
-            visit_id=visit.visit_id,
+            visit_id=visit_id,
             medication_id=chosen.medication_id,
             dosage=dosage,
             frequency=freq,
@@ -729,9 +741,9 @@ def generate_dummy_data(patient_count=20):
         _register("prescriptions", prescription.prescription_id)
     db.session.commit()
 
-    for admission in admissions:
+    for admission_id in admissions:
         disp = PharmacyDispensation(
-            admission_id=admission.admission_id,
+            admission_id=admission_id,
             dispensed_at=fake.date_time_between(start_date="-15d", end_date="now"),
             total_cost=round(random.uniform(15, 450), 2),
             notes=fake.sentence(nb_words=10),
@@ -754,10 +766,11 @@ def generate_dummy_data(patient_count=20):
     db.session.commit()
 
     exam_count = max(patient_count, 15)
-    for patient in patients[:exam_count]:
+    batch = 0
+    for patient_id in patients[:exam_count]:
         doctor = random.choice(doctors)
         exam = RadiologyExam(
-            patient_id=patient.patient_id,
+            patient_id=patient_id,
             requesting_doctor_id=doctor.staff_id,
             exam_type=random.choice(RADIOLOGY_EXAMS),
             requested_at=fake.date_time_between(start_date="-30d", end_date="now"),
@@ -769,6 +782,9 @@ def generate_dummy_data(patient_count=20):
         db.session.add(exam)
         db.session.flush()
         _register("radiology_exams", exam.exam_id)
+        batch += 1
+        if batch % 500 == 0:
+            db.session.commit()
     db.session.commit()
 
     # ── set some actual_discharge dates on older admissions ──
