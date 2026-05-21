@@ -21,6 +21,7 @@ from views.statistics_view import StatisticsView
 from views.advanced_reports_view import AdvancedReportsView
 from views.user_management_view import UserManagementView
 from views.audit_log_view import AuditLogView
+from views.notification_bar import NotificationBar
 
 
 class MainInterface:
@@ -44,7 +45,7 @@ class MainInterface:
         self.frame.columnconfigure(1, weight=1)
 
         self.sidebar = tk.Frame(self.frame, bg=UIStyle.HEADER_BG, width=210)
-        self.sidebar.grid(row=0, column=0, rowspan=2, sticky="nsew")
+        self.sidebar.grid(row=0, column=0, rowspan=3, sticky="nsew")
         self.sidebar.grid_propagate(False)
 
         header = tk.Frame(self.sidebar, bg=UIStyle.HEADER_BG)
@@ -164,6 +165,9 @@ class MainInterface:
 
         self.content = tk.Frame(self.frame, bg=UIStyle.BG)
         self.content.grid(row=1, column=1, sticky="nsew")
+
+        self.notification_bar = NotificationBar(self.frame)
+        self.notification_bar.frame.grid(row=2, column=1, sticky="ew")
 
     def navigate(self, section):
         if self.current_section == section:

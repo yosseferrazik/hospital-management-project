@@ -832,7 +832,6 @@ def _generate_all(patient_count, floors, rooms, theaters, medications, doctors, 
             db.session.commit()
     db.session.commit()
 
-    # ── set some actual_discharge dates on older admissions ──
     older = Admission.query.filter(
         Admission.admission_date < (datetime.now(timezone.utc) - timedelta(days=3))
     ).all()

@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from services.api_client import APIClient
+from services.process_tracker import ProcessTracker
 from utils.session import Session
 from utils.ui_style import UIStyle
 
@@ -13,6 +14,7 @@ class TestDataView:
         self.app = app
         self.session = Session()
         self.api_client = APIClient(self.session)
+        self.tracker = ProcessTracker()
         self._is_destroyed = False
 
         self.create_widgets()
@@ -69,7 +71,7 @@ class TestDataView:
         self.count_entry.pack(side="left", padx=(8, 0))
         tk.Label(
             count_row,
-            text="(1–50 000)",
+            text="(1\u201350 000)",
             font=UIStyle.SUBTITLE_FONT,
             bg=UIStyle.CARD_BG,
             fg=UIStyle.TEXT_LIGHT,
@@ -121,10 +123,12 @@ class TestDataView:
             count = max(1, min(count, 50000))
         except ValueError:
             count = 14
+        proc = self.tracker.start(f"Generating {count} patients")
         self._run_async(
             "Generating dummy data...",
             lambda: self.api_client.generate_dummy(count=count),
             f"Dummy data generated successfully ({count} patients).",
+            proc,
         )
 
     def clear_data(self):
@@ -133,13 +137,15 @@ class TestDataView:
             "This will remove dummy records registered by the backend. Continue?",
         ):
             return
+        proc = self.tracker.start("Cleaning dummy data")
         self._run_async(
             "Cleaning dummy data...",
             self.api_client.cleanup_dummy,
             "Dummy data removed successfully.",
+            proc,
         )
 
-    def _run_async(self, start_message, action, success_message):
+    def _run_async(self, start_message, action, success_message, proc):
         self.log(start_message)
         self.progress.start()
 
@@ -148,22 +154,24 @@ class TestDataView:
             if self._is_destroyed or not self.page.winfo_exists():
                 return
             self.page.after(
-                0, lambda: self._finish_async(response, error, success_message)
+                0, lambda: self._finish_async(response, error, success_message, proc)
             )
 
         threading.Thread(target=worker, daemon=True).start()
 
-    def _finish_async(self, response, error, success_message):
+    def _finish_async(self, response, error, success_message, proc):
         self.progress.stop()
         if error:
             self.log(f"Error: {error}")
+            self.tracker.end(proc, "error", f"Error: {error}")
             messagebox.showerror("Error", error)
             return
         payload_message = (
             response.get("message") if isinstance(response, dict) else None
         )
-        self.log(payload_message or success_message)
-        messagebox.showinfo("Success", payload_message or success_message)
+        msg = payload_message or success_message
+        self.log(msg)
+        self.tracker.end(proc, "success", msg)
 
     def log(self, message):
         self.log_text.insert("end", message + "\n")

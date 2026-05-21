@@ -40,7 +40,6 @@ import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
-# Configuration from environment or defaults
 DB_NAME = os.getenv('HMS_DB_NAME', 'hsp_db')
 DB_HOST = os.getenv('HMS_DB_HOST', 'localhost')
 DB_PORT = os.getenv('HMS_DB_PORT', '5432')
@@ -56,7 +55,6 @@ STANDBY_DIR = os.getenv('HMS_STANDBY_DIR', '/backups/local')
 BACKUP_PATTERN = f"{DB_NAME}_*.dump"
 TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
 
-# Tables whose data changes rarely — excluded from incremental (--frequent) backups
 STATIC_TABLES = [
     "staff", "medical_staff", "nursing_staff", "general_staff",
     "medical_staff_specialties", "floors", "rooms", "operating_theaters",
@@ -384,12 +382,10 @@ def parse_args():
 def main():
     args = parse_args()
 
-    # --- LIST mode ---
     if args.list:
         list_backups(before=args.before, json_output=args.json)
         return
 
-    # --- RESTORE mode ---
     if args.restore:
         backup_filepath = None
 
@@ -421,7 +417,6 @@ def main():
         success = restore_database(backup_filepath)
         sys.exit(0 if success else 1)
 
-    # --- BACKUP mode ---
     logger.info("=== HMS Backup Script Started ===")
     logger.info("Database: %s @ %s:%s", DB_NAME, DB_HOST, DB_PORT)
     logger.info("Backup directory: %s", BACKUP_DIR)
