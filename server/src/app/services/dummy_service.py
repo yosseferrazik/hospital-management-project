@@ -472,7 +472,7 @@ def _ensure_support_data():
     return specialty_map, floors, Room.query.all(), OperatingTheater.query.all(), Medication.query.all()
 
 
-def _create_staff_batch(specialty_map, patient_count):
+def _create_staff_batch(specialty_map, patient_count, floors):
     factor = max(1, math.ceil(patient_count / 1000))
     all_specialties = list(specialty_map.values())
     batch_committed = 0
@@ -520,7 +520,7 @@ def _create_staff_batch(specialty_map, patient_count):
             staff_id=staff.staff_id,
             nursing_license=f"ENF-{fake.unique.numerify(text='######')}",
             assigned_doctor_id=random.choice(doctors).staff_id if doctors else None,
-            assigned_floor_id=random.randint(1, 5),
+            assigned_floor_id=random.choice(floors).floor_id,
             certifications=random.choice([
                 "Enfermeria general, cuidados intensivos",
                 "Enfermeria quirurgica, instrumentacion",
@@ -589,9 +589,10 @@ def _create_patients(count):
 def generate_dummy_data(patient_count=20):
     patient_count = max(1, min(patient_count, 50000))
     cleanup_dummy()
+    fake.unique.clear()
 
     specialty_map, floors, rooms, theaters, medications = _ensure_support_data()
-    doctors, nurses, _general = _create_staff_batch(specialty_map, patient_count)
+    doctors, nurses, _general = _create_staff_batch(specialty_map, patient_count, floors)
     patients = _create_patients(patient_count)
 
     specialty_names = {s.specialty_id: s.name for s in MedicalSpecialty.query.all()}

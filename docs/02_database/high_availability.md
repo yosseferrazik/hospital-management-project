@@ -387,9 +387,10 @@ python scripts/backup_database.py --restore latest --dry-run
 
 The script will:
 1. Verify the backup integrity with `pg_restore -l`
-2. **Drop** the current `hsp_db` database
-3. Recreate it empty
-4. Run `pg_restore --clean --if-exists`
+2. Terminate any active connections to `hsp_db`
+3. **Drop** the current `hsp_db` database
+4. Recreate it empty
+5. Run `pg_restore --clean --if-exists`
 
 Because this is destructive, the script asks for confirmation (`yes`) before proceeding.
 
