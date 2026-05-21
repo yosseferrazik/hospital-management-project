@@ -262,9 +262,9 @@ hostssl hsp_db          app_nurse       127.0.0.1/32            scram-sha-256
 hostssl hsp_db          app_receptionist 127.0.0.1/32           scram-sha-256
 hostssl hsp_db          app_staff       127.0.0.1/32            scram-sha-256
 
-# Backup user (from Briar itself — no SSL required for local backup connections)
-host    hsp_db          backup_user     127.0.0.1/32            scram-sha-256
-host    hsp_db          backup_user     ::1/128                 scram-sha-256
+# Backup user (from Briar itself — needs access to template1 for dropdb/createdb)
+host    all             backup_user     127.0.0.1/32            scram-sha-256
+host    all             backup_user     ::1/128                 scram-sha-256
 ```
 
 All remote connections use **SSL** (`hostssl`). Connections over Tailscale have both Tailscale's own encryption **plus** PostgreSQL SSL (double layer).

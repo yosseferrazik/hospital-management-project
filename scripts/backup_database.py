@@ -222,12 +222,21 @@ def restore_database(backup_filepath, dry_run=False):
 
     if dry_run:
         print("\n[DRY-RUN] Would execute:")
+        print(f"  $ psql -h {DB_HOST} -p {DB_PORT} -U {DB_USER} -d template1 -c \"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{DB_NAME}' AND pid <> pg_backend_pid()\"")
         print(f"  $ {' '.join(dropdb_cmd)}")
         print(f"  $ {' '.join(createdb_cmd)}")
         print(f"  $ {' '.join(pgrestore_cmd)}")
         return True
 
     try:
+        logger.info("Terminating active connections to %s ...", DB_NAME)
+        term_cmd = [
+            'psql', '-h', DB_HOST, '-p', DB_PORT, '-U', DB_USER,
+            '-d', 'template1',
+            '-c', f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{DB_NAME}' AND pid <> pg_backend_pid()"
+        ]
+        subprocess.run(term_cmd, check=False, capture_output=True, text=True, env=pg_env())
+
         logger.info("Dropping database %s ...", DB_NAME)
         subprocess.run(dropdb_cmd, check=True, capture_output=True, text=True, env=pg_env())
 
