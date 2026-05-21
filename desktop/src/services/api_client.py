@@ -187,7 +187,7 @@ class APIClient:
         )
 
     def generate_dummy(self, count=14):
-        return self._request("POST", "/dummy/generate", data={"count": count}, timeout=300)
+        return self._request("POST", "/dummy/generate", data={"count": count}, timeout=1800)
 
     def cleanup_dummy(self):
         return self._request("DELETE", "/dummy/cleanup", data={})

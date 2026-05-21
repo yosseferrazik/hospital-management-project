@@ -56,6 +56,14 @@ STANDBY_DIR = os.getenv('HMS_STANDBY_DIR', '/backups/local')
 BACKUP_PATTERN = f"{DB_NAME}_*.dump"
 TIMESTAMP_FORMAT = '%Y%m%d_%H%M%S'
 
+# Tables whose data changes rarely — excluded from incremental (--frequent) backups
+STATIC_TABLES = [
+    "staff", "medical_staff", "nursing_staff", "general_staff",
+    "medical_staff_specialties", "floors", "rooms", "operating_theaters",
+    "medical_devices", "medical_specialties", "medications",
+    "app_users", "dummy_registry",
+]
+
 
 def pg_env():
     env = os.environ.copy()
@@ -145,7 +153,7 @@ def find_backup(before=None):
     return backups[0]
 
 
-def run_backup():
+def run_backup(exclude_static_data=False):
     """Execute PostgreSQL backup using pg_dump."""
     timestamp = datetime.now().strftime(TIMESTAMP_FORMAT)
     backup_filename = f"{DB_NAME}_{timestamp}.dump"
@@ -163,6 +171,11 @@ def run_backup():
         '-v',
         '-f', backup_filepath
     ]
+
+    if exclude_static_data:
+        for table in STATIC_TABLES:
+            cmd.extend(['--exclude-table-data', table])
+        logger.info("Incremental mode: excluding data from %d static/reference tables", len(STATIC_TABLES))
 
     try:
         logger.info("Starting backup to %s...", backup_filepath)
@@ -361,7 +374,8 @@ def parse_args():
                         help='Show what restore would do without executing it')
     parser.add_argument('--json', action='store_true', help='Output list in JSON format')
     parser.add_argument('--frequent', action='store_true',
-                        help='Quick frequent backup mode: skips verify + rsync, '
+                        help='Incremental frequent backup mode: skips verify + rsync, '
+                             'excludes static table data (staff, floors, etc.), '
                              'uses hourly retention (default 24h). '
                              'Ideal for every-15-min cron jobs to achieve minute-level RPO.')
     return parser.parse_args()
@@ -413,10 +427,10 @@ def main():
     logger.info("Backup directory: %s", BACKUP_DIR)
 
     if args.frequent:
-        logger.info("Frequent mode: skipping verify + rsync")
+        logger.info("Frequent mode: skipping verify + rsync, incremental (static table data excluded)")
         freq_hours = int(os.getenv('FREQUENT_RETENTION_HOURS', '24'))
 
-    backup_filepath, backup_success = run_backup()
+    backup_filepath, backup_success = run_backup(exclude_static_data=args.frequent)
 
     if not backup_success:
         logger.error("Backup execution failed - aborting cleanup and archive")
