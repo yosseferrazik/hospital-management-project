@@ -13,6 +13,7 @@ from app.models import (
 )
 
 fake = Faker("es_ES")
+fake_ru = Faker("ru_RU")
 BATCH = 1000
 
 MEDICAL_SPECIALTIES = [
@@ -385,6 +386,16 @@ def _unique_email(prefix):
     return f"{prefix}.{fake.unique.lexify(text='??????')}@salutpalomera.test"
 
 
+def _cyrillic_name():
+    if random.random() < 0.05:
+        return fake_ru.first_name(), fake_ru.last_name()
+    return fake.first_name(), fake.last_name()
+
+def _cyrillic_word():
+    if random.random() < 0.05:
+        return fake_ru.text(max_nb_chars=80)
+    return ""
+
 def _flush_batch(committed=0):
     db.session.flush()
     committed += 1
@@ -467,10 +478,11 @@ def _create_staff_batch(specialty_map, patient_count):
     batch_committed = 0
 
     def _make_staff(staff_type):
+        first_name, last_name = _cyrillic_name()
         s = Staff(
             national_id=fake.unique.numerify(text="########"),
-            first_name=fake.first_name(),
-            last_name=fake.last_name(),
+            first_name=first_name,
+            last_name=last_name,
             birth_date=_random_birth_date(),
             phone=fake.phone_number(),
             ssn=fake.unique.numerify(text="##########"),
@@ -549,10 +561,11 @@ def _create_patients(count):
     patients = []
     batch_committed = 0
     for _ in range(count):
+        first_name, last_name = _cyrillic_name()
         p = Patient(
             national_id=fake.unique.numerify(text="########"),
-            first_name=fake.first_name(),
-            last_name=fake.last_name(),
+            first_name=first_name,
+            last_name=last_name,
             birth_date=_random_birth_date(1, 90),
             gender=random.choice(["MALE", "FEMALE", "OTHER"]),
             phone=fake.phone_number(),
@@ -589,12 +602,17 @@ def generate_dummy_data(patient_count=20):
         doctor = random.choice(doctors)
         spec_name = specialty_names.get(doctor.specialty_id, "Cardiologia")
         diag_pool = DIAGNOSES_BY_SPECIALTY.get(spec_name, DIAGNOSES_BY_SPECIALTY["Cardiologia"])
+        cyr_note = _cyrillic_word()
+        if cyr_note:
+            notes = f"{fake.sentence(nb_words=12)} {cyr_note}"
+        else:
+            notes = fake.sentence(nb_words=15)
         visit = Visit(
             patient_id=random.choice(patients).patient_id,
             doctor_id=doctor.staff_id,
             visit_timestamp=fake.date_time_between(start_date="-60d", end_date="+5d"),
             diagnosis=random.choice(diag_pool),
-            notes=fake.sentence(nb_words=15),
+            notes=notes,
         )
         db.session.add(visit)
         db.session.flush()

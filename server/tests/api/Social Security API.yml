@@ -1,0 +1,15 @@
+info:
+  name: Social Security API
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://100.78.155.2:5000/api/export/send
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -47,7 +47,6 @@ nosetests.xml
 .env
 .env.*
 !.env.example
-server/login_credentials.enc
 *.pem
 *.crt
 *.key

@@ -1,27 +1,30 @@
-# Documentation
+# Documentation — Hospital Management System
 
-The project documentation is organized in two complementary layers:
-
-## Practical Guides (Quick Start)
+## Quick Start
 
 | Guide | Description |
 |:------|:------------|
-| [Installation Guide](./04_Operations/Installation_Guide.md) | Step-by-step setup from scratch |
-| [Configuration Guide](./04_Operations/Configuration_Guide.md) | Environment variables, database, ports, logging |
-| [Deployment Guide](./03_Infrastructure_Security/Deployment_Guide.md) | Production deployment on real servers |
-| [Usage Guide](./04_Operations/Usage_Guide.md) | API endpoints with real request/response examples |
+| [Installation Guide](./04_deployment/installation_guide.md) | How to set up and run the project from scratch |
+| [Configuration](./04_deployment/configuration.md) | Environment variables, ports, production setup |
+| [User Manual](./05_user_guides/user_manual.md) | How to use the desktop application |
+| [Administrator Manual](./05_user_guides/administrator_manual.md) | User management, audit, backup and recovery |
 
-## Reference Documentation (Detailed)
+## Reference
 
-| Directory | Purpose |
-|:----------|:--------|
-| `00_Governance/` | Project session logs, reference sources, documentation backlog |
-| `01_Planning/` | Architecture overview, functional/non-functional requirements, tech stack, system context |
-| `02_Data/` | Data dictionary, relational model, database standards, access control matrix |
-| `03_Infrastructure_Security/` | Deployment architecture, network, TLS, HA/backup strategy, secrets management |
-| `04_Operations/` | Runbooks, incident response, replication, backup/restore, installation, configuration, usage |
-| `99_Index/` | Table of contents, documentation audit |
+| Directory | Contents |
+|:----------|:---------|
+| `01_planning/` | Project overview, architecture, tech stack, system context diagram |
+| `02_database/` | ER/relational model, security and compliance, high availability, test data, AGPD |
+| `03_application/` | Authentication, maintenance, reports, export and dashboard |
+| `04_deployment/` | Installation guide, configuration |
+| `05_user_guides/` | User and administrator manuals |
 
-> **Tip:** For a quick start, read the practical guides first. Refer to the detailed docs for in-depth understanding.
->
-> The canonical architectural reference is **[TECHNICAL_SPECIFICATION.md](../TECHNICAL_SPECIFICATION.md)**
+## References
+
+- PostgreSQL 16: https://www.postgresql.org/docs/
+- Flask: https://flask.palletsprojects.com/
+- Python: https://docs.python.org/3/
+- Faker: https://faker.readthedocs.io/
+- Chart.js: https://www.chartjs.org/
+- LOPDGDD 3/2018: https://www.boe.es/buscar/act.php?id=BOE-A-2018-16673
+- OWASP Top 10: https://owasp.org/www-project-top-ten/

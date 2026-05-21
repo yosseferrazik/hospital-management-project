@@ -3,8 +3,8 @@ import os
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom import minidom
 
-from app.models import db, Visit, Patient, MedicalStaff, Staff, MedicalSpecialty
-from datetime import datetime, date
+from app.models import db, Visit, Patient, MedicalStaff, Staff, MedicalSpecialty, Surgery, Admission, NursingStaff, Room, Floor
+from datetime import datetime, date, timedelta
 
 
 def _visits_query(start_date, end_date):
@@ -103,8 +103,17 @@ def validate_xml(data_str):
 def get_dashboard_stats():
     today = date.today()
     start = datetime(today.year, today.month, today.day)
-    total = db.session.query(Visit).filter(Visit.visit_timestamp >= start).count()
-    rows = (
+
+    visits_today = db.session.query(Visit).filter(Visit.visit_timestamp >= start).count()
+    surgeries_today = db.session.query(Surgery).filter(Surgery.surgery_date == today).count()
+    active_admissions = db.session.query(Admission).filter(Admission.actual_discharge_date.is_(None)).count()
+
+    total_patients = db.session.query(Patient).count()
+    total_staff = db.session.query(Staff).count()
+    total_doctors = db.session.query(MedicalStaff).count()
+    total_nurses = db.session.query(NursingStaff).count()
+
+    by_specialty_rows = (
         db.session.query(
             MedicalSpecialty.name,
             db.func.count(Visit.visit_id).label("count"),
@@ -116,8 +125,72 @@ def get_dashboard_stats():
         .order_by(db.desc("count"))
         .all()
     )
+
+    trend = []
+    for i in range(6, -1, -1):
+        day = today - timedelta(days=i)
+        day_start = datetime(day.year, day.month, day.day)
+        day_end = day_start + timedelta(days=1)
+        count = db.session.query(Visit).filter(
+            Visit.visit_timestamp >= day_start,
+            Visit.visit_timestamp < day_end
+        ).count()
+        trend.append({"date": day.isoformat(), "count": count})
+
+    top_doctors = (
+        db.session.query(
+            Staff.first_name,
+            Staff.last_name,
+            db.func.count(Visit.visit_id).label("visit_count"),
+        )
+        .join(MedicalStaff, MedicalStaff.staff_id == Visit.doctor_id)
+        .join(Staff, Staff.staff_id == MedicalStaff.staff_id)
+        .filter(Visit.visit_timestamp >= start)
+        .group_by(Staff.first_name, Staff.last_name)
+        .order_by(db.desc("visit_count"))
+        .limit(5)
+        .all()
+    )
+
+    recent_admissions = (
+        db.session.query(
+            Patient.first_name,
+            Patient.last_name,
+            Admission.admission_date,
+            Room.room_number,
+            Floor.floor_number,
+        )
+        .join(Admission, Admission.patient_id == Patient.patient_id)
+        .join(Room, Room.room_id == Admission.room_id)
+        .join(Floor, Floor.floor_id == Room.floor_id)
+        .filter(Admission.actual_discharge_date.is_(None))
+        .order_by(Admission.admission_date.desc())
+        .limit(10)
+        .all()
+    )
+
     return {
         "date": today.isoformat(),
-        "total_visits": total,
-        "by_specialty": [{"specialty": r.name, "count": r.count} for r in rows],
+        "visits_today": visits_today,
+        "surgeries_today": surgeries_today,
+        "active_admissions": active_admissions,
+        "total_patients": total_patients,
+        "total_staff": total_staff,
+        "total_doctors": total_doctors,
+        "total_nurses": total_nurses,
+        "by_specialty": [{"specialty": r.name, "count": r.count} for r in by_specialty_rows],
+        "visits_trend": trend,
+        "top_doctors": [
+            {"name": f"{r.first_name} {r.last_name}", "count": r.visit_count}
+            for r in top_doctors
+        ],
+        "recent_admissions": [
+            {
+                "patient": f"{r.first_name} {r.last_name}",
+                "since": r.admission_date.isoformat(),
+                "room": r.room_number,
+                "floor": r.floor_number,
+            }
+            for r in recent_admissions
+        ],
     }
