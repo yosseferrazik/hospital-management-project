@@ -18,12 +18,12 @@ scripts/
 ## Deployment
 
 See `scripts/deploy/README.md` for the versioned deploy workflow.  
-See `docs/DEPLOYMENT.md` for the full production deployment guide.
+See `docs/04_deployment/installation_guide.md` for the full production deployment guide.
 
 ## Operations
 
 See `scripts/ops/README.md` for monitoring and maintenance helpers.  
-See `docs/CONFIGURATION.md` for logging and backup configuration.
+See `docs/04_deployment/configuration.md` for logging and backup configuration.
 
 ## systemd
 

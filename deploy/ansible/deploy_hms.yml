@@ -70,6 +70,8 @@
   become: yes
   vars:
     primary_ip: "{{ hostvars['primary']['ansible_host'] }}"
+    repo_url: "https://github.com/yosseferrazik/hospital-management-project.git"
+    hms_dir: "/opt/hms"
   tasks:
     - name: Ensure PostgreSQL 16 is installed
       apt:
@@ -77,9 +79,39 @@
         state: present
         update_cache: yes
 
+    - name: Create hms system user
+      user:
+        name: hms
+        system: yes
+        home: "{{ hms_dir }}"
+        shell: /usr/sbin/nologin
+        state: present
+
+    - name: Create directory structure
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: hms
+        group: hms
+        mode: "0755"
+      loop:
+        - "{{ hms_dir }}/releases"
+        - "{{ hms_dir }}/venv"
+
+    - name: Clone or update repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ hms_dir }}/repo"
+        version: main
+        force: yes
+
+    - name: Create current symlink
+      file:
+        src: "{{ hms_dir }}/repo"
+        dest: "{{ hms_dir }}/current"
+        state: link
+
     - name: Run standby setup
-      command: "PRIMARY_IP={{ primary_ip }} bash scripts/deploy/deploy_standby.sh"
-      args:
-        chdir: "/opt/hms/current"
+      command: "PRIMARY_IP={{ primary_ip }} bash {{ hms_dir }}/current/scripts/deploy/deploy_standby.sh"
       failed_when: false
       ignore_errors: yes

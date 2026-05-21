@@ -25,6 +25,11 @@ ORANGE = (245, 158,  11)
 PURPLE = (124,  58, 237)
 RED    = (220,  38,  38)
 
+PW   = 210   # A4 page width (mm)
+LM   = 20    # left margin (mm)
+RM   = 20    # right margin (mm)
+TW   = PW - LM - RM   # usable content width (mm)
+
 FONT_XS   = 6.5
 FONT_SM   = 7.5
 FONT_BASE = 8.5

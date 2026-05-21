@@ -219,7 +219,7 @@ class TestMisc(unittest.TestCase):
         assert_ok(r, "medications list")
 
     def test_75_health_endpoint(self):
-        r = request("GET", "/health".replace("/api", ""))
+        r = requests.get(f"{BASE_URL.replace('/api', '')}/health", timeout=10)
         # /health is at root, not under /api
         if r.status_code == 200:
             self.assertIn("status", r.json())
@@ -269,6 +269,7 @@ if __name__ == "__main__":
     result = runner.run(unittest.makeSuite(TestNurseAssignment))
     result = runner.run(unittest.makeSuite(TestMisc))
     result = runner.run(unittest.makeSuite(TestDummyData))
+    result = runner.run(unittest.makeSuite(TestAuditLogs))
 
     print()
     print("=" * 60)

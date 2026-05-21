@@ -520,8 +520,8 @@ sudo ufw allow from 100.64.0.0/10 to any port 5000 proto tcp   # Tailscale
 
 ### 9.1 Backup
 
-Backup strategy is documented in the canonical runbook at:
-`docs/04_Operations_and_Manuals/Backup_and_Restore_Runbook.md`
+Backup strategy is documented in:
+`docs/02_database/high_availability.md`
 
 **Scripts:**
 - `scripts/ops/backup.sh` — `pg_dump`-based backup with rotation
@@ -633,17 +633,21 @@ sudo nano /etc/hms.env   # fill DATABASE_URL and JWT_SECRET_KEY
 |:---------|:-------|:--------|
 | `TECHNICAL_SPECIFICATION.md` | **Canonical** | Single source of truth for architecture, deploy, operations |
 | `docs/README.md` | Active | Documentation index and navigation |
-| `docs/04_Operations/Installation_Guide.md` | Active | Quick-start step-by-step setup |
-| `docs/04_Operations/Configuration_Guide.md` | Active | Environment variables, database, ports, logging |
-| `docs/03_Infrastructure_Security/Deployment_Guide.md` | Active | Production deployment guide |
-| `docs/04_Operations/User_Manual.md` | Active | End-user desktop client workflows |
-| `docs/04_Operations/Administrator_Manual.md` | Active | Admin tasks: user management, audit logs |
-| `docs/04_Operations/Usage_Guide.md` | Active | API endpoints with real request/response examples |
-| `docs/02_Data/Data_Dictionary.md` | Active | Database field definitions |
-| `docs/02_Data/Relational_Model.md` | Active | Entity-relationship design |
-| `docs/02_Data/Access_Control_Matrix.md` | Active | Role-based permissions |
-| `docs/03_Infrastructure_Security/` | Supplementary | TLS, network architecture, HA, backup, GDPR |
-| `docs/00_Governance/` | Supplementary | Session log, reference sources, backlog |
+| `docs/04_deployment/installation_guide.md` | Active | Quick-start step-by-step setup |
+| `docs/04_deployment/configuration.md` | Active | Environment variables, database, ports, logging |
+| `docs/05_user_guides/user_manual.md` | Active | End-user desktop client workflows |
+| `docs/05_user_guides/administrator_manual.md` | Active | Admin tasks: user management, audit logs |
+| `docs/02_database/er_relational_model.md` | Active | Entity-relationship design |
+| `docs/02_database/security_and_compliance.md` | Active | Security, RBAC, data masking, AGPD compliance |
+| `docs/02_database/high_availability.md` | Active | HA topology, replication, backup, restore |
+| `docs/02_database/test_data.md` | Active | Dummy data generation |
+| `docs/02_database/agpd_compliance.md` | Active | AGPD data protection documentation |
+| `docs/01_planning/project_overview.md` | Active | Project overview and tech stack |
+| `docs/01_planning/system_context.md` | Active | System context diagram |
+| `docs/03_application/authentication.md` | Active | Login and connectivity block |
+| `docs/03_application/maintenance.md` | Active | Maintenance CRUD operations |
+| `docs/03_application/reports.md` | Active | Reports and queries |
+| `docs/03_application/export_and_dashboard.md` | Active | XML/JSON export and PowerBI dashboard |
 | `scripts/deploy/README.md` | Active | Deploy script usage |
 | `scripts/ops/README.md` | Active | Operations helper usage |
 | `scripts/README.md` | Active | Scripts directory overview |

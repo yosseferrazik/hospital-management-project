@@ -12,16 +12,14 @@
 
 | Guide | Description |
 |:------|:------------|
-| [Installation Guide](./docs/04_Operations/Installation_Guide.md) | Step-by-step setup from scratch |
-| [Configuration Guide](./docs/04_Operations/Configuration_Guide.md) | Environment variables, database, ports, logging |
-| [Deployment Guide](./docs/03_Infrastructure_Security/Deployment_Guide.md) | Production deployment on real servers |
-| [User Manual](./docs/04_Operations/User_Manual.md) | Desktop client features for end users |
-| [Administrator Manual](./docs/04_Operations/Administrator_Manual.md) | User management, audit logs, maintenance |
-| [Usage Guide](./docs/04_Operations/Usage_Guide.md) | API endpoints with real request/response examples |
+| [Installation Guide](./docs/04_deployment/installation_guide.md) | Step-by-step setup from scratch |
+| [Configuration Guide](./docs/04_deployment/configuration.md) | Environment variables, database, ports, logging |
+| [User Manual](./docs/05_user_guides/user_manual.md) | Desktop client features for end users |
+| [Administrator Manual](./docs/05_user_guides/administrator_manual.md) | User management, audit logs, maintenance |
 
 ### Reference Documentation (detailed)
 
-Detailed specs, runbooks, data dictionary, security, and planning documents are in [docs/](./docs/README.md).
+Database design, security, high availability, application specs, and planning documents are in [docs/](./docs/README.md).
 
 ---
 

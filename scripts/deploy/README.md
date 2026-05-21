@@ -84,6 +84,5 @@ Requires PostgreSQL 16 to be installed. Runs `pg_basebackup` from primary to ini
 
 ## See Also
 
-- [Production Deployment Guide](../../docs/DEPLOYMENT.md)
-- [Installation Guide](../../docs/INSTALLATION.md)
-- [Configuration Guide](../../docs/CONFIGURATION.md)
+- [Installation Guide](../../docs/04_deployment/installation_guide.md)
+- [Configuration Guide](../../docs/04_deployment/configuration.md)

@@ -21,6 +21,12 @@ fi
 
 # Clear existing data directory
 PG_DATA=$(pg_lsclusters -h 2>/dev/null | head -1 | awk '{print $6}' || echo "/var/lib/postgresql/16/main")
+
+# Safety check: refuse to rm root or empty string
+if [ -z "$PG_DATA" ] || [ "$PG_DATA" = "/" ]; then
+    echo "FATAL: PG_DATA resolved to '$PG_DATA' — refusing to delete"
+    exit 2
+fi
 rm -rf "$PG_DATA"/*
 
 echo "Running pg_basebackup from $PRIMARY_IP..."

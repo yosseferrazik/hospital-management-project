@@ -15,4 +15,4 @@ export HMS_RETENTION_DAYS="${HMS_RETENTION_DAYS:-5}"
 
 mkdir -p "$HMS_BACKUP_DIR" "$(dirname "$HMS_LOG_FILE")"
 
-exec /usr/bin/python3 /opt/hms/scripts/backup_database.py
+exec /usr/bin/python3 /opt/hms/current/scripts/backup_database.py
