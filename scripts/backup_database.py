@@ -566,18 +566,30 @@ def detect_pgdata(version=None):
                 candidates.insert(0, path)
     except FileNotFoundError:
         pass
+    # First: try to find actual existing PGDATA
     for path in candidates:
-        if Path(path).is_dir():
-            pgdata = Path(path)
-            if (pgdata / 'PG_VERSION').is_file() or (pgdata / 'global').is_dir():
-                logger.info("Detected PGDATA: %s", path)
-                return path
+        p = Path(path)
+        if p.is_dir() and ((p / 'PG_VERSION').is_file() or (p / 'global').is_dir()):
+            logger.info("Detected PGDATA: %s", path)
+            return path
+    # Second: if no PGDATA exists (e.g. restore scenario), construct the
+    # standard Ubuntu path from the detected version
+    ver = version or detect_pg_version()
+    standard = f"/var/lib/postgresql/{ver}/main"
+    if standard in candidates:
+        logger.info("PGDATA does not exist yet — using standard path: %s", standard)
+        return standard
     logger.warning("PGDATA not found at any known path, defaulting to %s", candidates[0])
     return candidates[0]
 
 
 def detect_pg_service(version=None):
-    """Detect PostgreSQL systemd service name."""
+    """Detect PostgreSQL systemd service name reliably.
+
+    Uses `systemctl cat` which succeeds if the unit exists regardless
+    of its current state (active, inactive, failed, etc.).
+    Falls back to listing known candidates.
+    """
     if PG_SERVICE:
         return PG_SERVICE
     ver = version or detect_pg_version()
@@ -585,16 +597,93 @@ def detect_pg_service(version=None):
         f"postgresql@{ver}-main",
         f"postgresql-{ver}",
         "postgresql",
+        "postgresql-server",
     ]
     for svc in candidates:
         try:
-            result = subprocess.run(['systemctl', 'is-active', svc], capture_output=True,
+            result = subprocess.run(['systemctl', 'cat', svc], capture_output=True,
                                     text=True, check=False)
-            if result.returncode == 0 or result.stdout.strip() in ('active', 'inactive'):
+            if result.returncode == 0:
+                logger.debug("Detected PG service: %s", svc)
                 return svc
         except FileNotFoundError:
             pass
+    logger.warning("Could not detect PG service, defaulting to postgresql@%s-main", ver)
     return f"postgresql@{ver}-main"
+
+
+def pg_service_stop(service):
+    """Stop PostgreSQL, trying multiple service names and fallback commands."""
+    services_to_try = [service]
+    # Also try common alternatives
+    ver = detect_pg_version()
+    for alt in [f"postgresql@{ver}-main", f"postgresql-{ver}", "postgresql"]:
+        if alt not in services_to_try:
+            services_to_try.append(alt)
+
+    for svc in services_to_try:
+        try:
+            logger.info("Attempting to stop PostgreSQL via: %s", svc)
+            subprocess.run(['systemctl', 'stop', svc], check=True,
+                           capture_output=True, text=True, timeout=30)
+            logger.info("Stopped via systemctl %s", svc)
+            return True
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+            continue
+
+    # Fallback: pg_ctlcluster
+    try:
+        logger.info("Trying pg_ctlcluster %s main stop", ver)
+        subprocess.run(['pg_ctlcluster', ver, 'main', 'stop', '--force'],
+                       check=True, capture_output=True, text=True, timeout=30)
+        return True
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+    # Final fallback: pkill
+    try:
+        logger.info("Trying pkill -9 postgres")
+        subprocess.run(['pkill', '-9', '-u', 'postgres', 'postgres'],
+                       check=False, capture_output=True, timeout=10)
+        import time
+        time.sleep(2)
+        return True
+    except (FileNotFoundError, Exception):
+        pass
+
+    logger.warning("Could not stop PostgreSQL cleanly — continuing anyway")
+    return False
+
+
+def pg_service_start(service):
+    """Start PostgreSQL, trying multiple service names and fallback commands."""
+    services_to_try = [service]
+    ver = detect_pg_version()
+    for alt in [f"postgresql@{ver}-main", f"postgresql-{ver}", "postgresql"]:
+        if alt not in services_to_try:
+            services_to_try.append(alt)
+
+    for svc in services_to_try:
+        try:
+            logger.info("Attempting to start PostgreSQL via: %s", svc)
+            subprocess.run(['systemctl', 'start', svc], check=True,
+                           capture_output=True, text=True, timeout=30)
+            logger.info("Started via systemctl %s", svc)
+            return True
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+            continue
+
+    # Fallback: pg_ctlcluster
+    try:
+        logger.info("Trying pg_ctlcluster %s main start", ver)
+        subprocess.run(['pg_ctlcluster', ver, 'main', 'start'],
+                       check=True, capture_output=True, text=True, timeout=30)
+        return True
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+    logger.error("Could not start PostgreSQL via any method")
+    return False
 
 
 def detect_pg_config_dir(version=None):
@@ -735,14 +824,12 @@ def backup_physical():
         else:
             # Strategy 3: cold tar backup
             logger.warning("pg_basebackup unavailable or failed — falling back to cold tar backup")
-            logger.warning("Stopping PostgreSQL service: %s", pg_service)
-            subprocess.run(['systemctl', 'stop', pg_service], check=True,
-                           capture_output=True, text=True)
+            pg_service_stop(pg_service)
             try:
                 with tarfile.open(archive_path, 'w:gz') as tar:
                     tar.add(pgdata, arcname='.')
             finally:
-                subprocess.run(['systemctl', 'start', pg_service], check=False)
+                pg_service_start(pg_service)
 
         archive_size_mb = os.path.getsize(archive_path) / (1024 * 1024)
         logger.info("Physical backup completed: %s (%.2f MB)", archive_name, archive_size_mb)
@@ -810,9 +897,7 @@ def restore_physical(archive_filepath, dry_run=False, target_dir=None):
 
     try:
         logger.warning("PostgreSQL service WILL BE STOPPED during restore")
-        logger.info("Stopping PostgreSQL: %s", pg_service)
-        subprocess.run(['systemctl', 'stop', pg_service], check=True,
-                       capture_output=True, text=True)
+        pg_service_stop(pg_service)
 
         pgdata_path = Path(pgdata)
 
@@ -836,8 +921,7 @@ def restore_physical(archive_filepath, dry_run=False, target_dir=None):
                        capture_output=True, text=True)
 
         logger.info("Starting PostgreSQL: %s", pg_service)
-        subprocess.run(['systemctl', 'start', pg_service], check=True,
-                       capture_output=True, text=True)
+        pg_service_start(pg_service)
 
         # Wait for PG to be ready
         for i in range(15):
