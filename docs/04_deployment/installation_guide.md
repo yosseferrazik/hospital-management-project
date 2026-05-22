@@ -506,28 +506,59 @@ To make this easier, I prepared an installer with Inno Setup (the `.exe` already
 
 ---
 
-## 17. Automated backups
+## 17. Automated backups & full-service recovery
 
-### On Briar
+The backup system uses **three layers** to protect against any data loss scenario:
+
+| Layer | Backup file | Created by | Protects against |
+|-------|-------------|------------|------------------|
+| **Physical** | `physical_*.tar.gz` | `--physical` flag | Deleted `/var/lib/postgresql/` |
+| **Logical** | `hsp_db_*.dump` | default (`pg_dump -Fc`) | Corrupted/deleted database |
+| **Config** | `config_*.tar.gz` | default (auto) | Lost `.env`, systemd, `postgresql.conf` |
+
+### Backup script
+
+`scripts/backup_database.py` runs on **Briar**.
+
+```bash
+# Default: logical dump + config backup
+python scripts/backup_database.py
+
+# Add physical PGDATA backup
+python scripts/backup_database.py --physical
+
+# PGDATA only
+python scripts/backup_database.py --physical-only
+```
+
+### On Briar — cron setup
 
 ```bash
 sudo crontab -e
 # Add the lines (replace <password>):
-# Daily full backup (with verify + rsync)
+#
+# Daily: logical dump + config (with verify + rsync if configured)
 0 2 * * * HMS_DB_PASSWORD='<password>' cd /opt/hms/current && python scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
-
-# Every 15 min — quick backup for minute-level RPO
+#
+# Daily physical PGDATA backup (separate schedule, heavy I/O)
+0 3 * * * HMS_DB_PASSWORD='<password>' cd /opt/hms/current && python scripts/backup_database.py --physical-only >> /tmp/hms_backup_physical.log 2>&1
+#
+# Every 15 min — quick logical dump for minute-level RPO
 */15 * * * * HMS_DB_PASSWORD='<password>' cd /opt/hms/current && python scripts/backup_database.py --frequent >> /tmp/hms_backup_frequent.log 2>&1
 ```
 
-> To avoid putting the password in the command line, use `.pgpass`:
-> 
+> **Passwordless** via `.pgpass`:
 > ```bash
 > echo 'localhost:5432:hsp_db:backup_user:<password>' | sudo tee -a /root/.pgpass
 > sudo chmod 600 /root/.pgpass
 > ```
 
-The script runs `pg_dump -Fc`, saves to `/backups/local/`, keeps the last 5, and verifies integrity. Rsync to Sion is **disabled by default** — to enable it:
+**Config files backed up automatically each run:**
+`server/src/.env`, `desktop/src/.env`, `inventory.ini`, `.deploy_meta`, `hms-api.service`, `logrotate.d/hms`, `/etc/hms.env`, `postgresql.conf`, `pg_hba.conf`, `pg_ident.conf`.
+
+### Rsync to Sion (standby) — optional
+
+**Disabled by default.** To enable:
 
 **1. On Sion** — prepare the directory:
 
@@ -563,35 +594,54 @@ sudo HMS_DB_PASSWORD='<password>' HMS_STANDBY_HOST=100.98.214.53 python3 scripts
 ```bash
 echo "STANDBY_HOST=$HMS_STANDBY_HOST"   # empty = disabled
 # On Sion:
-ls -la /backups/local/                  # should show .dump files
+ls -la /backups/local/                  # should show .dump + .tar.gz files
 ```
 
-Verify if it's active:
+### Restore operations
+
+#### List available backups of all types
 
 ```bash
-echo "STANDBY_HOST=$HMS_STANDBY_HOST"   # empty = disabled
-```
-
-### Restore
-
-The same script can restore the database from any backup:
-
-```bash
-# List available backups
 python scripts/backup_database.py --list
+```
 
-# Restore the most recent backup (asks for confirmation)
+#### Restore logical database
+
+```bash
+# Most recent backup
 python scripts/backup_database.py --restore latest
 
-# Restore a backup from before a specific time (point-in-time recovery)
+# Point-in-time
 python scripts/backup_database.py --restore latest --before "2026-05-20 14:30"
 
-# Restore from a specific file
+# Specific file
 python scripts/backup_database.py --restore /backups/local/hsp_db_20260520_020000.dump
 
-# Dry-run: preview what would happen
+# Dry-run (preview only)
 python scripts/backup_database.py --restore latest --dry-run
 ```
+
+#### Restore app + PostgreSQL configuration
+
+```bash
+python scripts/backup_database.py --config-restore latest
+```
+
+#### Restore PGDATA (physical — when /var/lib/postgresql is lost)
+
+```bash
+python scripts/backup_database.py --physical-restore latest
+```
+
+This stops PostgreSQL, replaces the data directory, fixes permissions, and restarts.
+
+#### Full bare-metal restore (all three layers)
+
+```bash
+python scripts/backup_database.py --full-restore latest
+```
+
+Order of restore: **PGDATA → config files → logical DB dump**.
 
 ---
 

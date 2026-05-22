@@ -285,23 +285,50 @@ Or using the script:
 ./scripts/ops/check_replication.sh
 ```
 
-## Backup
+## Backup & Recovery
+
+The backup system is a **three-layer** strategy:
+
+| Layer        | Type            | Tool                       | Covers                                                       |
+| ------------ | --------------- | -------------------------- | ------------------------------------------------------------ |
+| **Physical** | PGDATA (tar.gz) | `pg_basebackup` / cold tar | `/var/lib/postgresql/*`                                      |
+| **Logical**  | `pg_dump -Fc`   | `backup_database.py`       | SQL schema + all data                                        |
+| **Config**   | tar.gz of files | `backup_database.py`       | `.env`, systemd, logrotate, `postgresql.conf`, `pg_hba.conf` |
 
 ### Main script (`scripts/backup_database.py`)
 
-Runs on **Briar** (it has the primary database):
+Runs on **Briar**. Default execution backs up **logical DB dump + app config files**.
 
 ```bash
-# Manual backup (will prompt for password)
+# Full backup (logical + config — default)
 python scripts/backup_database.py
 
-# Manual backup with password (no prompt)
-HMS_DB_PASSWORD='<password>' python scripts/backup_database.py
+# Add physical PGDATA backup alongside logical + config
+python scripts/backup_database.py --physical
 
-# Daily full backup (with verify + rsync)
+# PGDATA backup only
+python scripts/backup_database.py --physical-only
+
+# App config backup only (includes postgresql.conf, pg_hba.conf)
+python scripts/backup_database.py --config-only
+
+# Logical dump only
+python scripts/backup_database.py --db-only
+
+# Frequent logical backup every 15 min (minute-level RPO)
+python scripts/backup_database.py --frequent
+```
+
+**Cron examples** (via `backup_wrapper.sh` or direct):
+
+```bash
+# Daily full backup (logical + config)
 0 2 * * * HMS_DB_PASSWORD='<password>' cd /opt/hms/current && python scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
 
-# Frequent backup every 15 min (minute-level RPO, skips verify + rsync)
+# Daily with physical PGDATA backup
+0 3 * * * HMS_DB_PASSWORD='<password>' cd /opt/hms/current && python scripts/backup_database.py --physical >> /tmp/hms_backup_physical.log 2>&1
+
+# Frequent logical every 15 min
 */15 * * * * HMS_DB_PASSWORD='<password>' cd /opt/hms/current && python scripts/backup_database.py --frequent >> /tmp/hms_backup_frequent.log 2>&1
 ```
 
@@ -312,14 +339,24 @@ HMS_DB_PASSWORD='<password>' python scripts/backup_database.py
 > sudo chmod 600 /root/.pgpass
 > ```
 
-What the backup does:
+**What the full backup does:**
 
-1. Connects to `hsp_db`
-2. `pg_dump -Fc` → `/backups/local/hsp_db_YYYYMMDD_HHMMSS.dump`
-3. Verifies with `pg_restore -l`
-4. Saves JSON metadata (date, size, checksum, result)
-5. Cleans backups older than 5 days
-6. Optionally rsyncs a copy to Sion (disabled by default — see below)
+1. Logical: `pg_dump -Fc` → `hsp_db_YYYYMMDD_HHMMSS.dump`  
+   Config: tar.gz of all critical files → `config_YYYYMMDD_HHMMSS.tar.gz`  
+   Physical (if `--physical`): `pg_basebackup` → `physical_YYYYMMDD_HHMMSS.tar.gz`
+2. Verifies logical backup with `pg_restore -l`
+3. Saves JSON metadata (date, size, results)
+4. Cleans backups older than 5 days (all three types)
+5. Optionally rsyncs to Sion (disabled by default)
+
+**Config files backed up automatically:**
+
+- `/opt/hms/current/server/src/.env` · `/opt/hms/current/desktop/src/.env`
+- `/opt/hms/current/deploy/ansible/inventory.ini` · `/opt/hms/.deploy_meta`
+- `/etc/systemd/system/hms-api.service` · `/etc/logrotate.d/hms` · `/etc/hms.env`
+- `postgresql.conf` · `pg_hba.conf` · `pg_ident.conf` (auto-detected)
+
+Extra paths via `HMS_CONFIG_PATHS` (colon-separated).
 
 > **rsync to Sion is disabled by default.** To enable it you need:
 > 
@@ -344,13 +381,13 @@ What the backup does:
 > # ssh -i <your.pem> ubuntu@100.98.214.53 "echo '<paste_key>' | sudo tee -a /home/ubuntu/.ssh/authorized_keys"
 > ```
 > 
-> **Run with rsync enabled** (STANDBY_USER defaults to `ubuntu` now):
+> **Run with rsync enabled**:
 > 
 > ```bash
 > sudo HMS_STANDBY_HOST=100.98.214.53 python3 scripts/backup_database.py
 > ```
 > 
-> **Persist in crontab** (replace `<password>`):
+> **Persist in crontab**:
 > 
 > ```bash
 > sudo crontab -e
@@ -362,51 +399,103 @@ What the backup does:
 > 
 > ```bash
 > echo "STANDBY_HOST=$HMS_STANDBY_HOST"        # empty = disabled
-> ls -la /backups/local/                       # on Sion — should show .dump files
+> ls -la /backups/local/                       # on Sion — should show .dump, .tar.gz
 > ```
 
-### Restore (on Briar)
-
-The same script can list backups and restore the database.
+### List backups
 
 ```bash
-# List available backups
+# Lists all three types (logical, config, physical)
 python scripts/backup_database.py --list
 
-# List backups before a specific date/time
-python scripts/backup_database.py --list --before "2026-05-20 14:30"
-
-# List backups as JSON (for scripting)
+# JSON output (for scripting)
 python scripts/backup_database.py --list --json
 
+# Filter by date
+python scripts/backup_database.py --list --before "2026-05-20 14:30"
+```
+
+### Restore operations
+
+#### Logical DB restore (from pg_dump)
+
+```bash
 # Restore from the most recent backup
 python scripts/backup_database.py --restore latest
 
-# Restore from a specific backup file
+# Restore from a specific file
 python scripts/backup_database.py --restore /backups/local/hsp_db_20260520_020000.dump
 
-# Restore the latest backup before a point in time
+# Point-in-time
 python scripts/backup_database.py --restore latest --before "2026-05-20 14:30"
 
-# Dry-run: see what would happen without touching the database
+# Dry-run
 python scripts/backup_database.py --restore latest --dry-run
 ```
 
-The script will:
+Script flow: verify → terminate connections → **DROP** DB → recreate → `pg_restore --clean --if-exists`
 
-1. Verify the backup integrity with `pg_restore -l`
-2. Terminate any active connections to `hsp_db`
-3. **Drop** the current `hsp_db` database
-4. Recreate it empty
-5. Run `pg_restore --clean --if-exists`
-
-Because this is destructive, the script asks for confirmation (`yes`) before proceeding.
-
-> For a single-table restore, use `pg_restore` directly:
+> Single-table restore via `pg_restore` directly:
 > 
 > ```bash
 > sudo -u postgres pg_restore -d hsp_db --clean -t patients /backups/local/hsp_db_20260519_020001.dump
 > ```
+
+#### Config restore (app + PostgreSQL .conf files)
+
+```bash
+# Restore latest config backup
+python scripts/backup_database.py --config-restore latest
+
+# Restore specific archive
+python scripts/backup_database.py --config-restore /backups/local/config_20260522_020000.tar.gz
+
+# Preview what would be restored
+python scripts/backup_database.py --config-restore latest --dry-run
+```
+
+Existing files are backed up to `/backups/local/.config_restore_backups/` before overwriting.
+
+#### Physical PGDATA restore (when `/var/lib/postgresql` is lost)
+
+```bash
+# Restore latest physical backup
+python scripts/backup_database.py --physical-restore latest
+
+# Restore specific archive
+python scripts/backup_database.py --physical-restore /backups/local/physical_20260522_020000.tar.gz
+
+# Restore to custom PGDATA path
+python scripts/backup_database.py --physical-restore latest --pgdata-dir /var/lib/postgresql/16/main
+
+# Dry-run preview
+python scripts/backup_database.py --physical-restore latest --dry-run
+```
+
+This **stops PostgreSQL, replaces PGDATA, fixes permissions, starts PG**, and waits for it to be ready (up to 30s).
+
+#### Full bare-metal restore (PGDATA + config + DB)
+
+```bash
+python scripts/backup_database.py --full-restore latest
+```
+
+Restores in order: **physical PGDATA → app config → logical DB dump**.
+
+#### Restore via shell script (recommended for disaster recovery)
+
+```bash
+sudo bash scripts/ops/restore_service.sh
+```
+
+See `scripts/ops/restore_service.sh --help` for options (`--backup-dir`, `--timestamp`, `--skip-physical`, `--physical-only`, etc.).
+
+### If deploy breaks
+
+```bash
+sudo rsync -a --delete --exclude='venv' --exclude='*.pyc' --exclude='__pycache__' /opt/hms/repo/ /opt/hms/releases/bfc4907/
+sudo systemctl restart hms-api.service
+```
 
 ## Failover
 

@@ -45,21 +45,50 @@ All changes to sensitive tables (patients, visits, prescriptions, admissions, su
 
 ## Backup and recovery
 
-Backups run automatically at 02:00 daily via a cron job (`scripts/backup_database.py`):
+### Three-layer strategy
 
-- Custom-format `pg_dump` saved locally to `/backups/local/`
-- 5 most recent backups retained
-- Rsync to standby (Sion) is **disabled by default** — enable via `HMS_STANDBY_HOST`
-- Backup integrity verified automatically
+| Layer | Backs up | Restore when... |
+|-------|----------|-----------------|
+| **Physical** | Entire PGDATA (`/var/lib/postgresql/`) | Server disk fails, `/var/lib/postgresql` deleted |
+| **Logical** | Full DB schema + data (`pg_dump -Fc`) | Database corrupted, accidental data loss |
+| **Config** | `.env`, systemd, logrotate, `postgresql.conf`, `pg_hba.conf` | `/opt/hms` lost, postgresql.conf corrupted |
 
-### Manual restore
+### Automated schedule (on Briar)
+
+| Time | Backup type | Retention |
+|------|-------------|-----------|
+| 02:00 daily | Logical dump + config | 5 days |
+| 03:00 daily | Physical PGDATA | 5 days |
+| Every 15 min | Frequent logical dump (lightweight) | 24 hours |
+
+Backups stored in `/backups/local/`. Config backup includes `postgresql.conf`, `pg_hba.conf`, `.env`, systemd unit, logrotate config, and deploy metadata.
+
+### Restore commands (admin)
 
 ```bash
-# Full restore
-pg_restore -d hsp_db --clean /path/to/backup.dump
+# List available backups
+python scripts/backup_database.py --list
 
-# Single table (e.g., accidentally deleted patients)
-pg_restore -d hsp_db --clean -t patients /path/to/backup.dump
+# Full logical restore (from pg_dump)
+python scripts/backup_database.py --restore latest
+
+# Config restore (app + postgresql.conf)
+python scripts/backup_database.py --config-restore latest
+
+# Physical PGDATA restore (for /var/lib/postgresql loss)
+python scripts/backup_database.py --physical-restore latest
+
+# Full bare-metal (PGDATA → config → logical)
+python scripts/backup_database.py --full-restore latest
+
+# Or use the disaster recovery script
+sudo bash scripts/ops/restore_service.sh
+```
+
+### Single-table restore (via pg_restore)
+
+```bash
+pg_restore -d hsp_db --clean -t patients /backups/local/hsp_db_20260519_020001.dump
 ```
 
 ## Monitoring
