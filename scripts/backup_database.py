@@ -809,8 +809,8 @@ def restore_physical(archive_filepath, dry_run=False, target_dir=None):
         return True
 
     try:
-        log_warn("PostgreSQL service WILL BE STOPPED during restore")
-        log_info("Stopping PostgreSQL: %s", pg_service)
+        logger.warning("PostgreSQL service WILL BE STOPPED during restore")
+        logger.info("Stopping PostgreSQL: %s", pg_service)
         subprocess.run(['systemctl', 'stop', pg_service], check=True,
                        capture_output=True, text=True)
 
