@@ -4,22 +4,22 @@
 
 Two nodes: one on-premise at the hospital and one cloud standby, connected through Tailscale.
 
-| Node | Location | Role | OS |
-|------|----------|------|-----|
-| **Briar** | Hospital de Blanes (server room) | Primary: API + active PostgreSQL | Ubuntu Server 24.04 LTS |
-| **Sion** | AWS EC2 (eu-west-3, Paris) | Standby: hot PostgreSQL (read-only) | Ubuntu Server 24.04 LTS |
+| Node      | Location                         | Role                                | OS                      |
+| --------- | -------------------------------- | ----------------------------------- | ----------------------- |
+| **Briar** | Hospital de Blanes (server room) | Primary: API + active PostgreSQL    | Ubuntu Server 24.04 LTS |
+| **Sion**  | AWS EC2 (eu-west-3, Paris)       | Standby: hot PostgreSQL (read-only) | Ubuntu Server 24.04 LTS |
 
 ### Briar (primary)
 
-| Component | Detail |
-|-----------|--------|
-| CPU | Intel Xeon E-2336 (6 cores, 12 threads) @ 4.8 GHz |
-| RAM | 16 GB DDR4 ECC (2 × 8 GB) |
-| Disk 1 | 240 GB SSD NVMe — OS + system |
-| Disk 2 | 480 GB SSD SATA — PostgreSQL data + WAL |
-| Network | 2 × 1 GbE (bonding mode 1 active-passive) |
-| Hospital LAN IP | **192.168.4.254** |
-| Tailscale IP | 100.78.155.2 |
+| Component       | Detail                                            |
+| --------------- | ------------------------------------------------- |
+| CPU             | Intel Xeon E-2336 (6 cores, 12 threads) @ 4.8 GHz |
+| RAM             | 16 GB DDR4 ECC (2 × 8 GB)                         |
+| Disk 1          | 240 GB SSD NVMe — OS + system                     |
+| Disk 2          | 480 GB SSD SATA — PostgreSQL data + WAL           |
+| Network         | 2 × 1 GbE (bonding mode 1 active-passive)         |
+| Hospital LAN IP | **192.168.4.254**                                 |
+| Tailscale IP    | 100.78.155.2                                      |
 
 #### LVM partitions
 
@@ -44,13 +44,13 @@ Separating `lv_pgdata` and `lv_pgwal` on different disks and VGs improves write 
 
 ### Sion (standby)
 
-| Component | Detail |
-|-----------|--------|
-| CPU | 2 vCPU (AWS t3.medium) |
-| RAM | 4 GB |
-| Disk | 80 GB gp3 SSD (elastic) |
-| Network | 1 GbE virtual (AWS ENI) |
-| Tailscale IP | 100.98.214.53 |
+| Component    | Detail                  |
+| ------------ | ----------------------- |
+| CPU          | 2 vCPU (AWS t3.medium)  |
+| RAM          | 4 GB                    |
+| Disk         | 80 GB gp3 SSD (elastic) |
+| Network      | 1 GbE virtual (AWS ENI) |
+| Tailscale IP | 100.98.214.53           |
 
 #### Partitions
 
@@ -306,6 +306,7 @@ HMS_DB_PASSWORD='<password>' python scripts/backup_database.py
 ```
 
 > To avoid putting the password in the command line, create a `.pgpass` file:
+> 
 > ```bash
 > echo 'localhost:5432:hsp_db:backup_user:<password>' | sudo tee -a /root/.pgpass
 > sudo chmod 600 /root/.pgpass
@@ -321,38 +322,44 @@ What the backup does:
 6. Optionally rsyncs a copy to Sion (disabled by default — see below)
 
 > **rsync to Sion is disabled by default.** To enable it you need:
+> 
 > 1. SSH key access from Briar (root) to Sion
 > 2. `HMS_STANDBY_HOST` and optionally `HMS_STANDBY_USER` set
->
+> 
 > ### Setup
->
+> 
 > **On Sion** — create the backup directory and fix ownership:
+> 
 > ```bash
 > sudo mkdir -p /backups/local
 > sudo chown ubuntu:ubuntu /backups/local
 > ```
->
+> 
 > **On Briar** — generate SSH key and copy it to Sion:
+> 
 > ```bash
 > sudo ssh-keygen -t ed25519 -f /root/.ssh/id_ed25519 -N ""
 > sudo cat /root/.ssh/id_ed25519.pub
 > # Copy the output, then from your admin machine:
 > # ssh -i <your.pem> ubuntu@100.98.214.53 "echo '<paste_key>' | sudo tee -a /home/ubuntu/.ssh/authorized_keys"
 > ```
->
+> 
 > **Run with rsync enabled** (STANDBY_USER defaults to `ubuntu` now):
+> 
 > ```bash
 > sudo HMS_STANDBY_HOST=100.98.214.53 python3 scripts/backup_database.py
 > ```
->
+> 
 > **Persist in crontab** (replace `<password>`):
+> 
 > ```bash
 > sudo crontab -e
 > # Add:
 > 0 2 * * * HMS_DB_PASSWORD='<password>' HMS_STANDBY_HOST=100.98.214.53 cd /opt/hms/current && python3 scripts/backup_database.py >> /tmp/hms_backup_cron.log 2>&1
 > ```
->
+> 
 > **Verify:**
+> 
 > ```bash
 > echo "STANDBY_HOST=$HMS_STANDBY_HOST"        # empty = disabled
 > ls -la /backups/local/                       # on Sion — should show .dump files
@@ -386,6 +393,7 @@ python scripts/backup_database.py --restore latest --dry-run
 ```
 
 The script will:
+
 1. Verify the backup integrity with `pg_restore -l`
 2. Terminate any active connections to `hsp_db`
 3. **Drop** the current `hsp_db` database
@@ -395,6 +403,7 @@ The script will:
 Because this is destructive, the script asks for confirmation (`yes`) before proceeding.
 
 > For a single-table restore, use `pg_restore` directly:
+> 
 > ```bash
 > sudo -u postgres pg_restore -d hsp_db --clean -t patients /backups/local/hsp_db_20260519_020001.dump
 > ```
@@ -426,14 +435,14 @@ sudo systemctl start postgresql-16
 
 ## Monitoring
 
-| What | Where to run | Tool |
-|------|-------------|------|
-| Replication lag | Briar | `scripts/ops/check_replication.sh` |
+| What            | Where to run   | Tool                               |
+| --------------- | -------------- | ---------------------------------- |
+| Replication lag | Briar          | `scripts/ops/check_replication.sh` |
 | SSL certificate | Briar and Sion | `scripts/ops/check_cert_expiry.sh` |
-| Disk space | Briar and Sion | `df -h` |
-| Audit logs | App (Admin) | Audit Logs section in the client |
-| PostgreSQL logs | Briar and Sion | `journalctl -u postgresql-16` |
-| API logs | Briar | `journalctl -u hms-api` |
+| Disk space      | Briar and Sion | `df -h`                            |
+| Audit logs      | App (Admin)    | Audit Logs section in the client   |
+| PostgreSQL logs | Briar and Sion | `journalctl -u postgresql-16`      |
+| API logs        | Briar          | `journalctl -u hms-api`            |
 
 ## Errors we had
 
