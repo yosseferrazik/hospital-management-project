@@ -511,15 +511,18 @@ def verify_backup(backup_filepath):
 # ---------------------------------------------------------------------------
 
 def detect_pg_version():
-    """Detect PostgreSQL major version from pg_config or known paths."""
+    """Detect PostgreSQL major version (e.g. '16') from pg_config or known paths."""
     if PG_VERSION:
         return PG_VERSION
     try:
         result = subprocess.run(['pg_config', '--version'], capture_output=True,
                                 text=True, check=False)
         if result.returncode == 0:
-            ver = result.stdout.strip().split()[-1]
-            return '.'.join(ver.split('.')[:2])
+            # Output: "PostgreSQL 16.14-1" → extract "16"
+            raw = result.stdout.strip().split()[-1]
+            major = raw.split('.')[0]
+            logger.debug("Detected PG major version: %s (from '%s')", major, raw)
+            return major
     except FileNotFoundError:
         pass
     # Fallback: scan /etc/postgresql/ for version dirs
@@ -528,7 +531,7 @@ def detect_pg_version():
         versions = sorted(pg_etc.iterdir())
         if versions:
             return versions[-1].name
-    # Last resort: try to find pg_lsclusters output
+    # Last resort: try pg_lsclusters output
     try:
         result = subprocess.run(['pg_lsclusters', '-h'], capture_output=True,
                                 text=True, check=False)
