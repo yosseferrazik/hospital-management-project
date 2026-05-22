@@ -2,34 +2,25 @@
 
 ## Available reports
 
-All accessible from the **Reports** / **Statistics** sections of the desktop app, or via the API.
+All accessible from the **Advanced Reports** tab of the desktop app, or via the API.
 
-### Required
-
-| Report | API endpoint | Description |
-|--------|-------------|-------------|
-| Floor summary | `GET /api/reports/floor-summary/{id}` | Rooms, operating theaters, and nurses on a given floor |
-| Staff directory | `GET /api/reports/staff-directory` | All hospital staff with roles |
-| Daily visits | `GET /api/reports/daily-visits?date=X` | Number of visits attended per day |
-
-### Optional
-
-| Report | API endpoint |
-|--------|-------------|
-| Doctor ranking | `GET /api/reports/top-doctors?date=X` | Doctors ranked by number of patients seen |
-
-### Top
-
-| Report | API endpoint |
-|--------|-------------|
-| Most common diagnoses | `GET /api/reports/common-diagnoses` | Disease frequency ranking |
+| Report | API endpoint | Filters |
+|--------|-------------|---------|
+| Summary | `GET /api/reports/summary` | start_date, end_date |
+| Visits | `GET /api/reports/visits` | start_date, end_date, specialty, doctor_id |
+| Surgeries | `GET /api/reports/surgeries` | start_date, end_date, procedure_type, surgeon_id |
+| Admissions | `GET /api/reports/admissions` | start_date, end_date, floor_id |
+| Medications | `GET /api/reports/medications` | start_date, end_date |
+| Financial | `GET /api/reports/financial` | start_date, end_date |
+| Radiology | `GET /api/reports/radiology` | start_date, end_date, status |
+| Doctor Workload | `GET /api/reports/doctor-workload` | start_date, end_date |
 
 ## PDF export
 
-Any report can be downloaded as a professional PDF (generated with fpdf2) via `GET /api/reports/{type}/pdf`. The PDF includes KPIs, data tables, and a footer with the generation timestamp.
+The summary report can be downloaded as a professional PDF (generated with fpdf2) via `GET /api/reports/summary/pdf`. Requires JWT with ADMIN, DOCTOR, or NURSE role. Includes KPIs, data tables, and a footer with the generation timestamp.
 
 ## Desktop views
 
-- **Queries & Reports** tab — Daily visits and surgeries
-- **Statistics** tab — Floor overview, staff directory, visit trends, doctor rankings, disease rankings
-- **Advanced Reports** tab — Multi-tab view with filters and PDF download
+- **Operational Reports** tab — Scheduled visits and surgeries for a given date
+- **Statistics** tab — Floor overview, staff directory, visit trends, doctor rankings, disease frequency
+- **Advanced Reports** tab — Multi-tab view with 8 report categories, filters, and PDF download

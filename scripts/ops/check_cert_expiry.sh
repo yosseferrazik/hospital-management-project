@@ -1,6 +1,6 @@
 #!/bin/bash
 # /usr/local/bin/check_cert_expiry.sh -> scripts/ops/check_cert_expiry.sh
-EXPIRY=$(openssl x509 -in /etc/ssl/certs/server.crt -noout -enddate | cut -d= -f2)
+EXPIRY=$(openssl x509 -in /etc/ssl/certs/postgres.crt -noout -enddate | cut -d= -f2)
 EXPIRY_EPOCH=$(date -d "$EXPIRY" +%s)
 NOW_EPOCH=$(date +%s)
 DAYS_LEFT=$(( ($EXPIRY_EPOCH - $NOW_EPOCH) / 86400 ))

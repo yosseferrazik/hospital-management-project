@@ -2,7 +2,7 @@
 
 ## Overview
 
-The database has **22 tables** covering patients, medical staff, visits, surgeries, admissions, pharmacy, radiology, and audit logging. The schema is defined in `scripts/sql/schema.sql`.
+The database has **24 tables** covering patients, medical staff, visits, surgeries, admissions, pharmacy, radiology, audit logging, and dummy data tracking. The schema is defined in `scripts/sql/schema.sql`.
 
 ## Key entities and relationships
 
@@ -20,6 +20,8 @@ PATIENTS ──┬── VISITS ──┬── PRESCRIPTIONS ── MEDICATIONS
            ├── SURGERIES ──┬── OPERATING_THEATERS ── MEDICAL_DEVICES
            │               └── SURGERY_ASSISTANTS
            └── RADIOLOGY_EXAMS
+
+DUMMY_REGISTRY (tracks generated test data for cleanup)
 
 APP_USERS ──── STAFF (login mapping)
 
@@ -52,22 +54,24 @@ AUDIT_LOGS (generic audit trail for 8 sensitive tables)
 | Column | Type | Notes |
 |--------|------|-------|
 | patient_id | SERIAL PK | |
-| national_id | VARCHAR(20) | UNIQUE, DNI/NIE |
+| national_id | VARCHAR(50) | UNIQUE, DNI/NIE |
 | first_name, last_name | VARCHAR(100) | Supports Cyrillic (UTF-8) |
 | birth_date | DATE | |
 | gender | VARCHAR(10) | CHECK 'MALE'/'FEMALE'/'OTHER' |
 | phone, email, address | VARCHAR | Contact info |
+| emergency_contact_name | VARCHAR(200) | |
+| emergency_contact_phone | VARCHAR(20) | |
 | blood_type | VARCHAR(5) | A+, A-, B+, B-, O+, O-, AB+, AB- |
 | allergies | TEXT | Free text |
-| health_card | VARCHAR(20) | UNIQUE |
+| health_card | VARCHAR(50) | UNIQUE |
 
 ### STAFF
 | Column | Type | Notes |
 |--------|------|-------|
 | staff_id | SERIAL PK | |
-| national_id | VARCHAR(20) | UNIQUE |
+| national_id | VARCHAR(50) | UNIQUE |
 | first_name, last_name | VARCHAR(100) | |
-| staff_type | VARCHAR(10) | 'MEDICAL', 'NURSING', 'GENERAL' |
+| staff_type | VARCHAR(50) | 'MEDICAL', 'NURSING', 'GENERAL' |
 | birth_date | DATE | |
 | phone, ssn, email, address | VARCHAR | |
 | curriculum / license | TEXT | Only for MEDICAL subtype |

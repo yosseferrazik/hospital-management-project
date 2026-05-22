@@ -19,17 +19,25 @@ curl -X POST http://localhost:5000/api/auth/login \
 {"access_token": "eyJhbGciOiJIUzI1NiIs...", "role": "ADMIN", "staff_id": 1}
 ```
 
-## Role-based access
+## Roles
 
-The sidebar in the desktop client dynamically shows/hides options based on role:
+Available roles: ADMIN, DOCTOR, NURSE, STAFF, RECEPTIONIST.
 
-| Role | Can see |
-|------|---------|
-| ADMIN | Everything (including User Management, Audit Logs) |
-| DOCTOR | Dashboard, Maintenance, Reports, Export |
-| NURSE | Dashboard, Maintenance (limited), Reports |
-| RECEPTIONIST | Dashboard, Maintenance (patients), Reports |
-| STAFF | Dashboard (limited view) |
+The sidebar in the desktop client shows the same base sections to all roles:
+Dashboard, Maintenance, Data Workspace, Operational Reports, Statistics, Advanced Reports, Dummy Data.
+Only ADMIN can additionally see **Users** and **Audit Logs** entries.
+
+Server-side endpoints use `@jwt_required()` without per-role restrictions on most CRUD routes. Some administrative endpoints (user management, audit cleanup) and the PDF report download are restricted to specific roles.
+
+## User management endpoints (admin)
+
+| Action | Endpoint |
+|--------|----------|
+| List users | `GET /api/auth/users` |
+| Register new user | `POST /api/auth/register` |
+| Change own password | `PUT /api/auth/change-password` |
+| Reset another user's password | `PUT /api/auth/users/<id>/password` |
+| Toggle user active/inactive | `PUT /api/auth/users/<id>/toggle-active` |
 
 ## Password management
 

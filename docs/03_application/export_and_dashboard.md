@@ -17,14 +17,15 @@ Both formats are validated against schemas:
 
 ## Social Security API
 
-At the end of each month, visits are exported to XML and sent to the Social Security API:
+Visits in a date range can be exported and sent to the Social Security API:
 
-```
+```json
 POST /api/export/send
+Body: { "start_date": "2026-05-01", "end_date": "2026-05-20", "format": "xml" }
 ```
 
 This endpoint:
-1. Generates the XML file for the current month
+1. Generates the XML or JSON file for the given date range
 2. Sends it to the configured external API with Basic Auth
 3. Returns the API response status
 
@@ -44,7 +45,7 @@ We built a web-based dashboard using Chart.js (instead of PowerBI, which would r
 | `surgeries_today` | Surgeries planned for today |
 | `active_admissions` | Currently hospitalised patients |
 | `total_patients` | Total registered |
-| `total_doctors` / `total_nurses` | Staff breakdown |
+| `total_doctors` / `total_nurses` / `total_staff` | Staff breakdown |
 | `by_specialty` | Visits grouped by medical area |
 | `visits_trend` | 7-day visit history |
 | `top_doctors` | Top 5 doctors by visits today |

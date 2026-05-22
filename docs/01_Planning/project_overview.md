@@ -25,17 +25,22 @@ We chose Flask and PostgreSQL because that's what we covered in class and it kee
 
 ## What we built
 
-- 22 database tables with full referential integrity
-- REST API with 23 endpoint groups (CRUD, reports, export, admin)
-- Tkinter desktop client with 11 views
-- RBAC with 5 roles and row-level security
-- Audit logging via PostgreSQL triggers (8 tables)
+- 24 database tables with full referential integrity
+- REST API with 24 endpoint groups (CRUD, reports, export, admin, audit, health)
+- Tkinter desktop client with 12+ views (Dashboard, Maintenance, Data Workspace, Operational Reports, Statistics, Advanced Reports, Dummy Data, Users, Audit Logs, NotificationBar)
+- RBAC with 5 roles (ADMIN, DOCTOR, NURSE, STAFF, RECEPTIONIST)
+- Audit logging via PostgreSQL triggers (8 tables) with diagnostics and cleanup endpoints
 - SSL-secured connections
 - Active-passive streaming replication (primary + cloud standby)
 - Automated daily backups with 5-day retention
 - XML/JSON export with XSD and JSON Schema validation
 - Social Security API integration
 - Chart.js web dashboard
+- Dummy data generator with Faker (Cyrillic support, 50k patients, 100k visits, batch processing)
+- Resource Browser (Data Workspace) — full CRUD interface for all database entities
+- Notification bar and process tracker for async operation feedback
+- Health check endpoint (`GET /health`)
+- Application factory pattern with PostgreSQL session variable injection for audit triggers
 
 ## Problems we ran into
 

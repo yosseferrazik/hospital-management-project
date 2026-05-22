@@ -4,32 +4,44 @@
 
 The system has 5 roles:
 
-| Role | Permissions |
-|------|-------------|
-| **ADMIN** | Full access to everything, including user management and audit logs |
-| **DOCTOR** | CRUD on patients, visits, treatments, surgeries. View reports. |
-| **NURSE** | View/edit patients on their floor, manage admissions, assist in surgeries |
-| **RECEPTIONIST** | Register patients, schedule appointments |
-| **STAFF** | Read-only: patient name + room only |
+| Role             | Permissions                                                               |
+| ---------------- | ------------------------------------------------------------------------- |
+| **ADMIN**        | Full access to everything, including user management and audit logs       |
+| **DOCTOR**       | CRUD on patients, visits, treatments, surgeries. View reports.            |
+| **NURSE**        | View/edit patients on their floor, manage admissions, assist in surgeries |
+| **RECEPTIONIST** | Register patients, schedule appointments                                  |
+| **STAFF**        | Read-only: patient name + room only                                       |
 
 ### Creating users
 
 1. Go to **User Management** in the sidebar
+   
+   | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-14-28-34-image.png) |
+   | ---------------------------------------------------------------------------------- |
 2. Click **Create User** and fill in:
    - Username
    - Password
    - Staff ID (must already exist in the STAFF table)
    - Role
+     
+     | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-14-30-29-image.png) |
+     | ---------------------------------------------------------------------------------- |
 3. The new user can log in immediately
 
 ### Managing existing users
 
 - **Toggle Active** — disable a user without deleting them
 - **Reset Password** — set a new password for any user
+  
+  | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-14-31-43-image.png) |
+  | ---------------------------------------------------------------------------------- |
 
 ## Audit logs
 
 All changes to sensitive tables (patients, visits, prescriptions, admissions, surgeries, exams) are automatically logged. Administrators can view, filter, and purge these logs from the **Audit Logs** section.
+
+| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-14-33-08-image.png) |
+| ---------------------------------------------------------------------------------- |
 
 ## Backup and recovery
 
@@ -54,12 +66,12 @@ pg_restore -d hsp_db --clean -t patients /path/to/backup.dump
 
 Check these regularly:
 
-| What | How |
-|------|-----|
-| Replication status | `scripts/ops/check_replication.sh` |
-| SSL cert expiry | `scripts/ops/check_cert_expiry.sh` |
-| API health | `curl http://localhost:5000/health` |
-| Disk space | `df -h` on both nodes |
+| What               | How                                 | Screnshoot |
+| ------------------ | ----------------------------------- | ---------- |
+| Replication status | `scripts/ops/check_replication.sh`  |            |
+| SSL cert expiry    | `scripts/ops/check_cert_expiry.sh`  |            |
+| API health         | `curl http://localhost:5000/health` |            |
+| Disk space         | `df -h` on both nodes               |            |
 
 ## Maintenance tasks
 

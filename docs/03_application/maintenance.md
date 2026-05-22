@@ -2,31 +2,18 @@
 
 ## What you can do
 
-From the **Maintenance** section in the desktop app:
-
-### Required (mandatory for passing)
+From the **Maintenance** section in the desktop app (5-tab notebook: Doctor, Nursing, General Staff, Patient, Assignments):
 
 | Task | Endpoint | Description |
 |------|----------|-------------|
-| Register new staff | `POST /api/maintenance/staff` | Add doctors, nurses, general staff |
+| Register medical staff | `POST /api/maintenance/staff/medical` | Add a doctor |
+| Register nursing staff | `POST /api/maintenance/staff/nursing` | Add a nurse |
+| Register general staff | `POST /api/maintenance/staff/general` | Add non-medical staff |
 | Register new patients | `POST /api/maintenance/patients` | Add a new patient record |
-| Assign nurse to doctor/floor | `PUT /api/maintenance/nurses/{id}` | Set `assigned_doctor_id` or `assigned_floor_id` |
+| Assign nurse to doctor/floor | `PUT /api/maintenance/nursing/assign` | Body: `{nurse_id, doctor_id}` or `{nurse_id, floor_id}` |
 | View surgeries by date | `GET /api/maintenance/surgeries?date=X` | List surgeries with patient, surgeon, assistants |
-| View visits by date | `GET /api/maintenance/visits?date=X` | List visits with patient, doctor, time |
-
-### Optional
-
-| Task | Endpoint |
-|------|----------|
-| View room reservations | `GET /api/rooms/{id}/reservations` |
-| View patient history | `GET /api/reports/patient-history/{id}` |
-| View doctor schedule | `GET /api/reports/doctor-schedule/{id}` |
-
-### Top (extra credit)
-
-| Task | Endpoint |
-|------|----------|
-| View medical devices by operating theater | `GET /api/medical-devices?theater_id=X` |
+| View visits by date | `GET /api/maintenance/visits/scheduled?date=X` | List scheduled visits with patient, doctor, time |
+| View medical devices by theater | `GET /api/medical-devices?theater_id=X` | Devices available in an operating theater |
 
 ## PL/pgSQL procedures
 
