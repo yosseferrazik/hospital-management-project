@@ -166,7 +166,7 @@ class Visit(db.Model):
     diagnosis = db.Column(db.Text)
     notes = db.Column(db.Text)
 
-    patient = db.relationship("Patient", backref="visits")
+    patient = db.relationship("Patient", backref=db.backref("visits", passive_deletes=True))
     doctor = db.relationship("MedicalStaff", backref="visits")
 
 
@@ -201,7 +201,7 @@ class Surgery(db.Model):
     procedure_type = db.Column(db.String(200), nullable=False)
     notes = db.Column(db.Text)
 
-    patient = db.relationship("Patient", backref="surgeries")
+    patient = db.relationship("Patient", backref=db.backref("surgeries", passive_deletes=True))
     theater = db.relationship("OperatingTheater", backref="surgeries")
     primary_surgeon = db.relationship("MedicalStaff", backref="lead_surgeries")
 
@@ -254,7 +254,7 @@ class Admission(db.Model):
     expected_discharge_date = db.Column(db.Date)
     actual_discharge_date = db.Column(db.Date)
 
-    patient = db.relationship("Patient", backref="admissions")
+    patient = db.relationship("Patient", backref=db.backref("admissions", passive_deletes=True))
     room = db.relationship("Room", backref="admissions")
 
 
@@ -305,7 +305,7 @@ class RadiologyExam(db.Model):
     radiologist_report = db.Column(db.Text)
     status = db.Column(db.String(50), default="REQUESTED")
 
-    patient = db.relationship("Patient", backref="radiology_exams")
+    patient = db.relationship("Patient", backref=db.backref("radiology_exams", passive_deletes=True))
     requesting_doctor = db.relationship("MedicalStaff", backref="requested_exams")
 
 
