@@ -247,71 +247,107 @@ def run_backup(exclude_static_data=False):
 def detect_pg_connection():
     """Detect working PostgreSQL connection method for restore operations.
 
-    Tries configured TCP first, then falls back to Unix socket via
-    sudo -u postgres (standard on Ubuntu/Debian). Returns a dict with
-    command prefix, host, port, user, and env, or None if unreachable.
+    Tries configured TCP first, then falls back to Unix socket variants.
+    Returns a dict with command prefix, host, port, user, and env,
+    or None if all methods fail. Prints debug info for each attempt.
     """
-    # Attempt 1: configured TCP connection
-    test_cmd = ['psql', '-h', DB_HOST, '-p', DB_PORT, '-U', DB_USER,
-                '-d', 'template1', '-c', 'SELECT 1', '--no-password']
-    try:
-        subprocess.run(test_cmd, capture_output=True, text=True,
-                       env=pg_env(), timeout=5, check=False)
-        # Check if it really worked (exit code 0)
-        result = subprocess.run(test_cmd, capture_output=True, text=True,
-                                env=pg_env(), timeout=5)
-        if result.returncode == 0:
-            logger.info("PostgreSQL connection: TCP %s:%s user=%s",
-                        DB_HOST, DB_PORT, DB_USER)
-            return {
+    candidates = []
+
+    # 1. TCP as configured
+    candidates.append({
+        'label': f'TCP {DB_HOST}:{DB_PORT} user={DB_USER}',
+        'prefix': [],
+        'host': DB_HOST,
+        'port': DB_PORT,
+        'user': DB_USER,
+        'env': pg_env(),
+    })
+
+    # 2. TCP using postgres user from DATABASE_URL host
+    cand_host = os.getenv('DATABASE_URL', '').split('@')
+    if len(cand_host) > 1:
+        db_url_host = cand_host[-1].split(':')[0]
+        if db_url_host and db_url_host != DB_HOST:
+            candidates.append({
+                'label': f'TCP {db_url_host}:{DB_PORT} user={DB_USER}',
                 'prefix': [],
-                'host': DB_HOST,
+                'host': db_url_host,
                 'port': DB_PORT,
                 'user': DB_USER,
                 'env': pg_env(),
-                'sudo': False,
-            }
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+            })
 
-    # Attempt 2: Unix socket as postgres OS user (sudo)
-    try:
-        test_sudo = ['sudo', '-nu', 'postgres', 'psql',
-                     '-d', 'template1', '-c', 'SELECT 1']
-        result = subprocess.run(test_sudo, capture_output=True, timeout=5)
-        if result.returncode == 0:
-            logger.info("PostgreSQL connection: Unix socket via sudo -u postgres")
-            return {
-                'prefix': ['sudo', '-nu', 'postgres'],
-                'host': '',
-                'port': '',
-                'user': 'postgres',
-                'env': os.environ.copy(),
-                'sudo': True,
-            }
-    except (subprocess.TimeoutExpired, FileNotFoundError, PermissionError):
-        pass
+    # 3. Unix socket via sudo -nu postgres
+    candidates.append({
+        'label': 'Unix socket (sudo -nu postgres)',
+        'prefix': ['sudo', '-nu', 'postgres'],
+        'host': '',
+        'port': '',
+        'user': '',
+        'env': os.environ.copy(),
+    })
 
-    # Attempt 3: try without -n flag (might need TTY)
-    try:
-        test_sudo = ['sudo', '-u', 'postgres', 'psql',
-                     '-d', 'template1', '-c', 'SELECT 1']
-        result = subprocess.run(test_sudo, capture_output=True, timeout=5)
-        if result.returncode == 0:
-            logger.info("PostgreSQL connection: Unix socket via sudo -u postgres (with TTY)")
-            return {
-                'prefix': ['sudo', '-u', 'postgres'],
-                'host': '',
-                'port': '',
-                'user': 'postgres',
-                'env': os.environ.copy(),
-                'sudo': True,
-            }
-    except (subprocess.TimeoutExpired, FileNotFoundError, PermissionError):
-        pass
+    # 4. Unix socket via sudo -u postgres
+    candidates.append({
+        'label': 'Unix socket (sudo -u postgres)',
+        'prefix': ['sudo', '-u', 'postgres'],
+        'host': '',
+        'port': '',
+        'user': '',
+        'env': os.environ.copy(),
+    })
 
-    logger.error("Cannot connect to PostgreSQL — tried TCP (%s:%s) and Unix socket (sudo -u postgres)",
-                 DB_HOST, DB_PORT)
+    # 5. Unix socket via su - postgres -c
+    candidates.append({
+        'label': 'Unix socket (su - postgres -c)',
+        'prefix': ['su', '-', 'postgres', '-c'],
+        'host': '',
+        'port': '',
+        'user': '',
+        'env': os.environ.copy(),
+    })
+
+    for cand in candidates:
+        prefix = cand['prefix']
+        h_flag = ['-h', cand['host']] if cand['host'] else []
+        p_flag = ['-p', cand['port']] if cand['port'] else []
+        u_flag = ['-U', cand['user']] if cand['user'] else []
+
+        if prefix and prefix[0] == 'su':
+            # su -c expects a single string argument
+            inner = 'psql -d template1 -c "SELECT 1"'
+            cmd = prefix + [inner]
+        else:
+            cmd = prefix + ['psql'] + h_flag + p_flag + u_flag + [
+                '-d', 'template1', '-c', 'SELECT 1', '--no-password'
+            ]
+
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True,
+                                    env=cand['env'], timeout=8)
+            if result.returncode == 0:
+                logger.info("PostgreSQL connection: %s", cand['label'])
+                return {
+                    'prefix': prefix,
+                    'host': cand['host'],
+                    'port': cand['port'],
+                    'user': cand['user'],
+                    'env': cand['env'],
+                }
+            else:
+                stderr_short = result.stderr.strip()[:120] if result.stderr else 'no stderr'
+                logger.debug("Connection %s failed (rc=%d): %s",
+                             cand['label'], result.returncode, stderr_short)
+        except FileNotFoundError as e:
+            logger.debug("Connection %s failed: %s", cand['label'], e)
+        except Exception as e:
+            logger.debug("Connection %s failed: %s", cand['label'], e)
+
+    # Final detailed error
+    logger.error("Cannot connect to PostgreSQL. Attempted:")
+    for cand in candidates:
+        logger.error("  - %s", cand['label'])
+    logger.error("Check that PostgreSQL is running and accessible.")
     return None
 
 
@@ -333,26 +369,47 @@ def restore_database(backup_filepath, dry_run=False):
         return False
 
     prefix = conn['prefix']
+    use_su = bool(prefix and prefix[0] == 'su')
     h_flag = ['-h', conn['host']] if conn['host'] else []
     p_flag = ['-p', conn['port']] if conn['port'] else []
     u_flag = ['-U', conn['user']] if conn['user'] else []
 
-    dropdb_cmd = prefix + ['dropdb'] + h_flag + p_flag + u_flag + ['--if-exists', DB_NAME]
-    createdb_cmd = prefix + ['createdb'] + h_flag + p_flag + u_flag + [DB_NAME]
-    pgrestore_cmd = prefix + [
-        'pg_restore',
-    ] + h_flag + p_flag + u_flag + [
-        '-d', DB_NAME,
-        '--clean',
-        '--if-exists',
-        '-v',
-        backup_filepath
-    ]
+    def build_cmd(tool, extra_args):
+        """Build command list, handling su -c syntax."""
+        parts = prefix[:]
+        if use_su:
+            inner = ' '.join([tool] + extra_args)
+            parts.append(inner)
+        else:
+            parts.append(tool)
+            parts.extend(extra_args)
+        return parts
+
+    def term_args():
+        return h_flag + p_flag + u_flag + [
+            '-d', 'template1',
+            '-c', f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{DB_NAME}' AND pid <> pg_backend_pid()"
+        ]
+
+    def drop_args():
+        return h_flag + p_flag + u_flag + ['--if-exists', DB_NAME]
+
+    def create_args():
+        return h_flag + p_flag + u_flag + [DB_NAME]
+
+    def restore_args():
+        return h_flag + p_flag + u_flag + [
+            '-d', DB_NAME, '--clean', '--if-exists', '-v', backup_filepath
+        ]
+
+    dropdb_cmd = build_cmd('dropdb', drop_args())
+    createdb_cmd = build_cmd('createdb', create_args())
+    pgrestore_cmd = build_cmd('pg_restore', restore_args())
 
     if dry_run:
         print("\n[DRY-RUN] Connection: %s" % (
-            "sudo -u postgres (Unix socket)" if conn['sudo']
-            else f"TCP {conn['host']}:{conn['port']} user={conn['user']}"))
+            'su - postgres -c' if use_su else ' '.join(prefix) if prefix else
+            f"TCP {conn['host']}:{conn['port']} user={conn['user']}"))
         print("  $ %s" % ' '.join(dropdb_cmd))
         print("  $ %s" % ' '.join(createdb_cmd))
         print("  $ %s" % ' '.join(pgrestore_cmd))
@@ -360,10 +417,7 @@ def restore_database(backup_filepath, dry_run=False):
 
     try:
         logger.info("Terminating active connections to %s ...", DB_NAME)
-        term_cmd = prefix + ['psql'] + h_flag + p_flag + u_flag + [
-            '-d', 'template1',
-            '-c', f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{DB_NAME}' AND pid <> pg_backend_pid()"
-        ]
+        term_cmd = build_cmd('psql', term_args())
         subprocess.run(term_cmd, check=False, capture_output=True, text=True, env=conn['env'])
 
         logger.info("Dropping database %s ...", DB_NAME)
