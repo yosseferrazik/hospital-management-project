@@ -162,11 +162,19 @@ hospital-management-project/
 | Framework          | Flask 3.1.3              | HTTP API framework             |
 | WSGI Server        | Gunicorn 23.0.0          | Production server (via systemd)|
 | ORM                | SQLAlchemy 2.0.49        | Object-relational mapping      |
+| Flask-SQLAlchemy   | Flask-SQLAlchemy 3.1.1   | Flask ORM integration          |
 | Authentication     | Flask-JWT-Extended 4.7.1 | JWT token issuance/validation  |
 | Password Hashing   | bcrypt 5.0.0             | Password storage               |
 | Database Driver    | psycopg2-binary 2.9.12   | PostgreSQL connectivity        |
 | CORS               | Flask-CORS 6.0.2         | Cross-origin support           |
 | Config Loading     | python-dotenv 1.2.2      | `.env` file loader             |
+| Fake Data          | Faker 40.15.0            | Dummy data generation          |
+| PDF Generation     | fpdf2 2.8.2              | PDF report generation          |
+| Image Processing   | Pillow 11.1.0            | Image handling for PDF reports |
+| Schema Validation  | jsonschema 4.23.0        | JSON Schema validation         |
+| XML Schema         | xmlschema 3.4.5          | XSD validation                 |
+| HTTP Client        | requests 2.32.3          | External API calls             |
+| Timezone           | tzdata 2026.2            | Timezone support               |
 
 Full pinned list: `server/src/requirements.txt`
 
@@ -176,7 +184,7 @@ Defined in `server/src/app/__init__.py`:
 
 - `create_app()` instantiates Flask with `Config`, initializes `SQLAlchemy`, `JWTManager`, `CORS`.
 - Registers a `/health` endpoint directly on the app (not behind `/api` prefix).
-- Registers 23 route Blueprints under `/api/` prefix: auth, maintenance, dummy, floor, room, operating_theater, medical_device, medical_specialty, patient, visit, scheduled_appointment, medication, prescription, admission, surgery, surgery_assistant, pharmacy_dispensation, dispensation_item, radiology_exam, staff, export, dashboard, audit.
+- Registers 24 route Blueprints under `/api/` prefix: auth, maintenance, dummy, floor, room, operating_theater, medical_device, medical_specialty, patient, visit, scheduled_appointment, medication, prescription, admission, surgery, surgery_assistant, pharmacy_dispensation, dispensation_item, radiology_exam, staff, export, dashboard, audit, reports.
 - Calls `db.create_all()` at startup to auto-create tables from SQLAlchemy models.
 
 ### 4.3 Entry Points
@@ -235,6 +243,7 @@ On database failure returns 503 with `status: "degraded"`, `database: "disconnec
 | export_bp          | `/api/export`                | No            |
 | dashboard_bp       | `/api/dashboard`             | No            |
 | audit_bp           | `/api/audit-logs`            | No            |
+| reports_bp         | `/api/reports`               | No            |
 
 **Note on auth enforcement:** `maintenance` and `dummy` enforce `@jwt_required()`. `auth_bp` enforces `@jwt_required()` on user management endpoints (`GET /api/auth/users`, `PUT /api/auth/change-password`, `PUT /api/auth/users/<id>/password`, `PUT /api/auth/users/<id>/toggle-active`), with ADMIN role required for the latter two. Other CRUD routes are open. This is a known gap for future hardening.
 
@@ -284,7 +293,7 @@ All production dependencies are pinned in `server/src/requirements.txt`. The fil
 
 ### 5.3 Schema Management
 
-- **SQLAlchemy models** (18 models in `server/src/app/models.py`) are the Python-side schema definition.
+- **SQLAlchemy models** (24 models in `server/src/app/models.py`) are the Python-side schema definition.
 - **SQL scripts** (`scripts/sql/schema.sql`, `security.sql`) contain the canonical production schema with additional features: RBAC roles, Row-Level Security (RLS), audit triggers, constraint triggers.
 - `db.create_all()` runs at every startup in the Flask app factory. In production the SQL scripts are applied separately — the Python models must remain compatible with the production schema.
 
@@ -324,6 +333,7 @@ All production dependencies are pinned in `server/src/requirements.txt`. The fil
 sudo bash scripts/deploy/deploy.sh              # normal (window-checked)
 sudo bash scripts/deploy/deploy.sh --force       # bypass time window
 sudo bash scripts/deploy/deploy.sh --rollback    # revert to previous release
+sudo bash scripts/deploy/deploy.sh --dev         # dev mode — symlinks repo directly, no release versioning
 ```
 
 **Flow (normal deploy):**
@@ -344,6 +354,8 @@ sudo bash scripts/deploy/deploy.sh --rollback    # revert to previous release
 14. **Smoke test** — `curl -f http://localhost:5000/health` with 5 retries at 3-second intervals
 15. **On success:** save metadata to `.deploy_meta`, clean old releases (>5 removed)
 16. **On failure:** revert symlink to previous release, restart service, re-run smoke test; if that also fails — **CRITICAL** — manual intervention required
+
+**Dev flow (`--dev`):** Skips time-window check, release versioning, and cleanup. Points `/opt/hms/current` symlink directly to the repo working tree. Suitable for development iterations.
 
 ### 6.4 Rollback
 
@@ -512,7 +524,7 @@ sudo ufw allow from 100.64.0.0/10 to any port 5000 proto tcp   # Tailscale
 - Disabled accounts (`is_active = False`) are rejected at login with `"Account is disabled"`.
 - Password hashing via `bcrypt`.
 - Default admin seed: `scripts/sql/initial_script.sql`
-- **Known gap:** JWT enforcement is not applied to most CRUD route blueprints (17 of 23). This is acceptable for the current internal-network deployment posture but should be addressed before any public exposure.
+- **Known gap:** JWT enforcement is not applied to most CRUD route blueprints (18 of 24). This is acceptable for the current internal-network deployment posture but should be addressed before any public exposure.
 
 ---
 
@@ -523,10 +535,19 @@ sudo ufw allow from 100.64.0.0/10 to any port 5000 proto tcp   # Tailscale
 Backup strategy is documented in:
 `docs/02_database/high_availability.md`
 
+**Three-layer backup system** (`scripts/backup_database.py`):
+
+| Layer | File pattern | Creates with |
+|-------|-------------|--------------|
+| **Physical** (PGDATA) | `physical_*.tar.gz` | `--physical` or `--physical-only` |
+| **Logical** (pg_dump) | `hsp_db_*.dump` | default or `--db-only` |
+| **Config** (app + PG .conf) | `config_*.tar.gz` | default or `--config-only` |
+
 **Scripts:**
-- `scripts/ops/backup.sh` — `pg_dump`-based backup with rotation
-- `scripts/backup_database.py` — Python automated backup with metadata tracking
+- `scripts/backup_database.py` — Python automated 3-layer backup with metadata tracking
 - `scripts/backup_wrapper.sh` — Cron wrapper
+- `scripts/ops/backup.sh` — Simplified `pg_dump`-based logical backup
+- `scripts/ops/restore_service.sh` — Full bare-metal disaster recovery (PGDATA → config → DB → restart + smoke test). Supports `--backup-dir`, `--timestamp`, `--physical-only`, `--skip-physical`, `--dry-run`.
 
 ### 9.2 Monitoring
 

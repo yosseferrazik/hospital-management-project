@@ -22,7 +22,7 @@
 | Service         | Port      | Node           | Notes                               |
 | --------------- | --------- | -------------- | ----------------------------------- |
 | Flask API (dev) | 5000      | Briar          | `python run.py`                     |
-| Gunicorn (prod) | 8000      | Briar          | Behind systemd                      |
+| Gunicorn (prod) | 5000      | Briar          | Behind systemd                      |
 | PostgreSQL      | 5432      | Briar and Sion | SSL required for remote connections |
 | Tailscale       | UDP 41641 | Briar and Sion | VPN mesh                            |
 

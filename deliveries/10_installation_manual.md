@@ -21,9 +21,13 @@ Everything I did to get the system running from scratch, step by step, with whic
 
 Hospital users connect to Briar at **192.168.4.254** on the LAN. The admin connects to both servers through **Tailscale**.
 
-| Briar                                                                                                                         | Sion                                                                                                                          |
-| ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| <img src="file:///C:/Users/yossef/AppData/Roaming/marktext/images/2026-05-21-00-11-19-image.png" title="" alt="" width="257"> | <img title="" src="file:///C:/Users/yossef/AppData/Roaming/marktext/images/2026-05-21-00-12-24-image.png" alt="" width="329"> |
+Briar server:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-11-19-image.png)
+
+Sion server:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-12-24-image.png)
 
 ---
 
@@ -60,10 +64,9 @@ LVM layout for Disk 2 (`/dev/sdb`, 480 GB SATA SSD):
     (25 GB reserve for LVM snapshots)
 ```
 
-Separating `lv_pgdata` and `lv_pgwal` on different disks and VGs improves write performance and makes LVM snapshot backups easier. Separating `lv_log` prevents logs from filling up the root partition.
+Separating `lv_pgdata` and `lv_pgwal` on different disks and VGs improves write performance and makes LVM snapshot backups easier.
 
-| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-00-08-15-image.png) |
-| ---------------------------------------------------------------------------------- |
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-08-15-image.png)
 
 ### On Sion — hardware and partitions
 
@@ -84,8 +87,7 @@ Separating `lv_pgdata` and `lv_pgwal` on different disks and VGs improves write 
     (7 GB reserve)
 ```
 
-| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-00-00-20-image.png) |
-| ---------------------------------------------------------------------------------- |
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-00-20-image.png)
 
 ### Update and install basic tools (on both)
 
@@ -108,11 +110,15 @@ sudo tailscale up
 # A browser will open. Authenticate with the project account.
 ```
 
-| <img src="file:///C:/Users/yossef/AppData/Roaming/marktext/images/2026-05-21-00-15-42-image.png" title="" alt="" width="256"> | <img src="file:///C:/Users/yossef/AppData/Roaming/marktext/images/2026-05-21-00-17-05-image.png" title="" alt="" width="258"> |
-| ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+Tailscale authentication:
 
-| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-00-22-23-image.png) |
-| ---------------------------------------------------------------------------------- |
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-15-42-image.png)
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-17-05-image.png)
+
+Tailscale connected:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-22-23-image.png)
 
 From now on, Briar and Sion see each other via 100.x.x.x Tailscale IPs. Ping to confirm:
 
@@ -123,8 +129,11 @@ ping 100.98.214.53   # should respond
 ping 100.78.155.2    # should respond
 ```
 
-| <img title="" src="file:///C:/Users/yossef/AppData/Roaming/marktext/images/2026-05-21-00-23-55-image.png" alt="" width="292"> | <img src="file:///C:/Users/yossef/AppData/Roaming/marktext/images/2026-05-21-00-24-08-image.png" title="" alt="" width="235"> |
-| ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+Ping verification:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-23-55-image.png)
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-24-08-image.png)
 
 ---
 
@@ -143,8 +152,9 @@ sudo ufw default allow outgoing
 sudo ufw --force enable
 ```
 
-| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-00-26-29-image.png) |
-| ---------------------------------------------------------------------------------- |
+UFW status on Briar:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-26-29-image.png)
 
 ### On Sion
 
@@ -159,8 +169,9 @@ sudo ufw --force enable
 
 If Sion is on AWS, also open the ports in its Security Group: 5432 (from Briar only), 22 (from Tailscale only), UDP 41641 (Tailscale).
 
-| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-00-26-10-image.png) |
-| ---------------------------------------------------------------------------------- |
+UFW status on Sion:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-26-10-image.png)
 
 ---
 
@@ -176,8 +187,11 @@ sudo apt install -y postgresql-16 postgresql-contrib-16
 psql --version   # should be 16.x
 ```
 
-| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-00-29-16-image.png) | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-00-29-25-image.png) |
-| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+PostgreSQL installation:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-29-16-image.png)
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-29-25-image.png)
 
 ---
 
@@ -323,8 +337,7 @@ sudo touch /var/lib/postgresql/16/main/standby.signal
 sudo systemctl start postgresql-16
 ```
 
-| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-01-05-26-image.png) |
-| ---------------------------------------------------------------------------------- |
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-01-05-26-image.png)
 
 ### On Briar — verify
 
@@ -334,8 +347,11 @@ sudo -u postgres psql -c "SELECT application_name, state, sync_state FROM pg_sta
 # Should show 'standby_sion', 'physical', 't' and the standby in 'streaming' state
 ```
 
-| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-01-19-34-image.png) | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-01-19-55-image.png) |
-| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+Replication verification:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-01-19-34-image.png)
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-01-19-55-image.png)
 
 ---
 
@@ -365,8 +381,7 @@ deactivate
 
 The `deploy/deploy.sh` script automates this: it creates a new release directory, symlinks `current`, runs a smoke test, and rolls back if it fails.
 
-| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-01-25-19-image.png) |
-| ---------------------------------------------------------------------------------- |
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-01-25-19-image.png)
 
 ---
 
@@ -403,8 +418,9 @@ sudo -u postgres psql -d hsp_db -c "\dt"
 # Should show 22 tables
 ```
 
-| <img src="file:///C:/Users/yossef/AppData/Roaming/marktext/images/2026-05-21-01-43-29-image.png" title="" alt="" width="311"> |
-| ----------------------------------------------------------------------------------------------------------------------------- |
+Database verification:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-01-43-29-image.png)
 
 ---
 
@@ -418,8 +434,7 @@ source .venv/bin/activate
 python run.py
 ```
 
-| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-01-44-37-image.png) |
-| ---------------------------------------------------------------------------------- |
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-01-44-37-image.png)
 
 Check it works:
 
@@ -428,8 +443,9 @@ curl http://192.168.4.254:5000/health
 # {"status":"healthy","database":"connected","timestamp":"..."}
 ```
 
-| <img src="file:///C:/Users/yossef/AppData/Roaming/marktext/images/2026-05-21-01-45-45-image.png" title="" alt="" width="293"> |
-| ----------------------------------------------------------------------------------------------------------------------------- |
+API health check:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-01-45-45-image.png)
 
 ---
 
@@ -439,20 +455,19 @@ curl http://192.168.4.254:5000/health
 
 The best option to avoid errors is to use the developed scripts.
 
-`/scripts/deploy/deploy_primary.sh` <- Installs dependencies, creates env files, etc..
+`/scripts/deploy/deploy_primary.sh` <- Installs dependencies, creates env files, etc.
 
-| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-01-59-09-image.png) |
-| ---------------------------------------------------------------------------------- |
+Deploy primary script:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-01-59-09-image.png)
 
 Then we execute `/scripts/deploy.sh` this clones the repo, installs venv and installs the whole service.
 
-| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-02-03-08-image.png) |
-| ---------------------------------------------------------------------------------- |
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-02-03-08-image.png)
 
-We check that the service is running correctly
+We check that the service is running correctly:
 
-| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-02-04-52-image.png) |
-| ---------------------------------------------------------------------------------- |
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-02-04-52-image.png)
 
 ---
 
@@ -483,8 +498,9 @@ python main.py
 
 (On Ubuntu you may need `sudo apt install python3-tk`)
 
-| ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-21-18-15-17-image.png) |
-| ---------------------------------------------------------------------------------- |
+Desktop client running:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-18-15-17-image.png)
 
 ---
 
@@ -530,6 +546,8 @@ python scripts/backup_database.py --physical
 # PGDATA only
 python scripts/backup_database.py --physical-only
 ```
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-17-31-12-image.png)
 
 ### On Briar — cron setup
 
@@ -598,6 +616,8 @@ echo "STANDBY_HOST=$HMS_STANDBY_HOST"   # empty = disabled
 ls -la /backups/local/                  # should show .dump + .tar.gz files
 ```
 
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-18-54-32-image.png)
+
 ### Restore operations
 
 #### List available backups of all types
@@ -605,6 +625,8 @@ ls -la /backups/local/                  # should show .dump + .tar.gz files
 ```bash
 python scripts/backup_database.py --list
 ```
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-18-57-42-image.png)
 
 #### Restore logical database
 
@@ -658,6 +680,10 @@ sudo -u postgres pg_ctl promote -D /var/lib/postgresql/16/main
 # DATABASE_URL=postgresql://postgres:password@100.98.214.53:5432/hsp_db
 ```
 
+Failover verification:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-18-59-40-image.png)
+
 ### Return to normal (rebuild Sion as standby)
 
 ```bash
@@ -669,6 +695,10 @@ sudo -u postgres pg_basebackup -h 100.78.155.2 -D /var/lib/postgresql/16/main \
 sudo touch /var/lib/postgresql/16/main/standby.signal
 sudo systemctl start postgresql-16
 ```
+
+Rebuild verification:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-19-02-00-image.png)
 
 ---
 
@@ -682,29 +712,55 @@ http://192.168.4.254:5000/api/dashboard/view
 
 For PowerBI: `http://192.168.4.254:5000/api/dashboard/stats`
 
+Dashboard:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-19-02-35-image.png)
+
 ---
 
 ## 20. Monitoring
 
-| What                   | Where to run   | Tool                               |                                                                                    |
-| ---------------------- | -------------- | ---------------------------------- | ---------------------------------------------------------------------------------- |
-| Replication lag        | Briar          | `scripts/ops/check_replication.sh` | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-18-40-14-image.png) |
-| SSL certificate expiry | Briar and Sion | `scripts/ops/check_cert_expiry.sh` | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-18-40-30-image.png) |
-| Disk space             | Briar and Sion | `df -h`                            | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-18-40-47-image.png) |
-| Audit logs             | App (Admin)    | Audit Logs section in the client   | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-18-40-57-image.png) |
-| PostgreSQL logs        | Briar and Sion | `journalctl -u postgresql-16`      | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-18-41-16-image.png) |
+| What                   | Where to run   | Tool                               |
+| ---------------------- | -------------- | ---------------------------------- |
+| Replication lag        | Briar          | `scripts/ops/check_replication.sh` |
+| SSL certificate expiry | Briar and Sion | `scripts/ops/check_cert_expiry.sh` |
+| Disk space             | Briar and Sion | `df -h`                            |
+| Audit logs             | App (Admin)    | Audit Logs section in the client   |
+| PostgreSQL logs        | Briar and Sion | `journalctl -u postgresql-16`      |
+
+Screenshots:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-18-40-14-image.png)
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-18-40-30-image.png)
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-18-40-47-image.png)
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-18-40-57-image.png)
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-18-41-16-image.png)
 
 ---
 
 ## 21. Verification checklist
 
-| Test               | Where          | Command                                                     |                                                                                    |
-| ------------------ | -------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| API works          | Any LAN PC     | `curl http://192.168.4.254:5000/health`                     | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-18-41-48-image.png) |
-| Login works        | Any LAN PC     | `curl -X POST http://192.168.4.254:5000/api/auth/login ...` |                                                                                    |
-| Tables created     | On Briar       | `sudo -u postgres psql -d hsp_db -c "\dt"`                  | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-18-42-07-image.png) |
-| Replication active | On Briar       | `psql -c "SELECT state FROM pg_stat_replication;"`          | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-18-42-29-image.png) |
-| Dashboard          | Browser on LAN | `http://192.168.4.254:5000/api/dashboard/view`              | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-18-42-51-image.png) |
+| Test               | Where          | Command                                                     |
+| ------------------ | -------------- | ----------------------------------------------------------- |
+| API works          | Any LAN PC     | `curl http://192.168.4.254:5000/health`                     |
+| Login works        | Any LAN PC     | `curl -X POST http://192.168.4.254:5000/api/auth/login ...` |
+| Tables created     | On Briar       | `sudo -u postgres psql -d hsp_db -c "\dt"`                  |
+| Replication active | On Briar       | `psql -c "SELECT state FROM pg_stat_replication;"`          |
+| Dashboard          | Browser on LAN | `http://192.168.4.254:5000/api/dashboard/view`              |
+
+Screenshots:
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-18-41-48-image.png)
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-18-42-07-image.png)
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-18-42-29-image.png)
+
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-18-42-51-image.png)
 
 ---
 
