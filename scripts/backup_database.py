@@ -244,6 +244,77 @@ def run_backup(exclude_static_data=False):
         return None, False
 
 
+def detect_pg_connection():
+    """Detect working PostgreSQL connection method for restore operations.
+
+    Tries configured TCP first, then falls back to Unix socket via
+    sudo -u postgres (standard on Ubuntu/Debian). Returns a dict with
+    command prefix, host, port, user, and env, or None if unreachable.
+    """
+    # Attempt 1: configured TCP connection
+    test_cmd = ['psql', '-h', DB_HOST, '-p', DB_PORT, '-U', DB_USER,
+                '-d', 'template1', '-c', 'SELECT 1', '--no-password']
+    try:
+        subprocess.run(test_cmd, capture_output=True, text=True,
+                       env=pg_env(), timeout=5, check=False)
+        # Check if it really worked (exit code 0)
+        result = subprocess.run(test_cmd, capture_output=True, text=True,
+                                env=pg_env(), timeout=5)
+        if result.returncode == 0:
+            logger.info("PostgreSQL connection: TCP %s:%s user=%s",
+                        DB_HOST, DB_PORT, DB_USER)
+            return {
+                'prefix': [],
+                'host': DB_HOST,
+                'port': DB_PORT,
+                'user': DB_USER,
+                'env': pg_env(),
+                'sudo': False,
+            }
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+    # Attempt 2: Unix socket as postgres OS user (sudo)
+    try:
+        test_sudo = ['sudo', '-nu', 'postgres', 'psql',
+                     '-d', 'template1', '-c', 'SELECT 1']
+        result = subprocess.run(test_sudo, capture_output=True, timeout=5)
+        if result.returncode == 0:
+            logger.info("PostgreSQL connection: Unix socket via sudo -u postgres")
+            return {
+                'prefix': ['sudo', '-nu', 'postgres'],
+                'host': '',
+                'port': '',
+                'user': 'postgres',
+                'env': os.environ.copy(),
+                'sudo': True,
+            }
+    except (subprocess.TimeoutExpired, FileNotFoundError, PermissionError):
+        pass
+
+    # Attempt 3: try without -n flag (might need TTY)
+    try:
+        test_sudo = ['sudo', '-u', 'postgres', 'psql',
+                     '-d', 'template1', '-c', 'SELECT 1']
+        result = subprocess.run(test_sudo, capture_output=True, timeout=5)
+        if result.returncode == 0:
+            logger.info("PostgreSQL connection: Unix socket via sudo -u postgres (with TTY)")
+            return {
+                'prefix': ['sudo', '-u', 'postgres'],
+                'host': '',
+                'port': '',
+                'user': 'postgres',
+                'env': os.environ.copy(),
+                'sudo': True,
+            }
+    except (subprocess.TimeoutExpired, FileNotFoundError, PermissionError):
+        pass
+
+    logger.error("Cannot connect to PostgreSQL — tried TCP (%s:%s) and Unix socket (sudo -u postgres)",
+                 DB_HOST, DB_PORT)
+    return None
+
+
 def restore_database(backup_filepath, dry_run=False):
     """Restore PostgreSQL database from a backup file using pg_restore."""
     logger.info("Restoring database %s from %s ...", DB_NAME, backup_filepath)
@@ -256,13 +327,21 @@ def restore_database(backup_filepath, dry_run=False):
     if not verify_ok:
         logger.warning("Backup verification failed — restore may be incomplete")
 
-    dropdb_cmd = ['dropdb', '-h', DB_HOST, '-p', DB_PORT, '-U', DB_USER, '--if-exists', DB_NAME]
-    createdb_cmd = ['createdb', '-h', DB_HOST, '-p', DB_PORT, '-U', DB_USER, DB_NAME]
-    pgrestore_cmd = [
+    conn = detect_pg_connection()
+    if not conn:
+        logger.error("No working PostgreSQL connection found — aborting restore")
+        return False
+
+    prefix = conn['prefix']
+    h_flag = ['-h', conn['host']] if conn['host'] else []
+    p_flag = ['-p', conn['port']] if conn['port'] else []
+    u_flag = ['-U', conn['user']] if conn['user'] else []
+
+    dropdb_cmd = prefix + ['dropdb'] + h_flag + p_flag + u_flag + ['--if-exists', DB_NAME]
+    createdb_cmd = prefix + ['createdb'] + h_flag + p_flag + u_flag + [DB_NAME]
+    pgrestore_cmd = prefix + [
         'pg_restore',
-        '-h', DB_HOST,
-        '-p', DB_PORT,
-        '-U', DB_USER,
+    ] + h_flag + p_flag + u_flag + [
         '-d', DB_NAME,
         '--clean',
         '--if-exists',
@@ -271,36 +350,36 @@ def restore_database(backup_filepath, dry_run=False):
     ]
 
     if dry_run:
-        print("\n[DRY-RUN] Would execute:")
-        print(f"  $ psql -h {DB_HOST} -p {DB_PORT} -U {DB_USER} -d template1 -c \"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{DB_NAME}' AND pid <> pg_backend_pid()\"")
-        print(f"  $ {' '.join(dropdb_cmd)}")
-        print(f"  $ {' '.join(createdb_cmd)}")
-        print(f"  $ {' '.join(pgrestore_cmd)}")
+        print("\n[DRY-RUN] Connection: %s" % (
+            "sudo -u postgres (Unix socket)" if conn['sudo']
+            else f"TCP {conn['host']}:{conn['port']} user={conn['user']}"))
+        print("  $ %s" % ' '.join(dropdb_cmd))
+        print("  $ %s" % ' '.join(createdb_cmd))
+        print("  $ %s" % ' '.join(pgrestore_cmd))
         return True
 
     try:
         logger.info("Terminating active connections to %s ...", DB_NAME)
-        term_cmd = [
-            'psql', '-h', DB_HOST, '-p', DB_PORT, '-U', DB_USER,
+        term_cmd = prefix + ['psql'] + h_flag + p_flag + u_flag + [
             '-d', 'template1',
             '-c', f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{DB_NAME}' AND pid <> pg_backend_pid()"
         ]
-        subprocess.run(term_cmd, check=False, capture_output=True, text=True, env=pg_env())
+        subprocess.run(term_cmd, check=False, capture_output=True, text=True, env=conn['env'])
 
         logger.info("Dropping database %s ...", DB_NAME)
-        subprocess.run(dropdb_cmd, check=True, capture_output=True, text=True, env=pg_env())
+        subprocess.run(dropdb_cmd, check=True, capture_output=True, text=True, env=conn['env'])
 
         logger.info("Creating database %s ...", DB_NAME)
-        subprocess.run(createdb_cmd, check=True, capture_output=True, text=True, env=pg_env())
+        subprocess.run(createdb_cmd, check=True, capture_output=True, text=True, env=conn['env'])
 
         logger.info("Running pg_restore ...")
-        result = subprocess.run(pgrestore_cmd, check=True, capture_output=True, text=True, env=pg_env())
+        subprocess.run(pgrestore_cmd, check=True, capture_output=True, text=True, env=conn['env'])
 
         logger.info("Restore completed successfully")
         return True
 
     except subprocess.CalledProcessError as e:
-        logger.error("Restore failed: %s", e.stderr)
+        logger.error("Restore failed: %s", e.stderr or e.stdout)
         return False
     except Exception as e:
         logger.error("Unexpected error during restore: %s", e)
