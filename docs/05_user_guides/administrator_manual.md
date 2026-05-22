@@ -66,12 +66,12 @@ pg_restore -d hsp_db --clean -t patients /path/to/backup.dump
 
 Check these regularly:
 
-| What               | How                                 | Screnshoot |
-| ------------------ | ----------------------------------- | ---------- |
-| Replication status | `scripts/ops/check_replication.sh`  |            |
-| SSL cert expiry    | `scripts/ops/check_cert_expiry.sh`  |            |
-| API health         | `curl http://localhost:5000/health` |            |
-| Disk space         | `df -h` on both nodes               |            |
+| What               | How                                 | Screnshoot                                                                         |
+| ------------------ | ----------------------------------- | ---------------------------------------------------------------------------------- |
+| Replication status | `scripts/ops/check_replication.sh`  |                                                                                    |
+| SSL cert expiry    | `scripts/ops/check_cert_expiry.sh`  | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-14-43-11-image.png) |
+| API health         | `curl http://localhost:5000/health` | ![](C:\Users\yossef\AppData\Roaming\marktext\images\2026-05-22-14-43-29-image.png) |
+| Disk space         | `df -h` on both nodes               |                                                                                    |
 
 ## Maintenance tasks
 
