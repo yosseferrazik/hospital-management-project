@@ -673,43 +673,74 @@ def backup_physical():
 
     temp_dir = os.path.join(BACKUP_DIR, f".pg_basebackup_{timestamp}")
     try:
-        # Strategy 1: hot backup via pg_basebackup (preferred)
+        Path(temp_dir).mkdir(parents=True, exist_ok=True)
+
+        # Strategy 1: pg_basebackup as configured user (TCP)
+        # Strategy 2: pg_basebackup via sudo -u postgres (Unix socket, has replication rights)
+        # Strategy 3: cold tar (stop PG → tar → start PG)
+        basebackup_ok = False
+
         if shutil.which('pg_basebackup'):
-            logger.info("Using pg_basebackup for hot physical backup...")
-            Path(temp_dir).mkdir(parents=True, exist_ok=True)
-            cmd = [
-                'pg_basebackup',
-                '-h', DB_HOST,
-                '-p', DB_PORT,
-                '-U', DB_USER,
-                '-D', temp_dir,
-                '-Ft',           # tar format output
-                '-z',            # gzip compression
-                '-P',            # show progress
-                '-X', 'fetch',   # include WAL
-            ]
-            subprocess.run(cmd, check=True, capture_output=True, text=True, env=pg_env())
-            # pg_basebackup creates one tar per tablespace; bundle them
+            # Strategy 1: as configured user
+            for attempt in [
+                ('TCP as ' + DB_USER, {
+                    'prefix': [],
+                    'host': DB_HOST,
+                    'port': DB_PORT,
+                    'user': DB_USER,
+                    'env': pg_env(),
+                }),
+                ('Unix socket via sudo -u postgres', {
+                    'prefix': ['sudo', '-nu', 'postgres'],
+                    'host': '',
+                    'port': '',
+                    'user': '',
+                    'env': os.environ.copy(),
+                }),
+            ]:
+                label, params = attempt
+                prefix = params['prefix']
+                hh = ['-h', params['host']] if params['host'] else []
+                pp = ['-p', params['port']] if params['port'] else []
+                uu = ['-U', params['user']] if params['user'] else []
+
+                cmd = prefix + ['pg_basebackup'] + hh + pp + uu + [
+                    '-D', temp_dir,
+                    '-Ft', '-z', '-P', '-X', 'fetch',
+                ]
+                try:
+                    logger.info("Physical backup attempt: %s", label)
+                    subprocess.run(cmd, check=True, capture_output=True, text=True,
+                                   env=params['env'], timeout=120)
+                    basebackup_ok = True
+                    logger.info("pg_basebackup succeeded: %s", label)
+                    break
+                except subprocess.CalledProcessError as e2:
+                    err_msg = (e2.stderr or e2.stdout or '')[:200]
+                    logger.warning("pg_basebackup %s failed: %s", label, err_msg)
+                    continue
+                except subprocess.TimeoutExpired:
+                    logger.warning("pg_basebackup %s timed out", label)
+                    continue
+
+        if basebackup_ok:
+            # pg_basebackup creates tar.gz files in temp_dir
             base_files = sorted(Path(temp_dir).glob('*.tar.gz'))
             if base_files:
-                # Rename the main base.tar.gz to our archive name
-                base_tar = base_files[0]
-                shutil.move(str(base_tar), archive_path)
-                # If there are additional tablespace tars, include them
-                if len(base_files) > 1:
-                    # We need to repack: extract base and add extra tars
-                    pass  # for now, single tablespace case
+                shutil.move(str(base_files[0]), archive_path)
+                logger.info("Moved pg_basebackup output to %s", archive_path)
             else:
                 raise FileNotFoundError("pg_basebackup produced no output files")
+
         else:
-            # Strategy 2: cold backup via tar (requires PG to be stopped)
-            logger.warning("pg_basebackup not available, using cold tar backup")
+            # Strategy 3: cold tar backup
+            logger.warning("pg_basebackup unavailable or failed — falling back to cold tar backup")
             logger.warning("Stopping PostgreSQL service: %s", pg_service)
             subprocess.run(['systemctl', 'stop', pg_service], check=True,
                            capture_output=True, text=True)
             try:
                 with tarfile.open(archive_path, 'w:gz') as tar:
-                    tar.add(pgdata, arcname=os.path.basename(pgdata))
+                    tar.add(pgdata, arcname='.')
             finally:
                 subprocess.run(['systemctl', 'start', pg_service], check=False)
 
@@ -784,11 +815,9 @@ def restore_physical(archive_filepath, dry_run=False, target_dir=None):
                        capture_output=True, text=True)
 
         pgdata_path = Path(pgdata)
-        pgdata_parent = pgdata_path.parent
 
         if pgdata_path.is_dir():
             logger.info("Clearing existing PGDATA: %s", pgdata)
-            # Remove contents but keep the directory itself
             for item in pgdata_path.iterdir():
                 if item.is_dir():
                     shutil.rmtree(item)
@@ -798,16 +827,9 @@ def restore_physical(archive_filepath, dry_run=False, target_dir=None):
             logger.info("Creating PGDATA directory: %s", pgdata)
             pgdata_path.mkdir(parents=True, exist_ok=True)
 
-        logger.info("Extracting physical backup to %s ...", pgdata_parent)
+        logger.info("Extracting physical backup to %s ...", pgdata)
         with tarfile.open(archive_filepath, 'r:gz') as tar:
-            # Check if archive contains the data dir directly or just contents
-            members = tar.getmembers()
-            if members and '/' not in members[0].name and not members[0].isdir():
-                # Archive has just the base dir name as prefix, extract to parent
-                tar.extractall(path=pgdata_parent)
-            else:
-                # Archive has relative paths, extract directly to pgdata
-                tar.extractall(path=pgdata)
+            tar.extractall(path=pgdata)
 
         logger.info("Fixing permissions: chown -R %s:%s %s", pg_user, pg_user, pgdata)
         subprocess.run(['chown', '-R', f'{pg_user}:{pg_user}', pgdata], check=True,
