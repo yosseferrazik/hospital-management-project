@@ -1,5 +1,6 @@
 from datetime import datetime
 from io import BytesIO
+import os
 
 from fpdf import FPDF
 
@@ -54,13 +55,19 @@ def _avg_stay(records: list[dict]) -> float:
 class ReportPDF(FPDF):
     """Custom FPDF subclass with reusable layout helpers."""
 
+    def __init__(self):
+        super().__init__()
+        font_dir = os.path.join(os.path.dirname(__file__), "fonts")
+        self.add_font("DejaVu", "", os.path.join(font_dir, "DejaVuSans.ttf"))
+        self.add_font("DejaVu", "B", os.path.join(font_dir, "DejaVuSans-Bold.ttf"))
+
     def header(self) -> None:
         """No automatic page header (handled manually per page)."""
         pass
 
     def footer(self) -> None:
         self.set_y(-15)
-        self.set_font("Helvetica", "", FONT_XS)
+        self.set_font("DejaVu", "", FONT_XS)
         self.set_text_color(*GRAY)
         self.cell(0, 10, f"Sa Palomera Hospital  |  {self.page_no()}/{{nb}}", align="C")
 
@@ -69,7 +76,7 @@ class ReportPDF(FPDF):
         self.set_fill_color(*DARK)
         self.rect(0, 0, PW, height, "F")
         self.set_y(height - 11)
-        self.set_font("Helvetica", "B", 9)
+        self.set_font("DejaVu", "B", 9)
         self.set_text_color(*WHITE)
         self.cell(0, 6, "", align="C", ln=True)
 
@@ -84,7 +91,7 @@ class ReportPDF(FPDF):
 
         # Title text
         self.set_x(LM + 8)
-        self.set_font("Helvetica", "B", FONT_MD)
+        self.set_font("DejaVu", "B", FONT_MD)
         self.set_text_color(*DARK)
         self.cell(0, 7, title, ln=True)
 
@@ -98,7 +105,7 @@ class ReportPDF(FPDF):
         """Render a dark table header row."""
         self.set_fill_color(*DARK)
         self.set_text_color(*WHITE)
-        self.set_font("Helvetica", "B", FONT_XS)
+        self.set_font("DejaVu", "B", FONT_XS)
         self.set_draw_color(*DARK)
         for col, width in zip(columns, widths):
             self.cell(width, HEADER_H, col, border=1, fill=True, align="C")
@@ -108,7 +115,7 @@ class ReportPDF(FPDF):
         """Render a single data row with optional zebra-striping."""
         self.set_fill_color(*LGRAY if alternate else WHITE)
         self.set_text_color(*DARK)
-        self.set_font("Helvetica", "", FONT_SM)
+        self.set_font("DejaVu", "", FONT_SM)
         self.set_draw_color(209, 213, 219)
         for i, (value, width) in enumerate(zip(values, widths)):
             align = "C" if i > 0 else "L"
@@ -132,13 +139,13 @@ class ReportPDF(FPDF):
 
         # Label
         self.set_xy(x + 1, y + 3)
-        self.set_font("Helvetica", "", FONT_XS)
+        self.set_font("DejaVu", "", FONT_XS)
         self.set_text_color(*GRAY)
         self.cell(width - 2, 4, label.upper(), align="C", ln=True)
 
         # Value
         self.set_x(x + 1)
-        self.set_font("Helvetica", "B", FONT_LG)
+        self.set_font("DejaVu", "B", FONT_LG)
         self.set_text_color(*(color or DARK))
         self.cell(width - 2, 9, str(value), align="C", ln=True)
 
@@ -225,12 +232,12 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
     # Cover banner
     pdf.dark_bar(56)
     pdf.set_y(12)
-    pdf.set_font("Helvetica", "B", FONT_XL)
+    pdf.set_font("DejaVu", "B", FONT_XL)
     pdf.set_text_color(*WHITE)
     pdf.cell(0, 12, "Sa Palomera Hospital", align="C", ln=True)
-    pdf.set_font("Helvetica", "", FONT_MD)
+    pdf.set_font("DejaVu", "", FONT_MD)
     pdf.cell(0, 7, f"{ps}  -  {pe}", align="C", ln=True)
-    pdf.set_font("Helvetica", "", FONT_XS)
+    pdf.set_font("DejaVu", "", FONT_XS)
     pdf.set_text_color(190, 200, 210)
     pdf.cell(0, 5, f"Generated {generated}", align="C", ln=True)
 
@@ -249,7 +256,7 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
         f"Average length of stay: {avg_stay} days. "
         f"Total pharmacy cost: ${total_cost:,.2f}."
     )
-    pdf.set_font("Helvetica", "", FONT_BASE)
+    pdf.set_font("DejaVu", "", FONT_BASE)
     pdf.set_text_color(*GRAY)
     pdf.set_x(LM)
     pdf.multi_cell(TW, 5.5, overview, align="J")
@@ -348,7 +355,7 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
         )
         if pdf.has_room_for(8):
             pdf.set_x(LM)
-            pdf.set_font("Helvetica", "", FONT_SM)
+            pdf.set_font("DejaVu", "", FONT_SM)
             pdf.set_text_color(*GRAY)
             pdf.cell(0, 6, f"Total exams in the period: {rad.get('total', 0)}", ln=True)
 
@@ -359,7 +366,7 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
     # Pharmacy summary line
     pdf.section("Pharmacy Dispensations")
     pdf.set_x(LM)
-    pdf.set_font("Helvetica", "B", FONT_MD)
+    pdf.set_font("DejaVu", "B", FONT_MD)
     pdf.set_text_color(*GREEN)
     pdf.cell(
         0, 7,
@@ -386,7 +393,7 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
 
     pdf.section("Admissions")
     pdf.set_x(LM)
-    pdf.set_font("Helvetica", "", FONT_BASE)
+    pdf.set_font("DejaVu", "", FONT_BASE)
     pdf.set_text_color(*GRAY)
     pdf.cell(
         0, 6,
