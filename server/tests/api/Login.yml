@@ -1,0 +1,32 @@
+info:
+  name: Login
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: http://192.168.4.254:5000/api/auth/login?username=yossef&password=yossef
+  headers:
+    - name: Content-Type
+      value: application/json
+  params:
+    - name: username
+      value: yossef
+      type: query
+    - name: password
+      value: yossef
+      type: query
+  body:
+    type: json
+    data: |-
+      {
+        "username": "yossef",
+        "password": "yossef"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

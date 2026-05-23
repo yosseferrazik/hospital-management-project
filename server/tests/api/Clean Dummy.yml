@@ -1,0 +1,17 @@
+info:
+  name: Clean Dummy
+  type: http
+  seq: 3
+
+http:
+  method: DELETE
+  url: http://192.168.4.254:5000/api/dummy/cleanup
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc3OTU0OTgyOCwianRpIjoiMTZhYzcyYmItZGRmYy00NzMyLTk4NDEtOGY2N2U1NmM4M2E1IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjIiLCJuYmYiOjE3Nzk1NDk4MjgsImNzcmYiOiIwZTc2YmNjMC05ZDQ1LTRhZGYtYjMwZS01ODc3ODZiYWExMmMiLCJleHAiOjE3Nzk1NTA3MjgsInJvbGUiOiJBRE1JTiIsInN0YWZmX2lkIjoxMDU5fQ.lMhtjCNFV-zSED5r2zP1GvnisyfSvwrf-V9TEFX4uc4
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

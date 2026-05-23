@@ -1,25 +1,83 @@
 # Installation Guide
 
-Everything I did to get the system running from scratch, step by step, with which node each command runs on.
+Everything done to get the system running from scratch, step by step, with the node on which each command runs.
+
+---
+
+## Table of Contents
+
+1. [Before you start](#before-you-start)
+2. [Install Ubuntu Server 24.04](#1-install-ubuntu-server-2404)
+3. [Tailscale](#2-tailscale)
+4. [Firewall](#3-firewall)
+5. [PostgreSQL 16](#4-postgresql-16)
+6. [TLS certificates](#5-tls-certificates)
+7. [Configure PostgreSQL — Briar (primary)](#6-configure-postgresql--briar-primary)
+8. [Configure PostgreSQL — Sion (standby)](#7-configure-postgresql--sion-standby)
+9. [Set up replication](#8-set-up-replication)
+10. [Clone the repository and prepare the environment](#9-clone-the-repository-and-prepare-the-environment)
+11. [Environment variables](#10-environment-variables)
+12. [Create the database and load schemas](#11-create-the-database-and-load-schemas)
+13. [Start the API in dev mode](#12-start-the-api-in-dev-mode-test)
+14. [systemd service (production)](#13-systemd-service-production)
+15. [Desktop client](#14-desktop-client)
+16. [First login](#15-first-login)
+17. [Desktop client setup (on LAN PCs)](#16-desktop-client-setup-on-lan-pcs)
+18. [Automated backups & full-service recovery](#17-automated-backups--full-service-recovery)
+19. [Failover](#18-failover)
+20. [Web dashboard](#19-web-dashboard)
+21. [Monitoring](#20-monitoring)
+22. [Verification checklist](#21-verification-checklist)
+23. [Troubleshooting](#22-troubleshooting)
 
 ---
 
 ## Before you start
 
-### What you need
+### Prerequisites
 
-- Two Ubuntu 24.04 LTS servers (**Briar** and **Sion**) with root access
-- A [Tailscale](https://tailscale.com) account to connect them
-- Python 3.12, PostgreSQL 16, Git
+- Two Ubuntu 24.04 LTS servers (**Briar** and **Sion**) with root access.
+- A [Tailscale](https://tailscale.com) account to connect them over an encrypted mesh VPN.
+- Python 3.12, PostgreSQL 16, Git installed.
 
-### Nodes
+### Node overview
 
-| Node      | Location                   | LAN IP        | Tailscale IP  | What runs there                |
-| --------- | -------------------------- | ------------- | ------------- | ------------------------------ |
-| **Briar** | Hospital server room       | 192.168.4.254 | 100.78.155.2  | Flask API + PostgreSQL primary |
-| **Sion**  | AWS EC2 (eu-west-3, Paris) | —             | 100.98.214.53 | PostgreSQL standby             |
+| Node      | Location                   | LAN IP        | Tailscale IP  | Role                                |
+|-----------|----------------------------|---------------|---------------|-------------------------------------|
+| **Briar** | Hospital server room       | 192.168.4.254 | 100.78.155.2  | Flask API + PostgreSQL primary      |
+| **Sion**  | AWS EC2 (eu-west-3, Paris) | —             | 100.98.214.53 | PostgreSQL standby (disaster recovery) |
 
-Hospital users connect to Briar at **192.168.4.254** on the LAN. The admin connects to both servers through **Tailscale**.
+Hospital users connect to Briar at **192.168.4.254** on the LAN. The administrator connects to both servers through **Tailscale** from any location.
+
+### Network topology (text description)
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                        Hospital LAN (192.168.4.0/24)             │
+│                                                                  │
+│  ┌─────────────┐    ┌──────────────┐     ┌──────────────────┐   │
+│  │ Doctor PC    │    │ Reception PC │     │ Admin Laptop     │   │
+│  │ (192.168.4.x)│    │ (192.168.4.x)│     │ (Tailscale)      │   │
+│  └──────┬──────┘    └──────┬───────┘     └────────┬─────────┘   │
+│         │                  │                       │              │
+│         └──────────────────┼───────────────────────┘              │
+│                            │                                     │
+│                   ┌────────▼────────┐                            │
+│                   │   Briar Server  │   LAN: 192.168.4.254       │
+│                   │   Flask API     │   TS:  100.78.155.2        │
+│                   │   PostgreSQL 16 │                            │
+│                   │   (PRIMARY)     │                            │
+│                   └────────┬────────┘                            │
+│                            │ Tailscale (encrypted)               │
+│                            │                                      │
+└────────────────────────────┼──────────────────────────────────────┘
+                             │
+                    ┌────────▼────────┐
+                    │   Sion Server   │   AWS EC2 (eu-west-3)
+                    │   PostgreSQL 16 │   TS: 100.98.214.53
+                    │   (STANDBY)     │
+                    └─────────────────┘
+```
 
 Briar server:
 
@@ -36,14 +94,14 @@ Sion server:
 ### On Briar — hardware and partitions
 
 | Component | Spec                                              |
-| --------- | ------------------------------------------------- |
+|-----------|---------------------------------------------------|
 | CPU       | Intel Xeon E-2336 (6 cores, 12 threads) @ 4.8 GHz |
 | RAM       | 16 GB DDR4 ECC (2 × 8 GB)                         |
 | Disk 1    | 240 GB SSD NVMe — OS + system                     |
 | Disk 2    | 480 GB SSD SATA — PostgreSQL data + WAL           |
 | Network   | 2 × 1 GbE (bonding mode 1 active-passive)         |
 
-LVM layout for Disk 1 (`/dev/sda`, 240 GB NVMe):
+**LVM layout for Disk 1** (`/dev/sda`, 240 GB NVMe):
 
 ```
 /dev/sda1   512 MB   /boot/efi    vfat
@@ -55,23 +113,23 @@ LVM layout for Disk 1 (`/dev/sda`, 240 GB NVMe):
     └── vg_system/lv_tmp      10 GB   /tmp
 ```
 
-LVM layout for Disk 2 (`/dev/sdb`, 480 GB SATA SSD):
+**LVM layout for Disk 2** (`/dev/sdb`, 480 GB SATA SSD):
 
 ```
 /dev/sdb1   480 GB   LVM VG: vg_postgres
     ├── vg_postgres/lv_pgdata    350 GB   /var/lib/postgresql/16/main
     └── vg_postgres/lv_pgwal      80 GB   /var/lib/postgresql/16/wal
-    (25 GB reserve for LVM snapshots)
+    (25 GB reserved for LVM snapshots)
 ```
 
-Separating `lv_pgdata` and `lv_pgwal` on different disks and VGs improves write performance and makes LVM snapshot backups easier.
+Separating `lv_pgdata` and `lv_pgwal` on different disks and volume groups improves write performance (reduces I/O contention) and makes LVM snapshot backups easier.
 
 ![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-08-15-image.png)
 
 ### On Sion — hardware and partitions
 
 | Component | Spec                    |
-| --------- | ----------------------- |
+|-----------|-------------------------|
 | CPU       | 2 vCPU (AWS t3.medium)  |
 | RAM       | 4 GB                    |
 | Disk      | 80 GB gp3 SSD (elastic) |
@@ -101,7 +159,7 @@ sudo apt install -y curl wget git vim ufw openssl
 
 ## 2. Tailscale
 
-This is the VPN connecting Briar and Sion (and my laptop). Auto-encrypted, zero config.
+Tailscale is the VPN connecting Briar and Sion (and the admin laptop). It provides WireGuard-based auto-encrypted tunnels with zero configuration.
 
 ```bash
 # On Briar and Sion
@@ -120,11 +178,12 @@ Tailscale connected:
 
 ![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-22-23-image.png)
 
-From now on, Briar and Sion see each other via 100.x.x.x Tailscale IPs. Ping to confirm:
+From now on, Briar and Sion see each other via `100.x.x.x` Tailscale IPs. Verify connectivity:
 
 ```bash
 # From Briar
 ping 100.98.214.53   # should respond
+
 # From Sion
 ping 100.78.155.2    # should respond
 ```
@@ -139,18 +198,30 @@ Ping verification:
 
 ## 3. Firewall
 
+The firewall restricts access to only necessary ports and sources.
+
 ### On Briar
 
 ```bash
-sudo ufw allow 22/tcp
-sudo ufw allow 5000/tcp
-sudo ufw allow from 192.168.4.0/24 to any port 5000
-sudo ufw allow from 100.98.214.53 to any port 5432
-sudo ufw allow in on tailscale0
+sudo ufw allow 22/tcp                                          # SSH
+sudo ufw allow 5000/tcp                                        # Flask API
+sudo ufw allow from 192.168.4.0/24 to any port 5000            # API from LAN
+sudo ufw allow from 100.98.214.53 to any port 5432             # PostgreSQL replication from Sion
+sudo ufw allow in on tailscale0                                # Allow all Tailscale traffic
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw --force enable
 ```
+
+**Rules breakdown:**
+
+| Rule                                     | Purpose                                |
+|------------------------------------------|----------------------------------------|
+| `allow 22/tcp`                           | SSH access (from LAN or Tailscale)     |
+| `allow 5000/tcp`                         | Flask API access                       |
+| `from 192.168.4.0/24 to any port 5000`   | Restrict API to hospital LAN           |
+| `from 100.98.214.53 to any port 5432`    | Allow only Sion to reach PostgreSQL    |
+| `allow in on tailscale0`                 | Allow all traffic over Tailscale       |
 
 UFW status on Briar:
 
@@ -167,7 +238,13 @@ sudo ufw default allow outgoing
 sudo ufw --force enable
 ```
 
-If Sion is on AWS, also open the ports in its Security Group: 5432 (from Briar only), 22 (from Tailscale only), UDP 41641 (Tailscale).
+If Sion is on AWS, also open the ports in its **Security Group**:
+
+| Port       | Protocol | Source         | Purpose                   |
+|------------|----------|----------------|---------------------------|
+| 5432       | TCP      | Briar TS IP    | PostgreSQL replication    |
+| 22         | TCP      | Tailscale only | SSH                       |
+| 41641      | UDP      | 0.0.0.0/0      | Tailscale WireGuard       |
 
 UFW status on Sion:
 
@@ -180,11 +257,12 @@ UFW status on Sion:
 ### On Briar and Sion
 
 ```bash
+# Add PostgreSQL official repository
 sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
 sudo apt update
 sudo apt install -y postgresql-16 postgresql-contrib-16
-psql --version   # should be 16.x
+psql --version   # should output 16.x
 ```
 
 PostgreSQL installation:
@@ -193,16 +271,28 @@ PostgreSQL installation:
 
 ![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-00-29-25-image.png)
 
+### Service management
+
+```bash
+sudo systemctl status postgresql-16    # Check if running
+sudo systemctl stop postgresql-16      # Stop
+sudo systemctl start postgresql-16     # Start
+sudo systemctl restart postgresql-16   # Restart
+sudo systemctl enable postgresql-16    # Enable on boot
+```
+
 ---
 
 ## 5. TLS certificates
+
+PostgreSQL connections use SSL with a custom CA and server certificates.
 
 ### On Briar
 
 ```bash
 mkdir -p ~/ssl && cd ~/ssl
 
-# Own CA
+# Create own CA (valid 10 years)
 openssl genrsa -out ca.key 4096
 openssl req -new -x509 -days 3650 -key ca.key -out ca.crt \
   -subj "/C=ES/ST=Girona/L=Blanes/O=Hospital de Blanes/CN=CA Hospital"
@@ -224,11 +314,13 @@ sudo chmod 600 /etc/ssl/private/postgresql.key
 
 ### On Sion (repeat with CN=100.98.214.53)
 
-Same steps but using `CN=100.98.214.53` (Sion's Tailscale IP) in the certificate.
+Same steps as above but using `CN=100.98.214.53` (Sion's Tailscale IP) in the certificate.
 
 ---
 
 ## 6. Configure PostgreSQL — Briar (primary)
+
+### postgresql.conf
 
 Edit `/etc/postgresql/16/main/postgresql.conf`:
 
@@ -236,39 +328,41 @@ Edit `/etc/postgresql/16/main/postgresql.conf`:
 listen_addresses = '*'
 port = 5432
 max_connections = 200
-shared_buffers = 4GB
-effective_cache_size = 12GB
+shared_buffers = 4GB                    # 25% of RAM
+effective_cache_size = 12GB             # 75% of RAM
 work_mem = 64MB
 maintenance_work_mem = 1GB
-wal_level = replica
-max_wal_senders = 5
-wal_keep_size = 1024
-max_replication_slots = 5
-hot_standby = on
+wal_level = replica                     # Required for replication
+max_wal_senders = 5                     # Max standby connections
+wal_keep_size = 1024                    # MB of WAL to retain
+max_replication_slots = 5               # Physical + logical slots
+hot_standby = on                        # Allow read-only queries on standby
 ssl = on
 ssl_cert_file = '/etc/ssl/certs/postgresql.crt'
 ssl_key_file = '/etc/ssl/private/postgresql.key'
 ssl_ca_file = '/etc/ssl/certs/ca.crt'
 ```
 
+### pg_hba.conf
+
 Edit `/etc/postgresql/16/main/pg_hba.conf`:
 
-```
-# Local admin (no SSL)
+```bash
+# Local admin (no SSL required)
 local   all             postgres                                peer
 
-# Replication over Tailscale (automatic encryption, plus SSL on top)
+# Replication over Tailscale (Tailscale encryption + SSL on top)
 hostssl replication     replicator      100.98.214.53/32        scram-sha-256
 
 # Application from the hospital LAN
-hostssl hsp_db          postgres        192.168.4.0/24            scram-sha-256
+hostssl hsp_db          postgres        192.168.4.0/24          scram-sha-256
 hostssl hsp_db          app_admin       192.168.4.0/24          scram-sha-256
 hostssl hsp_db          app_doctor      192.168.4.0/24          scram-sha-256
 hostssl hsp_db          app_nurse       192.168.4.0/24          scram-sha-256
 hostssl hsp_db          app_receptionist 192.168.4.0/24         scram-sha-256
 hostssl hsp_db          app_staff       192.168.4.0/24          scram-sha-256
 
-# Application from Briar itself
+# Application from Briar itself (localhost)
 hostssl hsp_db          postgres        127.0.0.1/32            scram-sha-256
 hostssl hsp_db          app_admin       127.0.0.1/32            scram-sha-256
 hostssl hsp_db          app_doctor      127.0.0.1/32            scram-sha-256
@@ -276,12 +370,12 @@ hostssl hsp_db          app_nurse       127.0.0.1/32            scram-sha-256
 hostssl hsp_db          app_receptionist 127.0.0.1/32           scram-sha-256
 hostssl hsp_db          app_staff       127.0.0.1/32            scram-sha-256
 
-# Backup user (from Briar itself — needs access to template1 for dropdb/createdb)
+# Backup user (needs access to template1 for dropdb/createdb operations)
 host    all             backup_user     127.0.0.1/32            scram-sha-256
 host    all             backup_user     ::1/128                 scram-sha-256
 ```
 
-All remote connections use **SSL** (`hostssl`). Connections over Tailscale have both Tailscale's own encryption **plus** PostgreSQL SSL (double layer).
+**Security note:** All remote connections use `hostssl` (SSL mandatory). Connections over Tailscale have both Tailscale's own encryption **plus** PostgreSQL SSL (double encryption layer).
 
 ---
 
@@ -292,10 +386,10 @@ Edit `/etc/postgresql/16/main/postgresql.conf`:
 ```ini
 listen_addresses = '*'
 port = 5432
-max_connections = 50
-shared_buffers = 1GB
+max_connections = 50                     # Lower than primary
+shared_buffers = 1GB                     # 25% of 4GB RAM
 wal_level = replica
-hot_standby = on
+hot_standby = on                         # Allow read-only queries
 primary_conninfo = 'host=100.78.155.2 port=5432 user=replicator password=change_password sslmode=require'
 primary_slot_name = 'standby_sion'
 ssl = on
@@ -316,17 +410,17 @@ sudo systemctl enable postgresql-16
 
 ## 8. Set up replication
 
-### On Briar
+### On Briar (primary)
 
 ```bash
-# Replication user
+# Create replication user
 sudo -u postgres psql -c "CREATE ROLE replicator WITH LOGIN REPLICATION PASSWORD 'change_password';"
 
-# Replication slot
+# Create physical replication slot
 sudo -u postgres psql -c "SELECT pg_create_physical_replication_slot('standby_sion');"
 ```
 
-### On Sion
+### On Sion (standby)
 
 ```bash
 sudo systemctl stop postgresql-16
@@ -339,13 +433,16 @@ sudo systemctl start postgresql-16
 
 ![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-01-05-26-image.png)
 
-### On Briar — verify
+### On Briar — verify replication
 
 ```bash
 sudo -u postgres psql -c "SELECT slot_name, slot_type, active, restart_lsn FROM pg_replication_slots;"
 sudo -u postgres psql -c "SELECT application_name, state, sync_state FROM pg_stat_replication;"
-# Should show 'standby_sion', 'physical', 't' and the standby in 'streaming' state
 ```
+
+Expected output:
+- `slot_name` = `standby_sion`, `slot_type` = `physical`, `active` = `t`
+- `state` = `streaming`, `sync_state` = `async`
 
 Replication verification:
 
@@ -359,7 +456,7 @@ Replication verification:
 
 ### On Briar
 
-I use a versioned deploy structure so I can roll back quickly if a new version breaks something.
+A versioned deploy structure is used so rollbacks are quick if a new version breaks something.
 
 ```bash
 # Clone once
@@ -379,9 +476,30 @@ pip install -r requirements.txt
 deactivate
 ```
 
-The `deploy/deploy.sh` script automates this: it creates a new release directory, symlinks `current`, runs a smoke test, and rolls back if it fails.
+### Deploy script
+
+The `deploy/deploy.sh` script automates the full process: cloning a new release, creating the symlink, running a smoke test, and rolling back on failure.
+
+```bash
+cd /opt/hms
+sudo ./current/scripts/deploy/deploy.sh    # see deploy/deploy_primary.sh for details
+```
 
 ![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-01-25-19-image.png)
+
+### Release structure
+
+```
+/opt/hms/
+├── current -> /opt/hms/releases/v1.0/      # Active symlink
+├── releases/
+│   ├── v1.0/                                # Initial release
+│   └── v1.1/                                # Future update
+├── backups/
+│   └── local/                               # Backup storage
+└── deploy/
+    └── deploy.sh                            # Deployment automation
+```
 
 ---
 
@@ -398,6 +516,8 @@ EXTERNAL_API_USERNAME=api_user
 EXTERNAL_API_PASSWORD=api_password
 ```
 
+**Important:** Run `openssl rand -hex 32` to generate a cryptographically strong `JWT_SECRET_KEY`. Never use a default value.
+
 ---
 
 ## 11. Create the database and load schemas
@@ -411,16 +531,18 @@ sudo -u postgres psql -d hsp_db -f /opt/hms/current/scripts/sql/security.sql
 sudo -u postgres psql -d hsp_db -f /opt/hms/current/scripts/sql/initial_script.sql
 ```
 
-Verify:
+### Verify tables
 
 ```bash
 sudo -u postgres psql -d hsp_db -c "\dt"
 # Should show 22 tables
 ```
 
+The 22 tables include: `patients`, `staff`, `doctors`, `nurses`, `visits`, `surgeries`, `admissions`, `prescriptions`, `exams`, `rooms`, `floors`, `specialties`, `users`, `roles`, `audit_logs`, and supporting tables.
+
 Database verification:
 
-![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-01-43-29-image.png)
+![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-18-41-48-image.png)
 
 ---
 
@@ -436,11 +558,11 @@ python run.py
 
 ![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-01-44-37-image.png)
 
-Check it works:
+### Check it works
 
 ```bash
 curl http://192.168.4.254:5000/health
-# {"status":"healthy","database":"connected","timestamp":"..."}
+# Expected: {"status":"healthy","database":"connected","timestamp":"..."}
 ```
 
 API health check:
@@ -455,17 +577,53 @@ API health check:
 
 The best option to avoid errors is to use the developed scripts.
 
-`/scripts/deploy/deploy_primary.sh` <- Installs dependencies, creates env files, etc.
+**`/scripts/deploy/deploy_primary.sh`** — Installs dependencies, creates environment files, sets up systemd, etc.
 
 Deploy primary script:
 
 ![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-01-59-09-image.png)
 
-Then we execute `/scripts/deploy.sh` this clones the repo, installs venv and installs the whole service.
+Then execute **`/scripts/deploy.sh`** which clones the repo, installs the virtual environment, and installs the whole service.
 
 ![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-02-03-08-image.png)
 
-We check that the service is running correctly:
+### systemd unit file
+
+The service is managed via a systemd unit at `/etc/systemd/system/hms-api.service`:
+
+```ini
+[Unit]
+Description=Hospital Management System API
+After=network.target postgresql-16.service
+Requires=postgresql-16.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/hms/current/server/src
+EnvironmentFile=/opt/hms/current/server/src/.env
+ExecStart=/opt/hms/current/server/src/.venv/bin/python run.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### Service management commands
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable hms-api.service
+sudo systemctl start hms-api.service
+sudo systemctl status hms-api.service
+sudo systemctl stop hms-api.service
+sudo journalctl -u hms-api.service -f    # Follow logs
+```
+
+Check that the service is running correctly:
 
 ![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-21-02-04-52-image.png)
 
@@ -473,7 +631,7 @@ We check that the service is running correctly:
 
 ## 14. Desktop client
 
-On your laptop or a hospital computer (inside the 192.168.4.x LAN):
+### On a laptop or hospital computer (inside the 192.168.4.x LAN)
 
 ```bash
 git clone https://github.com/yosseferrazik/hospital-management-project.git
@@ -484,19 +642,21 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+### Configure API endpoint
+
 Create `desktop/src/.env`:
 
 ```
 API_BASE_URL=http://192.168.4.254:5000/api
 ```
 
-Run:
+### Run
 
 ```bash
 python main.py
 ```
 
-(On Ubuntu you may need `sudo apt install python3-tk`)
+> **Note:** On Ubuntu you may need `sudo apt install python3-tk`.
 
 Desktop client running:
 
@@ -506,31 +666,39 @@ Desktop client running:
 
 ## 15. First login
 
-| Username | Password                |
-| -------- | ----------------------- |
-| `yossef` | `ChangeMePleaseChange!` |
+Default administrator credentials:
 
-Change the password on first login.
+| Username | Password                     |
+|----------|------------------------------|
+| `yossef` | `ChangeMePleaseChange!`      |
+
+**Important:** Change the password on first login via the **Change Password** option in the sidebar.
 
 ---
 
 ## 16. Desktop client setup (on LAN PCs)
 
-On each hospital computer that will use the application, create `desktop/src/.env` with `API_BASE_URL=http://192.168.4.254:5000/api`.
+On each hospital computer that will use the application, create `desktop/src/.env` with:
 
-To make this easier, I prepared an installer with Inno Setup (the `.exe` already includes the configured `.env`); it's at `desktop/dist/HMS_Client_Setup_v2026.05.19.exe`.
+```
+API_BASE_URL=http://192.168.4.254:5000/api
+```
+
+To make installation easier, an **Inno Setup installer** is available at `desktop/dist/HMS_Client_Setup_v2026.05.19.exe`. This `.exe` already includes the configured `.env` file and creates a desktop shortcut.
 
 ---
 
 ## 17. Automated backups & full-service recovery
 
+### Backup layers
+
 The backup system uses **three layers** to protect against any data loss scenario:
 
-| Layer        | Backup file         | Created by              | Protects against                        |
-| ------------ | ------------------- | ----------------------- | --------------------------------------- |
-| **Physical** | `physical_*.tar.gz` | `--physical` flag       | Deleted `/var/lib/postgresql/`          |
-| **Logical**  | `hsp_db_*.dump`     | default (`pg_dump -Fc`) | Corrupted/deleted database              |
-| **Config**   | `config_*.tar.gz`   | default (auto)          | Lost `.env`, systemd, `postgresql.conf` |
+| Layer        | Backup file              | Created by              | Protects against                        |
+|--------------|--------------------------|-------------------------|-----------------------------------------|
+| **Physical** | `physical_*.tar.gz`      | `--physical` flag       | Deleted `/var/lib/postgresql/` directory |
+| **Logical**  | `hsp_db_*.dump`          | default (`pg_dump -Fc`) | Corrupted/deleted database              |
+| **Config**   | `config_*.tar.gz`        | default (auto)          | Lost `.env`, systemd, `postgresql.conf` |
 
 ### Backup script
 
@@ -549,6 +717,21 @@ python scripts/backup_database.py --physical-only
 
 ![](https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/installation_manual/2026-05-22-17-31-12-image.png)
 
+### Config files backed up automatically each run
+
+```
+server/src/.env
+desktop/src/.env
+inventory.ini
+.deploy_meta
+hms-api.service
+logrotate.d/hms
+/etc/hms.env
+postgresql.conf
+pg_hba.conf
+pg_ident.conf
+```
+
 ### On Briar — cron setup
 
 ```bash
@@ -565,15 +748,12 @@ sudo crontab -e
 */15 * * * * HMS_DB_PASSWORD='<password>' cd /opt/hms/current && python scripts/backup_database.py --frequent >> /tmp/hms_backup_frequent.log 2>&1
 ```
 
-> **Passwordless** via `.pgpass`:
-> 
+> **Passwordless alternative via `.pgpass`:**
+>
 > ```bash
 > echo 'localhost:5432:hsp_db:backup_user:<password>' | sudo tee -a /root/.pgpass
 > sudo chmod 600 /root/.pgpass
 > ```
-
-**Config files backed up automatically each run:**
-`server/src/.env`, `desktop/src/.env`, `inventory.ini`, `.deploy_meta`, `hms-api.service`, `logrotate.d/hms`, `/etc/hms.env`, `postgresql.conf`, `pg_hba.conf`, `pg_ident.conf`.
 
 ### Rsync to Sion (standby) — optional
 
@@ -656,7 +836,7 @@ python scripts/backup_database.py --config-restore latest
 python scripts/backup_database.py --physical-restore latest
 ```
 
-This stops PostgreSQL, replaces the data directory, fixes permissions, and restarts.
+This stops PostgreSQL, replaces the data directory, fixes permissions, and restarts the service.
 
 #### Full bare-metal restore (all three layers)
 
@@ -710,7 +890,11 @@ Open a browser from any computer on the LAN:
 http://192.168.4.254:5000/api/dashboard/view
 ```
 
-For PowerBI: `http://192.168.4.254:5000/api/dashboard/stats`
+For PowerBI data source:
+
+```
+http://192.168.4.254:5000/api/dashboard/stats
+```
 
 Dashboard:
 
@@ -720,13 +904,14 @@ Dashboard:
 
 ## 20. Monitoring
 
-| What                   | Where to run   | Tool                               |
-| ---------------------- | -------------- | ---------------------------------- |
-| Replication lag        | Briar          | `scripts/ops/check_replication.sh` |
-| SSL certificate expiry | Briar and Sion | `scripts/ops/check_cert_expiry.sh` |
-| Disk space             | Briar and Sion | `df -h`                            |
-| Audit logs             | App (Admin)    | Audit Logs section in the client   |
-| PostgreSQL logs        | Briar and Sion | `journalctl -u postgresql-16`      |
+| What                   | Where to run   | Tool                                |
+|------------------------|----------------|-------------------------------------|
+| Replication lag        | Briar          | `scripts/ops/check_replication.sh`  |
+| SSL certificate expiry | Briar and Sion | `scripts/ops/check_cert_expiry.sh`  |
+| Disk space             | Briar and Sion | `df -h`                             |
+| Audit logs             | App (Admin)    | Audit Logs section in the client    |
+| PostgreSQL logs        | Briar and Sion | `journalctl -u postgresql-16 -f`    |
+| API logs               | Briar          | `journalctl -u hms-api.service -f`  |
 
 Screenshots:
 
@@ -744,13 +929,15 @@ Screenshots:
 
 ## 21. Verification checklist
 
-| Test               | Where          | Command                                                     |
-| ------------------ | -------------- | ----------------------------------------------------------- |
-| API works          | Any LAN PC     | `curl http://192.168.4.254:5000/health`                     |
-| Login works        | Any LAN PC     | `curl -X POST http://192.168.4.254:5000/api/auth/login ...` |
-| Tables created     | On Briar       | `sudo -u postgres psql -d hsp_db -c "\dt"`                  |
-| Replication active | On Briar       | `psql -c "SELECT state FROM pg_stat_replication;"`          |
-| Dashboard          | Browser on LAN | `http://192.168.4.254:5000/api/dashboard/view`              |
+| Test                    | Where          | Command                                                                 |
+|-------------------------|----------------|-------------------------------------------------------------------------|
+| API works               | Any LAN PC     | `curl http://192.168.4.254:5000/health`                                 |
+| Login works             | Any LAN PC     | `curl -X POST http://192.168.4.254:5000/api/auth/login -H "Content-Type: application/json" -d '{"username":"yossef","password":"..."}'` |
+| Tables created          | On Briar       | `sudo -u postgres psql -d hsp_db -c "\dt"`                              |
+| Replication active      | On Briar       | `sudo -u postgres psql -c "SELECT state FROM pg_stat_replication;"`     |
+| Dashboard accessible    | Browser on LAN | `http://192.168.4.254:5000/api/dashboard/view`                          |
+| Backup runs             | On Briar       | `sudo python3 scripts/backup_database.py --list`                         |
+| Tailscale connectivity  | Either node    | `ping 100.78.155.2` or `ping 100.98.214.53`                             |
 
 Screenshots:
 
@@ -764,15 +951,22 @@ Screenshots:
 
 ---
 
-## 22. Problems I ran into and how I fixed them
+## 22. Troubleshooting
 
-| Problem                               | Where        | Solution                                               |
-| ------------------------------------- | ------------ | ------------------------------------------------------ |
-| `pg_hba.conf` wouldn't let me connect | Briar        | Changed `127.0.0.1/32` to `192.168.4.0/24` for the LAN |
-| pg_basebackup timed out               | Briar → Sion | Added `sslmode=require` to `primary_conninfo`          |
-| Tailscale wouldn't connect            | Sion (AWS)   | Was missing UDP port 41641 in the Security Group       |
-| High replication lag                  | Briar        | `wal_keep_size` was 64 MB, raised it to 1024 MB        |
-| psycopg2 wouldn't install             | Briar        | `sudo apt install libpq-dev`                           |
-| Tkinter error on Linux                | Hospital PC  | `sudo apt install python3-tk`                          |
-| Serial IDs reset on restore           | Briar        | Switched from plain text `pg_dump` to `pg_dump -Fc`    |
-| Datacenter firewall blocked API       | Hospital LAN | Coordinated with the network team to open port 5000    |
+| Problem                                    | Where        | Solution                                                             |
+|--------------------------------------------|--------------|----------------------------------------------------------------------|
+| `pg_hba.conf` wouldn't let me connect      | Briar        | Changed `127.0.0.1/32` to `192.168.4.0/24` for the LAN range        |
+| `pg_basebackup` timed out                  | Briar → Sion | Added `sslmode=require` to `primary_conninfo`                        |
+| Tailscale wouldn't connect                 | Sion (AWS)   | Was missing UDP port 41641 in the AWS Security Group                 |
+| High replication lag                       | Briar        | `wal_keep_size` was 64 MB, raised it to 1024 MB                      |
+| psycopg2 wouldn't install                  | Briar        | `sudo apt install libpq-dev` (needed for compilation)                |
+| Tkinter error on Linux                     | Hospital PC  | `sudo apt install python3-tk`                                        |
+| Serial IDs reset on restore                | Briar        | Switched from plain text `pg_dump` to `pg_dump -Fc` (custom format)  |
+| Datacenter firewall blocked API            | Hospital LAN | Coordinated with the network team to open port 5000                  |
+| `JWT_SECRET_KEY` not set                   | Briar        | Generate with `openssl rand -hex 32` and add to `.env`               |
+| Could not connect to database              | Briar        | Check PostgreSQL is running: `sudo systemctl status postgresql-16`    |
+| Permission denied for `.pgpass`            | Briar        | Run `chmod 600 /root/.pgpass`                                        |
+| AWS Security Group blocking Tailscale      | Sion (AWS)   | Add UDP port 41641 to the inbound rules                              |
+| `standby.signal` not detected on startup   | Sion         | Verify file exists at `/var/lib/postgresql/16/main/standby.signal`   |
+| API returns 500 Internal Server Error      | Briar        | Check logs: `journalctl -u hms-api.service -f`                       |
+| Disk space full on `/backups/local`        | Briar        | Adjust retention period in cron or increase disk size                |

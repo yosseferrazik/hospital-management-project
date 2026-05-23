@@ -1,960 +1,1437 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ca">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospital Management System — Document Final</title>
 <style>
-body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.6; color: #222; margin: 0; padding: 20pt; }
-h1 { font-size: 20pt; color: #1a5276; border-bottom: 2px solid #1a5276; padding-bottom: 4pt; margin-top: 24pt; page-break-before: auto; }
-h2 { font-size: 16pt; color: #2e86c1; margin-top: 20pt; }
-h3 { font-size: 13pt; color: #2980b9; margin-top: 16pt; }
-table { border-collapse: collapse; width: 100%; margin: 12pt 0; font-size: 9pt; }
-th, td { border: 1px solid #999; padding: 3pt 6pt; text-align: left; }
-th { background: #1a5276; color: white; }
-tr:nth-child(even) td { background: #f0f4f8; }
-code { background: #e8e8e8; padding: 1pt 3pt; border-radius: 2pt; font-size: 9pt; }
-pre { background: #f4f4f4; border: 1px solid #ddd; padding: 8pt; font-size: 9pt; overflow-x: auto; }
-pre code { background: none; padding: 0; }
-img { max-width: 95%; height: auto; margin: 6pt 0; }
-blockquote { background: #eaf2f8; border-left: 4pt solid #2980b9; margin: 10pt 0; padding: 6pt 10pt; font-style: italic; }
-.cover-page { text-align: center; padding-top: 100pt; }
-.cover-page h1 { font-size: 28pt; color: #1a5276; border: none; margin-bottom: 10pt; }
-.cover-page h2 { font-size: 16pt; color: #555; font-weight: normal; border: none; }
-.cover-page p { font-size: 11pt; color: #555; margin: 3pt 0; }
-.cover-institution { font-size: 13pt; color: #888; margin-bottom: 30pt; }
-@media print { .no-break { page-break-inside: avoid; } }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #222;
+    background: #fff;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  h1 { font-size: 26pt; color: #1a5276; margin: 40px 0 16px; border-bottom: 3px solid #1a5276; padding-bottom: 8px; }
+  h2 { font-size: 18pt; color: #1a5276; margin: 32px 0 12px; border-bottom: 1px solid #bbb; padding-bottom: 6px; }
+  h3 { font-size: 14pt; color: #2c3e50; margin: 24px 0 10px; }
+  h4 { font-size: 12pt; color: #2c3e50; margin: 20px 0 8px; }
+  p { margin: 0 0 12px; }
+  a { color: #2980b9; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  hr { border: none; border-top: 1px solid #ccc; margin: 30px 0; }
+  blockquote {
+    border-left: 4px solid #1a5276;
+    background: #f0f4f8;
+    padding: 10px 16px;
+    margin: 16px 0;
+    font-style: italic;
+    color: #333;
+  }
+  blockquote p { margin: 4px 0; }
+  pre {
+    background: #f5f6f8;
+    border: 1px solid #d0d4dc;
+    border-radius: 5px;
+    padding: 14px 16px;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 9.5pt;
+    overflow-x: auto;
+    line-height: 1.45;
+    margin: 16px 0;
+  }
+  code {
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 9.5pt;
+    background: #eff0f3;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  pre code { background: none; padding: 0; border-radius: 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 10pt;
+  }
+  th, td {
+    border: 1px solid #b0b8c4;
+    padding: 7px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #1a5276;
+    color: #fff;
+    font-weight: 600;
+  }
+  tr:nth-child(even) { background: #f4f6f9; }
+  tr:hover { background: #e8edf4; }
+  ul, ol { margin: 10px 0 10px 24px; }
+  li { margin-bottom: 4px; }
+  img { max-width: 100%; height: auto; display: block; margin: 16px auto; }
+  strong { font-weight: 700; }
+  em { font-style: italic; }
+
+  /* Cover page */
+  .cover-page {
+    text-align: center;
+    padding-top: 120px;
+    page-break-after: always;
+  }
+  .cover-page .subtitle { font-size: 14pt; color: #666; }
+  .cover-page h1 { font-size: 32pt; color: #1a5276; border: none; margin: 20px 0; }
+  .cover-page h2 { font-size: 18pt; color: #555; font-weight: normal; border: none; margin: 10px 0; }
+  .cover-page hr.divider { width: 50%; margin: 30px auto; border: 1px solid #1a5276; }
+  .cover-page p { font-size: 12pt; margin: 6px 0; }
+
+  /* Table of contents */
+  .toc { page-break-before: always; }
+  .toc h1 { text-align: center; border: none; }
+  .toc ul { list-style: none; margin: 20px 0; padding: 0; }
+  .toc ul ul { margin: 4px 0 4px 24px; }
+  .toc li { margin: 4px 0; font-size: 11pt; }
+  .toc li a { color: #1a5276; }
+  .toc .part-label { font-weight: 700; color: #1a5276; }
+
+  /* Part sections */
+  .part { page-break-before: always; }
+
+  /* Page break */
+  .page-break { page-break-before: always; }
+
+  /* Cover page within parts */
+  .cover-part { text-align: center; margin-top: 50px; }
+  .cover-part hr { width: 50%; margin: 30px auto; }
+  .cover-part p { font-size: 10pt; color: #555; }
+
+  /* Print */
+  @media print {
+    body { font-size: 10pt; padding: 0; max-width: none; }
+    a { color: #1a5276; }
+    pre { font-size: 8.5pt; }
+    table { font-size: 9pt; }
+    .cover-page { padding-top: 80px; }
+    @page { margin: 2cm; }
+  }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    body { padding: 10px; font-size: 10pt; }
+    pre { font-size: 8.5pt; }
+    table { font-size: 9pt; }
+    .cover-page { padding-top: 40px; }
+    .cover-page h1 { font-size: 24pt; }
+    .cover-page h2 { font-size: 14pt; }
+  }
 </style>
 </head>
 <body>
+
+<!-- COVER PAGE -->
 <div class="cover-page">
-<div class="cover-content">
-<p class="cover-institution">Institut Sa Palomera · ASIX</p>
-<h1 class="cover-title">Hospital Management System</h1>
-<h2 class="cover-subtitle">Sistema de Gestió Hospitalària per a l'Hospital de Blanes</h2>
-<p class="cover-meta"><strong>Projecte Intermodular</strong></p>
-<p class="cover-meta">Autor: <strong>Yossef Errazik</strong></p>
-<p class="cover-meta">Curs: 2025–2026</p>
-<p class="cover-meta">Data: Maig de 2026</p>
-<p class="cover-meta">Repositori: <a href="https://github.com/yosseferrazik/hospital-management-project">github.com/yosseferrazik/hospital-management-project</a></p>
+  <p class="subtitle">Institut Sa Palomera · ASIX</p>
+  <h1>Hospital Management System</h1>
+  <h2>Sistema de Gesti&oacute; Hospital&agrave;ria per a l'Hospital de Blanes</h2>
+  <hr class="divider">
+  <p><strong>Projecte Intermodular</strong></p>
+  <p>Autor: <strong>Yossef Errazik</strong></p>
+  <p>Curs: 2025–2026</p>
+  <p>Data: Maig de 2026</p>
+  <p>Repositori: <a href="https://github.com/yosseferrazik/hospital-management-project">github.com/yosseferrazik/hospital-management-project</a></p>
 </div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+<h1>&Iacute;ndex de continguts</h1>
+<ul>
+  <li><span class="part-label">Part I: Resum Executiu / Executive Summary</span></li>
+  <li><span class="part-label">Part II: Lliuraments (Deliveries)</span>
+    <ul>
+      <li><a href="#1-planificacio-del-projecte-i-github">1. Planificaci&oacute; del Projecte i GitHub</a></li>
+      <li><a href="#2-prg--bloc-de-connectivitat-i-login">2. PRG — Bloc de Connectivitat i Login</a></li>
+      <li><a href="#3-bd--disseny-er-i-model-relacional">3. BD — Disseny ER i Model Relacional</a></li>
+      <li><a href="#4-bd--esquema-de-seguretat">4. BD — Esquema de Seguretat</a></li>
+      <li><a href="#5-prg--bloc-de-manteniment">5. PRG — Bloc de Manteniment</a></li>
+      <li><a href="#6-bd--esquema-dalta-disponibilitat">6. BD — Esquema d'Alta Disponibilitat</a></li>
+      <li><a href="#7-prg--bloc-de-consultes">7. PRG — Bloc de Consultes</a></li>
+      <li><a href="#8-bd--dummy-data">8. BD — Dummy Data</a></li>
+      <li><a href="#9-prg--bloc-dexportacio-de-dades">9. PRG — Bloc d'Exportaci&oacute; de Dades</a></li>
+      <li><a href="#10-manual-dinstal-lacio">10. Manual d'Instal&middot;laci&oacute;</a></li>
+      <li><a href="#11-manual-dusuari">11. Manual d'Usuari</a></li>
+      <li><a href="#12-manual-dadministrador">12. Manual d'Administrador</a></li>
+    </ul>
+  </li>
+  <li><span class="part-label">Part III: Technical Documentation</span></li>
+  <li><span class="part-label">Part IV: Final Summary</span></li>
+</ul>
 </div>
 
-<div style="page-break-before: always;"></div>
+<hr>
 
-<!-- TOC placeholder - we'll use a CSS-based approach -->
+<!-- PART I -->
+<div class="part">
+<h1 id="part-i-resum-executiu--executive-summary">Part I: Resum Executiu / Executive Summary</h1>
 
-<div style="page-break-before: always;"></div>
+<h2 id="visio-general-cat">Visi&oacute; General (CAT)</h2>
+<p>El <strong>Hospital Management System</strong> &eacute;s un sistema de gesti&oacute; hospital&agrave;ria dissenyat per a l'Hospital de Blanes. Desenvolupat com a projecte intermodular del cicle ASIX a l'Institut Sa Palomera, el sistema cobreix la gesti&oacute; completa de pacients, personal m&egrave;dic, visites, cirurgies, admissions, farm&agrave;cia i radiologia. Consta d'un backend Python/Flask amb PostgreSQL 16, un client d'escriptori Tkinter, un dashboard web Chart.js i un esquema d'alta disponibilitat amb replicaci&oacute; entre dos nodes (Briar i Sion).</p>
 
-<h1 id="part-i-resum-executiu-executive-summary">Part I: Resum Executiu / Executive Summary</h1>
-<blockquote>
-<p><strong>CAT:</strong> Aquest document constitueix el lliurable final del projecte <strong>Hospital Management System (HMS)</strong>, desenvolupat per a l'Hospital de Blanes. Recull de manera sintetitzada tots els apartats del projecte, incloent-hi la planificació, el disseny de la base de dades, la implementació de l'API i el client d'escriptori, la seguretat, l'alta disponibilitat, les consultes, l'exportació de dades i la documentació tècnica completa.</p>
-<p><strong>ENG:</strong> This document is the final deliverable of the <strong>Hospital Management System (HMS)</strong> project, developed for Hospital de Blanes. It synthesises all project sections including planning, database design, API and desktop client implementation, security, high availability, queries, data export, and complete technical documentation.</p>
-</blockquote>
-<hr />
-<h3 id="arquitectura-del-sistema-system-architecture">Arquitectura del sistema / System Architecture</h3>
-<pre><code>Tkinter Desktop Client ──HTTP──▶ Flask API ──SQL──▶ PostgreSQL 16
-</code></pre>
+<h2 id="project-overview-eng">Project Overview (ENG)</h2>
+<p>The <strong>Hospital Management System</strong> is a hospital management solution designed for Hospital de Blanes. Developed as a cross-module project for the ASIX program at Institut Sa Palomera, the system covers full management of patients, medical staff, visits, surgeries, admissions, pharmacy, and radiology. It consists of a Python/Flask backend with PostgreSQL 16, a Tkinter desktop client, a Chart.js web dashboard, and a high-availability setup with replication across two nodes (Briar and Sion).</p>
+
+<h2 id="system-architecture">System Architecture</h2>
+<pre><code>┌─────────────────────────────────────────────────────────────────────┐
+│                        HOSPITAL LAN (192.168.4.0/24)                │
+│                                                                     │
+│  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌────────────────┐   │
+│  │  Doctor   │  │ Reception │  │   Nurse   │  │  Admin Laptop  │   │
+│  │  (Tkinter)│  │ (Tkinter) │  │ (Tkinter) │  │  (Tailscale)   │   │
+│  └─────┬─────┘  └─────┬─────┘  └─────┬─────┘  └───────┬────────┘   │
+│        └──────────────┼──────────────┼─────────────────┘            │
+│                       │              │                               │
+│              ┌────────▼──────────────▼──────────────┐               │
+│              │         BRIAR (Primary)              │               │
+│              │  Flask API + PostgreSQL 16           │               │
+│              │  192.168.4.254  |  100.78.155.2      │               │
+│              └───────────────────┬──────────────────┘               │
+└──────────────────────────────────┼───────────────────────────────────┘
+                                   │ Tailscale VPN (WireGuard)
+                          ┌────────▼────────┐
+                          │  SION (AWS EC2)  │
+                          │  PostgreSQL 16   │
+                          │  STANDBY         │
+                          │  100.98.214.53   │
+                          └─────────────────┘</code></pre>
+
+<h2 id="technology-stack">Technology Stack</h2>
 <table>
 <thead>
-<tr>
-<th>Capa / Layer</th>
-<th>Tecnologia / Technology</th>
-<th>Versió</th>
-</tr>
+<tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
 </thead>
 <tbody>
-<tr>
-<td>Backend</td>
-<td>Python + Flask</td>
-<td>3.13 / 3.1</td>
-</tr>
-<tr>
-<td>API Server</td>
-<td>Gunicorn (4 workers) + systemd</td>
-<td>23.0</td>
-</tr>
-<tr>
-<td>ORM</td>
-<td>SQLAlchemy</td>
-<td>2.0</td>
-</tr>
-<tr>
-<td>Base de dades</td>
-<td>PostgreSQL</td>
-<td>16</td>
-</tr>
-<tr>
-<td>Autenticació</td>
-<td>JWT (Flask-JWT-Extended) + bcrypt</td>
-<td>4.7 / 5.0</td>
-</tr>
-<tr>
-<td>Client</td>
-<td>Tkinter</td>
-<td>—</td>
-</tr>
-<tr>
-<td>Dashboard</td>
-<td>Chart.js</td>
-<td>—</td>
-</tr>
-<tr>
-<td>Dades falses</td>
-<td>Faker (es_ES, ru_RU)</td>
-<td>40.15</td>
-</tr>
-<tr>
-<td>Xarxa</td>
-<td>Tailscale VPN</td>
-<td>—</td>
-</tr>
+<tr><td>Backend</td><td>Python 3.12 + Flask 3.1</td><td>REST API and business logic</td></tr>
+<tr><td>Database</td><td>PostgreSQL 16</td><td>Relational data with Cyrillic/SSL/rep</td></tr>
+<tr><td>ORM</td><td>SQLAlchemy 2.0</td><td>SQL injection prevention, abstraction</td></tr>
+<tr><td>Client</td><td>Tkinter</td><td>Desktop GUI (included with Python)</td></tr>
+<tr><td>Dashboard</td><td>Chart.js</td><td>Real-time web charts (free alternative)</td></tr>
+<tr><td>Authentication</td><td>JWT + bcrypt</td><td>Stateless auth with hashed passwords</td></tr>
+<tr><td>VPN</td><td>Tailscale</td><td>Secure node interconnectivity</td></tr>
+<tr><td>PDF Generation</td><td>fpdf2</td><td>On-demand report PDF export</td></tr>
+<tr><td>Validation</td><td>jsonschema + lxml</td><td>XSD and JSON Schema validation</td></tr>
 </tbody>
 </table>
-<h3 id="nodes">Nodes</h3>
+
+<h2 id="node-overview">Node Overview</h2>
 <table>
 <thead>
-<tr>
-<th>Node</th>
-<th>Ubicació</th>
-<th>IP Tailscale</th>
-<th>Rol</th>
-</tr>
+<tr><th>Node</th><th>Location</th><th>LAN IP</th><th>Tailscale IP</th><th>Role</th></tr>
 </thead>
 <tbody>
-<tr>
-<td><strong>Briar</strong></td>
-<td>Sala de servidors hospital</td>
-<td>100.78.155.2</td>
-<td>API + PostgreSQL primari</td>
-</tr>
-<tr>
-<td><strong>Sion</strong></td>
-<td>AWS EC2 (eu-west-3, París)</td>
-<td>100.98.214.53</td>
-<td>PostgreSQL standby (read-only)</td>
-</tr>
+<tr><td><strong>Briar</strong></td><td>Hospital server room</td><td>192.168.4.254</td><td>100.78.155.2</td><td>Flask API + PostgreSQL PRIMARY</td></tr>
+<tr><td><strong>Sion</strong></td><td>AWS EC2 (eu-west-3)</td><td>—</td><td>100.98.214.53</td><td>PostgreSQL STANDBY (disaster rec.)</td></tr>
 </tbody>
 </table>
-<p>Hospital users connect to Briar at <strong>192.168.4.254</strong> on the LAN. Admin connects via <strong>Tailscale</strong>.</p>
-<p><img alt="C4 Context Diagram" src="C:\Users\yossef\Proyectos y actividades\Proyectos Intermodulares\hospital-management-project\docs\01_planning\images\C4_Context_Diagram.drawio.png" /></p>
-<div style="page-break-before: always;"></div>
 
+<h2 id="c4-context-diagram">C4 Context Diagram</h2>
+<p><img src="https://raw.githubusercontent.com/yosseferrazik/hospital-management-project/main/deliveries/images/C4_Context_Diagram.drawio.png" alt="C4 Context Diagram"></p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- PART II -->
+<div class="part">
 <h1 id="part-ii-lliuraments-deliveries">Part II: Lliuraments (Deliveries)</h1>
-<p><em>Aquesta secció està redactada en català.</em></p>
-<h2 id="1-planificacio-del-projecte-i-github">1. Planificació del Projecte i GitHub</h2>
+
+<h2 id="1-planificacio-del-projecte-i-github">1. Planificaci&oacute; del Projecte i GitHub</h2>
+
+<h3 id="resum-1">Resum</h3>
+<p>Projecte individual desenvolupat per Yossef Errazik amb un total de <strong>91 hores reals</strong> (77 hores estimades, desviaci&oacute; +18.2%). S'ha seguit un enfocament de desenvolupament continu a la branca <code>main</code> amb commits at&ograve;mics seguint la convenci&oacute; <strong>Conventional Commits</strong>.</p>
+
+<h3 id="tasques-principals">Tasques principals</h3>
 <table>
 <thead>
-<tr>
-<th>Membre</th>
-<th>Rol</th>
-</tr>
+<tr><th>Tasca</th><th>Hores est.</th><th>Hores reals</th><th>Desviaci&oacute;</th></tr>
 </thead>
 <tbody>
-<tr>
-<td>Yossef Errazik</td>
-<td>Desenvolupament complet</td>
-</tr>
+<tr><td>Planificaci&oacute;</td><td>4</td><td>5</td><td>+1h</td></tr>
+<tr><td>Connectivitat i login</td><td>6</td><td>7</td><td>+1h</td></tr>
+<tr><td>ER - Model Relacional</td><td>5</td><td>6</td><td>+1h</td></tr>
+<tr><td>Esquema de seguretat</td><td>8</td><td>9</td><td>+1h</td></tr>
+<tr><td>Bloc de manteniment</td><td>10</td><td>12</td><td>+2h</td></tr>
+<tr><td>Alta disponibilitat</td><td>10</td><td>14</td><td>+4h</td></tr>
+<tr><td>Bloc de consultes</td><td>8</td><td>8</td><td>0h</td></tr>
+<tr><td>Dummy Data</td><td>6</td><td>7</td><td>+1h</td></tr>
+<tr><td>Exportaci&oacute; de dades</td><td>8</td><td>10</td><td>+2h</td></tr>
+<tr><td>Documentaci&oacute; i manuals</td><td>12</td><td>13</td><td>+1h</td></tr>
 </tbody>
 </table>
-<p><strong>GitHub:</strong> <a href="https://github.com/yosseferrazik/hospital-management-project">github.com/yosseferrazik/hospital-management-project</a></p>
-<p><strong>Tecnologies escollides:</strong></p>
+
+<h3 id="tecnologies-escollides">Tecnologies escollides</h3>
+<p>Les tecnologies es van seleccionar per criteris de cost zero, coneixements previs i requisits t&egrave;cnics: Python/Flask per al backend, PostgreSQL 16 per la base de dades (suport cir&iacute;l&middot;lic, SSL, replicaci&oacute;), SQLAlchemy com a ORM, Tkinter pel client d'escriptori, Chart.js per al dashboard, JWT + bcrypt per a autenticaci&oacute; i Tailscale per a la xarxa privada entre nodes.</p>
+
+<h3 id="convencio-de-commits">Convenci&oacute; de commits</h3>
 <table>
 <thead>
-<tr>
-<th>Capa</th>
-<th>Tecnologia</th>
-<th>Per què</th>
-</tr>
+<tr><th>Tipus</th><th>&Uacute;s</th></tr>
 </thead>
 <tbody>
-<tr>
-<td>Backend</td>
-<td>Python 3.12 + Flask 3.1</td>
-<td>Ja el coneixíem de classe, zero cost de llicència</td>
-</tr>
-<tr>
-<td>Base de dades</td>
-<td>PostgreSQL 16</td>
-<td>Complir requisits (ciríl·lic, SSL, replicació)</td>
-</tr>
-<tr>
-<td>ORM</td>
-<td>SQLAlchemy 2.0</td>
-<td>Prevenir SQL injection, facilitar manteniment</td>
-</tr>
-<tr>
-<td>Client</td>
-<td>Tkinter</td>
-<td>Va inclòs amb Python, funciona en equips modestos</td>
-</tr>
-<tr>
-<td>Dashboard</td>
-<td>Chart.js</td>
-<td>Alternativa gratuïta a PowerBI</td>
-</tr>
-<tr>
-<td>Autenticació</td>
-<td>JWT + bcrypt</td>
-<td>Estàteless, suficient per a ús intern</td>
-</tr>
-<tr>
-<td>Virtualització</td>
-<td>Tailscale</td>
-<td>Connectar els dos nodes sense obrir ports públics</td>
-</tr>
+<tr><td><code>feat:</code></td><td>Nova funcionalitat</td></tr>
+<tr><td><code>fix:</code></td><td>Correcci&oacute; d'error</td></tr>
+<tr><td><code>docs:</code></td><td>Documentaci&oacute;</td></tr>
+<tr><td><code>refactor:</code></td><td>Canvi intern</td></tr>
+<tr><td><code>test:</code></td><td>Tests</td></tr>
+<tr><td><code>db:</code></td><td>Migracions d'esquema</td></tr>
 </tbody>
 </table>
-<p><strong>Planificació de tasques (estimades vs. reals):</strong></p>
+
+<blockquote><p><strong>Lli&ccedil;ons apreses:</strong> Les desviacions es concentren en tasques amb tecnologies no cobertes a classe (Tailscale, replicaci&oacute;, Chart.js). Per a futures planificacions caldria augmentar el marge de conting&egrave;ncia en aquestes &agrave;rees.</p></blockquote>
+
+<blockquote><p>&#x1F4C4; Document complet: <a href="./01_planning_and_github.md">01_planning_and_github.md</a></p></blockquote>
+</div>
+
+<div class="page-break"></div>
+
+<div class="part">
+<h2 id="2-prg--bloc-de-connectivitat-i-login">2. PRG — Bloc de Connectivitat i Login</h2>
+
+<h3 id="resum-2">Resum</h3>
+<p>M&ograve;dul d'autenticaci&oacute; basat en JWT amb contrasenyes hashejades amb bcrypt. L'aplicaci&oacute; es connecta a PostgreSQL 16 via psycopg2-binary + SQLAlchemy 2.0 amb connection pooling.</p>
+
+<h3 id="connection-pooling">Connection Pooling</h3>
 <table>
 <thead>
-<tr>
-<th>Tasca</th>
-<th>Inici</th>
-<th>Fi</th>
-<th>H. est.</th>
-<th>H. reals</th>
-</tr>
+<tr><th>Par&agrave;metre</th><th>Valor</th><th>Descripci&oacute;</th></tr>
 </thead>
 <tbody>
-<tr>
-<td>Planificació</td>
-<td>01/04</td>
-<td>09/04</td>
-<td>4</td>
-<td>5</td>
-</tr>
-<tr>
-<td>Connectivitat i login</td>
-<td>06/04</td>
-<td>13/04</td>
-<td>6</td>
-<td>7</td>
-</tr>
-<tr>
-<td>ER - Model Relacional</td>
-<td>06/04</td>
-<td>15/04</td>
-<td>5</td>
-<td>6</td>
-</tr>
-<tr>
-<td>Esquema de seguretat</td>
-<td>15/04</td>
-<td>22/04</td>
-<td>8</td>
-<td>9</td>
-</tr>
-<tr>
-<td>Bloc de manteniment</td>
-<td>13/04</td>
-<td>27/04</td>
-<td>10</td>
-<td>12</td>
-</tr>
-<tr>
-<td>Alta disponibilitat</td>
-<td>22/04</td>
-<td>06/05</td>
-<td>10</td>
-<td>14</td>
-</tr>
-<tr>
-<td>Bloc de consultes</td>
-<td>27/04</td>
-<td>09/05</td>
-<td>8</td>
-<td>8</td>
-</tr>
-<tr>
-<td>Dummy Data</td>
-<td>06/05</td>
-<td>13/05</td>
-<td>6</td>
-<td>7</td>
-</tr>
-<tr>
-<td>Exportació de dades</td>
-<td>09/05</td>
-<td>17/05</td>
-<td>8</td>
-<td>10</td>
-</tr>
-<tr>
-<td>Document final instal·lació</td>
-<td>13/05</td>
-<td>20/05</td>
-<td>4</td>
-<td>5</td>
-</tr>
-<tr>
-<td>Manual d'usuari</td>
-<td>13/05</td>
-<td>20/05</td>
-<td>4</td>
-<td>4</td>
-</tr>
-<tr>
-<td>Document final</td>
-<td>17/05</td>
-<td>20/05</td>
-<td>4</td>
-<td>4</td>
-</tr>
-<tr>
-<td><strong>Total</strong></td>
-<td></td>
-<td></td>
-<td><strong>77</strong></td>
-<td><strong>91</strong></td>
-</tr>
+<tr><td><code>pool_size</code></td><td>5</td><td>Connexions mantingudes obertes</td></tr>
+<tr><td><code>max_overflow</code></td><td>10</td><td>Connexions addicionals sota demanda</td></tr>
+<tr><td><code>pool_timeout</code></td><td>30</td><td>Temps d'espera m&agrave;xim (s)</td></tr>
+<tr><td><code>pool_recycle</code></td><td>1800</td><td>Temps m&agrave;xim de vida d'una connexi&oacute; (s)</td></tr>
+<tr><td><code>pool_pre_ping</code></td><td>True</td><td>Verifica salut de la connexi&oacute; abans d'usar-la</td></tr>
 </tbody>
 </table>
-<h2 id="2-prg-bloc-de-connectivitat-i-login">2. PRG — Bloc de Connectivitat i Login</h2>
-<p><strong>Connexió a la base de dades:</strong> L'aplicació es connecta a PostgreSQL 16 des de Python utilitzant <strong>psycopg2-binary</strong> i <strong>SQLAlchemy 2.0</strong>. La cadena de connexió es carrega des de la variable d'entorn <code>DATABASE_URL</code>.</p>
-<p><strong>Flux de login:</strong>
-1. L'usuari introdueix usuari i contrasenya al client Tkinter
-2. El client fa una petició <code>POST /api/auth/login</code> amb les credencials
-3. El servidor valida contra la taula <code>APP_USERS</code> (contrasenyes hashejades amb bcrypt)
-4. Si són correctes, retorna un <strong>JWT token</strong> amb el rol i el staff_id
-5. El client emmagatzema el token en memòria (singleton de sessió)
-6. Per a totes les peticions posteriors, s'envia com a <code>Authorization: Bearer &lt;token&gt;</code></p>
-<p><strong>Endpoints d'autenticació:</strong></p>
+
+<h3 id="flux-dautenticacio">Flux d'autenticaci&oacute;</h3>
+<ol>
+<li>L'usuari introdueix credencials al client Tkinter</li>
+<li>Petici&oacute; <code>POST /api/auth/login</code></li>
+<li>El servidor valida contra <code>APP_USERS</code> (bcrypt)</li>
+<li>Retorna JWT token amb <code>role</code> i <code>staff_id</code></li>
+<li>El client emmagatzema el token en un singleton de sessi&oacute;</li>
+<li>Peticions posteriors inclouen <code>Authorization: Bearer &lt;token&gt;</code></li>
+</ol>
+
+<h3 id="estructura-del-jwt">Estructura del JWT</h3>
+<pre><code class="language-json">{
+  "sub": "admin",
+  "role": "ADMIN",
+  "staff_id": 1,
+  "iat": 1716388800,
+  "exp": 1716475200,
+  "type": "access"
+}</code></pre>
+
+<h3 id="endpoints-dautenticacio">Endpoints d'autenticaci&oacute;</h3>
 <table>
 <thead>
-<tr>
-<th>Mètode</th>
-<th>Endpoint</th>
-<th>Autenticació</th>
-<th>Descripció</th>
-</tr>
+<tr><th>M&egrave;tode</th><th>Endpoint</th><th>Autenticaci&oacute;</th><th>Descripci&oacute;</th></tr>
 </thead>
 <tbody>
-<tr>
-<td>POST</td>
-<td><code>/api/auth/login</code></td>
-<td>No</td>
-<td>Inici de sessió, retorna token + rol</td>
-</tr>
-<tr>
-<td>POST</td>
-<td><code>/api/auth/register</code></td>
-<td>No</td>
-<td>Crear nou usuari</td>
-</tr>
-<tr>
-<td>GET</td>
-<td><code>/api/auth/users</code></td>
-<td>JWT</td>
-<td>Llistar usuaris</td>
-</tr>
-<tr>
-<td>PUT</td>
-<td><code>/api/auth/change-password</code></td>
-<td>JWT</td>
-<td>Canviar pròpia contrasenya</td>
-</tr>
-<tr>
-<td>PUT</td>
-<td><code>/api/auth/users/&lt;id&gt;/password</code></td>
-<td>JWT+ADMIN</td>
-<td>Resetear contrasenya d'un altre usuari</td>
-</tr>
-<tr>
-<td>PUT</td>
-<td><code>/api/auth/users/&lt;id&gt;/toggle-active</code></td>
-<td>JWT+ADMIN</td>
-<td>Activar/desactivar compte</td>
-</tr>
+<tr><td>POST</td><td><code>/api/auth/login</code></td><td>No</td><td>Inici de sessi&oacute;</td></tr>
+<tr><td>POST</td><td><code>/api/auth/register</code></td><td>No</td><td>Crear nou usuari</td></tr>
+<tr><td>GET</td><td><code>/api/auth/users</code></td><td>JWT</td><td>Llistar usuaris</td></tr>
+<tr><td>PUT</td><td><code>/api/auth/change-password</code></td><td>JWT</td><td>Canviar pr&ograve;pia contrasenya</td></tr>
+<tr><td>PUT</td><td><code>/api/auth/users/&lt;id&gt;/password</code></td><td>JWT+ADMIN</td><td>Resetear contrasenya d'un altre usuari</td></tr>
 </tbody>
 </table>
-<p><strong>Seguretat aplicada:</strong> Hashing bcrypt, tokens JWT signats amb clau de 256 bits, secrets en fitxer extern (<code>/etc/hms.env</code>, permisos 600), comptes desactivables, 5 rols (ADMIN, DOCTOR, NURSE, STAFF, RECEPTIONIST).</p>
-<h2 id="3-bd-disseny-er-i-model-relacional">3. BD — Disseny ER i Model Relacional</h2>
-<p>La base de dades té <strong>24 taules</strong> que cobreixen pacients, personal mèdic, visites, cirurgies, admissions, farmàcia, radiologia, auditoria i generació de dades de prova.</p>
-<p><strong>Model relacional:</strong></p>
-<pre><code>STAFF ────┬── MEDICAL_STAFF ──┬── MEDICAL_STAFF_SPECIALTIES
-              │                   └── MEDICAL_SPECIALTIES
-              │                   
-              ├── NURSING_STAFF ──┬── FLOORS (assigned_floor)
-              │                   └── MEDICAL_STAFF (assigned_doctor)
-              └── GENERAL_STAFF
+
+<h3 id="singleton-de-sessio-client">Singleton de sessi&oacute; (client)</h3>
+<pre><code class="language-python">class SessionManager:
+    _instance = None
+    _token = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def login(self, token, user, role, staff_id):
+        self._token = token
+        self._user = user
+        self._role = role
+        self._staff_id = staff_id
+
+    @property
+    def auth_header(self):
+        return {"Authorization": f"Bearer {self._token}"}</code></pre>
+
+<h3 id="seguretat-aplicada">Seguretat aplicada</h3>
+<table>
+<thead>
+<tr><th>Mesura</th><th>Implementaci&oacute;</th></tr>
+</thead>
+<tbody>
+<tr><td>Hashing de contrasenyes</td><td>bcrypt — <code>hashpw()</code> + <code>checkpw()</code> (work factor 12)</td></tr>
+<tr><td>Tokens JWT</td><td>Flask-JWT-Extended 4.7.1 — clau de 256 bits</td></tr>
+<tr><td>Secrets en fitxer extern</td><td><code>/etc/hms.env</code> — excl&ograve;s del repositori (permisos 600)</td></tr>
+<tr><td>Rols</td><td>ADMIN, DOCTOR, NURSE, STAFF, RECEPTIONIST</td></tr>
+</tbody>
+</table>
+
+<blockquote><p>&#x1F4C4; Document complet: <a href="./02_prg_connectivity_login.md">02_prg_connectivity_login.md</a></p></blockquote>
+</div>
+
+<div class="page-break"></div>
+
+<div class="part">
+<h2 id="3-bd--disseny-er-i-model-relacional">3. BD — Disseny ER i Model Relacional</h2>
+
+<h3 id="resum-3">Resum</h3>
+<p>Base de dades amb <strong>24 taules</strong> que cobreixen pacients, personal m&egrave;dic, visites, cirurgies, admissions, farm&agrave;cia, radiologia, auditoria i generaci&oacute; de dades de prova. El disseny segueix els principis de normalitzaci&oacute; (3FN).</p>
+
+<h3 id="model-relacional-entitats-principals">Model Relacional (entitats principals)</h3>
+<pre><code>STAFF ──┬── MEDICAL_STAFF ──┬── MEDICAL_STAFF_SPECIALTIES
+        │                   └── MEDICAL_SPECIALTIES
+        ├── NURSING_STAFF ──┬── FLOORS (assigned_floor)
+        │                   └── MEDICAL_STAFF (assigned_doctor)
+        └── GENERAL_STAFF
 
 PATIENTS ──┬── VISITS ──┬── PRESCRIPTIONS ── MEDICATIONS
            │            └── SCHEDULED_APPOINTMENTS
-           │            
            ├── ADMISSIONS ──┬── ROOMS ── FLOORS
            │                └── PHARMACY_DISPENSATIONS ── DISPENSATION_ITEMS
-           │                
            ├── SURGERIES ──┬── OPERATING_THEATERS ── MEDICAL_DEVICES
            │               └── SURGERY_ASSISTANTS
-           └── RADIOLOGY_EXAMS
+           └── RADIOLOGY_EXAMS</code></pre>
 
-DUMMY_REGISTRY (rastreja dades generades per a neteja)
-APP_USERS ──── STAFF (mapatge d'usuaris)
-AUDIT_LOGS (traça d'auditoria per a 8 taules sensibles)
-</code></pre>
-<p><strong>Patrons de disseny:</strong> Base + subtipus (STAFF → MEDICAL_STAFF, NURSING_STAFF, GENERAL_STAFF), taules de junció, taula d'auditoria, taules de referència, capçalera-detall.</p>
-<p><strong>Convencions:</strong> Taules en majúscules snake case, columnes en minúscules snake case, PK <code>&lt;entitat&gt;_id</code>, FK nom de la PK referenciada.</p>
-<p><strong>Principals taules:</strong> PATIENTS, STAFF, VISITS, SCHEDULED_APPOINTMENTS, SURGERIES, SURGERY_ASSISTANTS, ADMISSIONS, ROOMS, FLOORS, PHARMACY_DISPENSATIONS, DISPENSATION_ITEMS, RADIOLOGY_EXAMS, MEDICAL_SPECIALTIES, MEDICATIONS, OPERATING_THEATERS, MEDICAL_DEVICES, PRESCRIPTIONS, AUDIT_LOGS, APP_USERS, DUMMY_REGISTRY, MEDICAL_STAFF, NURSING_STAFF, GENERAL_STAFF, MEDICAL_STAFF_SPECIALTIES.</p>
-<h2 id="4-bd-esquema-de-seguretat">4. BD — Esquema de Seguretat</h2>
-<p><strong>Matriu RBAC (5 rols PostgreSQL):</strong></p>
+<h3 id="patrons-de-disseny">Patrons de disseny</h3>
 <table>
 <thead>
-<tr>
-<th>Rol</th>
-<th>Límit connexions</th>
-<th>Permisos</th>
-</tr>
+<tr><th>Patr&oacute;</th><th>Exemple</th></tr>
 </thead>
 <tbody>
-<tr>
-<td><code>app_admin</code></td>
-<td>5</td>
-<td>Accés complet a tot</td>
-</tr>
-<tr>
-<td><code>app_doctor</code></td>
-<td>50</td>
-<td>CRUD a pacients, visites, prescripcions, cirurgies</td>
-</tr>
-<tr>
-<td><code>app_nurse</code></td>
-<td>100</td>
-<td>L/E en camps limitats de pacients, admissions a la seva planta</td>
-</tr>
-<tr>
-<td><code>app_receptionist</code></td>
-<td>10</td>
-<td>CRUD a pacients, programar visites</td>
-</tr>
-<tr>
-<td><code>app_staff</code></td>
-<td>30</td>
-<td>Només lectura: nom del pacient + habitació (via vista <code>patient_directory</code>)</td>
-</tr>
+<tr><td>Base + subtipus</td><td><code>STAFF</code> &rarr; <code>MEDICAL_STAFF</code>, <code>NURSING_STAFF</code>, <code>GENERAL_STAFF</code></td></tr>
+<tr><td>Taula de junci&oacute;</td><td><code>MEDICAL_STAFF_SPECIALTIES</code>, <code>SURGERY_ASSISTANTS</code></td></tr>
+<tr><td>Taula d'auditoria</td><td><code>AUDIT_LOGS</code> amb valors abans/despr&eacute;s</td></tr>
+<tr><td>Cap&ccedil;alera-detall</td><td><code>PHARMACY_DISPENSATIONS</code> &rarr; <code>DISPENSATION_ITEMS</code></td></tr>
 </tbody>
 </table>
-<p><strong>Row-Level Security (RLS):</strong> Activat a PATIENTS i ADMISSIONS. Infermeres només veuen pacients ingressats a la seva planta. Variables de sessió (<code>app.current\_user\_id</code>, <code>app.current\_staff\_id</code>) establertes al login via <code>SET_CONFIG</code>.</p>
-<p><strong>SSL:</strong> PostgreSQL configurat amb SSL utilitzant certificats autogenerats amb OpenSSL (validesa 1 any). <code>pg_hba.conf</code> requereix <code>hostssl</code> per a totes les connexions remotes.</p>
-<p><strong>Data masking:</strong> Control d'accés a nivell de columna per restringir dades sensibles (DNI, telèfon, email, adreça) segons el rol.</p>
-<p><strong>Auditoria:</strong> 8 triggers de BD registren automàticament totes les operacions INSERT/UPDATE/DELETE a taules sensibles (PATIENTS, VISITS, PRESCRIPTIONS, ADMISSIONS, SURGERIES, RADIOLOGY_EXAMS, PHARMACY_DISPENSATIONS, SCHEDULED_APPOINTMENTS) a la taula AUDIT_LOGS.</p>
-<p><strong>Compliment AGPD:</strong> Document complet preparat per a l'Agència de Protecció de Dades. Categories de risc: clínic (crític), identitat (alt), contacte (mig), laboral (mig), metadades d'auditoria (alt).</p>
-<h2 id="5-prg-bloc-de-manteniment">5. PRG — Bloc de Manteniment</h2>
-<p>Operacions CRUD des de la pestanya <strong>Maintenance</strong> (5 subpestanyes: Doctor, Nursing, General Staff, Patient, Assignments):</p>
+
+<h3 id="normalitzacio-3fn">Normalitzaci&oacute; (3FN)</h3>
 <table>
 <thead>
-<tr>
-<th>Tasca</th>
-<th>Endpoint API</th>
-</tr>
+<tr><th>Forma Normal</th><th>Compliment</th><th>Justificaci&oacute;</th></tr>
 </thead>
 <tbody>
-<tr>
-<td>Alta personal mèdic</td>
-<td><code>POST /api/maintenance/staff/medical</code></td>
-</tr>
-<tr>
-<td>Alta personal d'infermeria</td>
-<td><code>POST /api/maintenance/staff/nursing</code></td>
-</tr>
-<tr>
-<td>Alta personal general</td>
-<td><code>POST /api/maintenance/staff/general</code></td>
-</tr>
-<tr>
-<td>Alta nous pacients</td>
-<td><code>POST /api/maintenance/patients</code></td>
-</tr>
-<tr>
-<td>Assignar infermer a metge/planta</td>
-<td><code>PUT /api/maintenance/nursing/assign</code></td>
-</tr>
-<tr>
-<td>Consultar cirurgies per data</td>
-<td><code>GET /api/maintenance/surgeries?date=X</code></td>
-</tr>
-<tr>
-<td>Consultar visites per data</td>
-<td><code>GET /api/maintenance/visits/scheduled?date=X</code></td>
-</tr>
-<tr>
-<td>Consultar dispositius per quiròfan</td>
-<td><code>GET /api/medical-devices?theater_id=X</code></td>
-</tr>
+<tr><td><strong>1FN</strong></td><td>&#x2713;</td><td>Totes les columnes s&oacute;n at&ograve;miques; no hi ha grups repetits</td></tr>
+<tr><td><strong>2FN</strong></td><td>&#x2713;</td><td>Cada columna no clau dep&egrave;n completament de la PK</td></tr>
+<tr><td><strong>3FN</strong></td><td>&#x2713;</td><td>No hi ha depend&egrave;ncies transitives</td></tr>
 </tbody>
 </table>
-<p><strong>Funcions/triggers PL/pgSQL (5 creades):</strong>
-1. <code>check_surgery_overlap()</code> — Evita reservar el mateix quiròfan al mateix dia/hora
-2. <code>validate_nurse_assignment()</code> — Comprova que el metge/planta assignat existeixi
-3. <code>audit_trigger_function()</code> — Registrador d'auditoria genèric per a 8 taules
-4. <code>get_current_app_user_id()</code> — Helper que retorna l'ID d'usuari actual
-5. <code>get_current_staff_id()</code> — Helper que retorna l'ID del treballador actual</p>
-<h2 id="6-bd-esquema-dalta-disponibilitat">6. BD — Esquema d'Alta Disponibilitat</h2>
-<p><strong>Proposta de hardware:</strong></p>
-<p><strong>Briar (primari):</strong> Intel Xeon E-2336, 16 GB RAM, 240 GB NVMe + 480 GB SATA SSD, LVM amb particions separades per a OS, logs, PGDATA i WAL.</p>
-<p><strong>Sion (standby):</strong> AWS EC2 t3.medium, 2 vCPU, 4 GB RAM, 80 GB gp3, LVM.</p>
-<p><strong>Topologia de replicació:</strong>
-- Mètode: Streaming replication nativa de PostgreSQL via WAL
-- Rol: Actiu-passiu (Briar = primary r/w, Sion = standby read-only)
-- Xarxa: Tailscale overlay network + LAN hospital (192.168.4.0/24)
-- Usuari de replicació: <code>replicator</code></p>
-<p><strong>Còpies de seguretat (Backup) - Sistema de 3 capes:</strong></p>
+
+<h3 id="exemple-sql-consulta-de-pacients-ingressats">Exemple SQL: Consulta de pacients ingressats</h3>
+<pre><code class="language-sql">SELECT p.patient_id, p.first_name, p.last_name,
+       r.room_number, f.floor_name, a.admission_date
+FROM ADMISSIONS a
+JOIN PATIENTS p ON a.patient_id = p.patient_id
+JOIN ROOMS r ON a.room_id = r.room_id
+JOIN FLOORS f ON r.floor_id = f.floor_id
+WHERE a.discharge_date IS NULL
+ORDER BY a.admission_date;</code></pre>
+
+<h3 id="indexacio">Indexaci&oacute;</h3>
 <table>
 <thead>
-<tr>
-<th>Capa</th>
-<th>Patró de fitxer</th>
-<th>Com es crea</th>
-</tr>
+<tr><th>&Iacute;ndex</th><th>Taula</th><th>Justificaci&oacute;</th></tr>
 </thead>
 <tbody>
-<tr>
-<td>Física (PGDATA)</td>
-<td><code>physical_*.tar.gz</code></td>
-<td><code>—physical</code> o <code>—physical-only</code></td>
-</tr>
-<tr>
-<td>Lògica (pg_dump)</td>
-<td><code>hsp_db_*.dump</code></td>
-<td>per defecte o <code>—db-only</code></td>
-</tr>
-<tr>
-<td>Configuració</td>
-<td><code>config_*.tar.gz</code></td>
-<td>per defecte o <code>—config-only</code></td>
-</tr>
+<tr><td><code>idx_patients_national_id</code></td><td>PATIENTS</td><td>Cerca per DNI</td></tr>
+<tr><td><code>idx_visits_patient</code></td><td>VISITS</td><td>Historial de visites d'un pacient</td></tr>
+<tr><td><code>idx_admissions_active</code></td><td>ADMISSIONS</td><td>Pacients actualment ingressats</td></tr>
+<tr><td><code>idx_audit_logs_timestamp</code></td><td>AUDIT_LOGS</td><td>Auditoria cronol&ograve;gica</td></tr>
 </tbody>
 </table>
-<p>Script principal: <code>scripts/backup_database.py</code> amb rotació local de 5 dies i pujada al núvol (Sion). Programació cron: backup complet diari a les 02:00, físic a les 03:00, freqüent cada 15 min.</p>
-<p><strong>Restauració:</strong> Script <code>restore_service.sh</code> per a recuperació bare-metal completa. Ordre: PGDATA → config → dump lògic.</p>
-<h2 id="7-prg-bloc-de-consultes">7. PRG — Bloc de Consultes</h2>
-<p>Informes accessibles des de les pestanyes <strong>Operational Reports</strong>, <strong>Statistics</strong> i <strong>Advanced Reports</strong>:</p>
-<p><strong>Obligatoris:</strong>
-- Dades d'una planta: habitacions, quiròfans i personal d'infermeria (<code>GET /api/reports/summary?floor_id=X</code>)
-- Tot el personal: llistat complet (<code>GET /api/reports/summary?report=staff</code>)
-- Visites per dia: nombre de visites ateses (<code>GET /api/reports/visits?start_date=X&amp;end_date=Y</code>)</p>
-<p><strong>Opcionals:</strong>
-- Ranking de metges: metges que atenen més pacients (<code>GET /api/reports/doctor-workload</code>)</p>
-<p><strong>Top:</strong>
-- Malalties més comunes: diagnòstics més freqüents (<code>GET /api/reports/summary?report=diseases</code>)</p>
-<p><strong>Reports complets:</strong> Summary, Visites, Cirurgies, Admissions, Medicacions. Exportació PDF via <code>fpdf2</code>.</p>
-<p><strong>Dashboard API:</strong> <code>GET /api/dashboard/stats</code> retorna visites avui, cirurgies avui, admissions actives, totals, visites per especialitat, tendència 7 dies, top 5 metges, admissions recents.</p>
-<h2 id="8-bd-dummy-data">8. BD — Dummy Data</h2>
-<p>Generació de dades falses per a proves amb la llibreria <strong>Faker</strong> (locale <code>es_ES</code> i <code>ru_RU</code>). Ubicació: <code>server/src/app/services/dummy_service.py</code>.</p>
-<p><strong>Volums de dades:</strong>
-| Entitat | Objectiu | Generat |
-|---------|---------|---------|
-| Pacients | 50.000 | 50.000 |
-| Visites | 100.000 | 100.000+ |
-| Metges | 100 | 100 |
-| Infermeres | 200 | 200 |
-| Personal general | 100 | 100 |
-| Cirurgies | ~25.000 | ~25.000 |
-| Admissions | ~25.000 | ~25.000 |</p>
-<p><strong>Procés:</strong> Dades de suport → Staff → Pacients → Visites (distribuïdes en 60 dies) → Cirurgies, admissions, prescripcions.</p>
-<p><strong>Ciríl·lic:</strong> 5% dels pacients i staff tenen noms en alfabet ciríl·lic (Faker locale <code>ru_RU</code>).</p>
-<p><strong>Optimització:</strong> Insercions per lots amb <code>flush()</code> cada 20 registres i <code>commit()</code> cada 400. Temps reduït de ~20 min a ~5 min.</p>
-<p><strong>Neteja:</strong> Taula <code>DummyRegistry</code> rastreja tots els registres. Opció "Cleanup dummy data" elimina tot en ordre invers.</p>
-<h2 id="9-prg-bloc-dexportacio-de-dades">9. PRG — Bloc d'Exportació de Dades</h2>
-<p><strong>Exportació XML/JSON:</strong> Les visites entre dues dates es poden exportar en format XML o JSON:
-- <code>GET /api/export/visits?start_date=X&amp;end_date=Y&amp;format=xml</code>
-- <code>GET /api/export/visits?start_date=X&amp;end_date=Y&amp;format=json</code></p>
-<p>Inclou: identificador de visita, data, metge (nom + col·legiat), pacient (DNI, nom, cognoms, targeta sanitària).</p>
-<p><strong>Esquemes de validació:</strong> XSD i JSON Schema (<code>server/src/app/schemas/</code>).</p>
-<p><strong>API Seguretat Social:</strong> <code>POST /api/export/send</code> genera el fitxer i l'envia a l'API externa amb Basic Auth.</p>
-<p><strong>Dashboard:</strong>
-- <strong>Chart.js (web):</strong> <code>http://localhost:5000/api/dashboard/view</code>
-- <strong>PowerBI (opcional):</strong> Connexió via <code>http://localhost:5000/api/dashboard/stats</code></p>
-<h2 id="10-manual-dinstallacio">10. Manual d'Instal·lació</h2>
-<blockquote>
-<p><strong>Nota:</strong> Aquest manual està redactat en anglès a l'original, ja que és un document tècnic destinat a administradors de sistemes.</p>
-</blockquote>
-<p><strong>Requisits previs:</strong>
-- Dos servidors Ubuntu 24.04 LTS (Briar i Sion) amb accés root
-- Compte de Tailscale per connectar-los
-- Python 3.12, PostgreSQL 16, Git</p>
-<p><strong>Passos resumits:</strong>
-1. Instal·lar Ubuntu Server 24.04 amb particions LVM
-2. Instal·lar i configurar Tailscale VPN
-3. Configurar el firewall (UFW)
-4. Instal·lar PostgreSQL 16 en tots dos nodes
-5. Generar certificats TLS/SSL amb OpenSSL
-6. Configurar PostgreSQL primari (Briar) i standby (Sion)
-7. Configurar replicació streaming
-8. Clonar el repositori i preparar l'entorn Python
-9. Configurar variables d'entorn
-10. Crear la base de dades i carregar esquemes
-11. Configurar servei systemd
-12. Instal·lar el client d'escriptori
-13. Configurar còpies de seguretat automatitzades
-14. Verificar el funcionament</p>
-<p><strong>Problemes trobats:</strong></p>
+
+<blockquote><p>&#x1F4C4; Document complet: <a href="./03_bd_er_relational_model.md">03_bd_er_relational_model.md</a></p></blockquote>
+</div>
+
+<div class="page-break"></div>
+
+<div class="part">
+<h2 id="4-bd--esquema-de-seguretat">4. BD — Esquema de Seguretat</h2>
+
+<h3 id="resum-4">Resum</h3>
+<p>Implementaci&oacute; de seguretat amb 5 rols PostgreSQL (RBAC), Row-Level Security (RLS), SSL amb certificats, data masking, triggers d'auditoria i compliment AGPD.</p>
+
+<h3 id="matriu-de-rols-rbac">Matriu de rols (RBAC)</h3>
 <table>
 <thead>
-<tr>
-<th>Problema</th>
-<th>On</th>
-<th>Solució</th>
-</tr>
+<tr><th>Rol</th><th>L&iacute;m. con.</th><th>Permisos</th></tr>
 </thead>
 <tbody>
-<tr>
-<td><code>pg_hba.conf</code> no deixava connectar</td>
-<td>Briar</td>
-<td>Canviar <code>127.0.0.1/32</code> a <code>192.168.4.0/24</code></td>
-</tr>
-<tr>
-<td>pg_basebackup timeout</td>
-<td>Briar → Sion</td>
-<td>Afegir <code>sslmode=require</code> a <code>primary_conninfo</code></td>
-</tr>
-<tr>
-<td>Tailscale no connectava</td>
-<td>Sion (AWS)</td>
-<td>Faltava port UDP 41641 al Security Group</td>
-</tr>
-<tr>
-<td>Lag de replicació alt</td>
-<td>Briar</td>
-<td><code>wal_keep_size</code> de 64 MB a 1024 MB</td>
-</tr>
-<tr>
-<td>psycopg2 no s'instal·lava</td>
-<td>Briar</td>
-<td><code>sudo apt install libpq-dev</code></td>
-</tr>
-<tr>
-<td>Tkinter no trobat</td>
-<td>PC hospital</td>
-<td><code>sudo apt install python3-tk</code></td>
-</tr>
-<tr>
-<td>IDs reiniciats al restore</td>
-<td>Briar</td>
-<td>Canviar de pg_dump text pla a <code>pg_dump -Fc</code></td>
-</tr>
-<tr>
-<td>Firewall bloquejava API</td>
-<td>LAN Hospital</td>
-<td>Obrir port 5000 amb equip de xarxa</td>
-</tr>
+<tr><td><code>app_admin</code></td><td>5</td><td>Acc&eacute;s complet a tot</td></tr>
+<tr><td><code>app_doctor</code></td><td>50</td><td>CRUD a pacients, visites, prescripcions, cirurgies</td></tr>
+<tr><td><code>app_nurse</code></td><td>100</td><td>L/E en camps limitats de pacients, admissions a la seva planta</td></tr>
+<tr><td><code>app_receptionist</code></td><td>10</td><td>CRUD a pacients, programar visites</td></tr>
+<tr><td><code>app_staff</code></td><td>30</td><td>Nom&eacute;s lectura: nom pacient + habitaci&oacute; (via vista)</td></tr>
 </tbody>
 </table>
+
+<h3 id="row-level-security">Row-Level Security</h3>
+<pre><code class="language-sql">ALTER TABLE PATIENTS ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY nurse_patients ON PATIENTS
+    FOR SELECT
+    USING (
+        current_user = 'app_nurse' AND
+        patient_id IN (
+            SELECT a.patient_id FROM ADMISSIONS a
+            JOIN ROOMS r ON a.room_id = r.room_id
+            JOIN NURSING_STAFF ns ON ns.assigned_floor = r.floor_id
+            JOIN APP_USERS u ON u.staff_id = ns.nursing_staff_id
+            WHERE u.username = current_setting('app.current_user')
+        )
+    );</code></pre>
+
+<h3 id="ssl-configuration">SSL Configuration</h3>
+<p>PostgreSQL configurat amb certificats OpenSSL. <code>pg_hba.conf</code> requereix <code>hostssl</code> per a totes les connexions remotes:</p>
+<pre><code>hostssl all all 10.147.17.0/24    scram-sha-256
+hostssl all all 100.64.0.0/10     scram-sha-256
+host    all all 0.0.0.0/0         reject</code></pre>
+
+<h3 id="data-masking">Data Masking</h3>
+<table>
+<thead>
+<tr><th>Rol</th><th>Pot veure</th></tr>
+</thead>
+<tbody>
+<tr><td>Metges</td><td>Totes les dades del pacient</td></tr>
+<tr><td>Infermeres</td><td>Columnes limitades (no DNI)</td></tr>
+<tr><td>Personal general</td><td>Nom&eacute;s nom + habitaci&oacute; (via vista <code>patient_directory</code>)</td></tr>
+</tbody>
+</table>
+
+<h3 id="auditoria-via-triggers">Auditoria via triggers</h3>
+<pre><code class="language-sql">CREATE OR REPLACE FUNCTION audit_trigger_func()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO AUDIT_LOGS (table_name, record_id, action, new_data, changed_by)
+        VALUES (TG_TABLE_NAME, NEW.patient_id, 'INSERT',
+                row_to_json(NEW)::jsonb,
+                current_setting('app.current_user', true));
+        RETURN NEW;
+    -- UPDATE i DELETE similars...
+    END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;</code></pre>
+
+<h3 id="compliment-agpd">Compliment AGPD</h3>
+<table>
+<thead>
+<tr><th>Requisit AGPD / LOPDGDD</th><th>Implementaci&oacute;</th></tr>
+</thead>
+<tbody>
+<tr><td>Consentiment expr&eacute;s</td><td>Registre amb acceptaci&oacute;</td></tr>
+<tr><td>Dret de supressi&oacute;</td><td>Funci&oacute; <code>anonymize_patient()</code></td></tr>
+<tr><td>Minimitzaci&oacute; de dades</td><td>Vista <code>patient_directory</code> limita exposici&oacute;</td></tr>
+<tr><td>Retenci&oacute; limitada</td><td>Backup c&iacute;clic amb eliminaci&oacute; als 5 dies</td></tr>
+<tr><td>Seguretat t&egrave;cnica</td><td>RBAC + RLS + SSL + bcrypt + JWT</td></tr>
+</tbody>
+</table>
+
+<blockquote><p>&#x1F4C4; Document complet: <a href="./04_bd_security_scheme.md">04_bd_security_scheme.md</a></p></blockquote>
+</div>
+
+<div class="page-break"></div>
+
+<div class="part">
+<h2 id="5-prg--bloc-de-manteniment">5. PRG — Bloc de Manteniment</h2>
+
+<h3 id="resum-5">Resum</h3>
+<p>Operacions CRUD completes per a personal m&egrave;dic, pacients, visites i cirurgies. Implementaci&oacute; de 5 funcions/triggers PL/pgSQL per garantir la integritat de les dades.</p>
+
+<h3 id="endpoints-crud-principals">Endpoints CRUD principals</h3>
+<table>
+<thead>
+<tr><th>Tasca</th><th>M&egrave;tode</th><th>Endpoint API</th></tr>
+</thead>
+<tbody>
+<tr><td>Alta personal m&egrave;dic</td><td>POST</td><td><code>/api/maintenance/staff/medical</code></td></tr>
+<tr><td>Alta personal d'infermeria</td><td>POST</td><td><code>/api/maintenance/staff/nursing</code></td></tr>
+<tr><td>Alta personal general</td><td>POST</td><td><code>/api/maintenance/staff/general</code></td></tr>
+<tr><td>Alta nous pacients</td><td>POST</td><td><code>/api/maintenance/patients</code></td></tr>
+<tr><td>Assignar infermer a metge/planta</td><td>PUT</td><td><code>/api/maintenance/nursing/assign</code></td></tr>
+<tr><td>Modificar personal</td><td>PUT</td><td><code>/api/maintenance/staff/{id}</code></td></tr>
+<tr><td>Eliminar personal</td><td>DELETE</td><td><code>/api/maintenance/staff/{id}</code></td></tr>
+</tbody>
+</table>
+
+<h3 id="exemple-creacio-de-pacient">Exemple: Creaci&oacute; de pacient</h3>
+<pre><code class="language-python">class PatientCreate(Schema):
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=200)
+    date_of_birth: date
+    phone: Optional[str] = Field(None, pattern=r'^\+?[\d\s\-]{6,20}$')
+    email: Optional[str] = Field(None, pattern=r'^[\w\.\-]+@[\w\-]+\.\w+$')
+
+@router.post("/api/maintenance/patients")
+def create_patient(data: PatientCreate, db: Session = Depends(get_db)):
+    patient = Patient(**data.model_dump())
+    db.add(patient)
+    db.commit()
+    db.refresh(patient)
+    return {"id": patient.id, "message": "Pacient creat correctament"}</code></pre>
+
+<h3 id="plpgsql-trigger-anti-solapament-de-quirofans">PL/pgSQL: Trigger anti-solapament de quir&ograve;fans</h3>
+<pre><code class="language-sql">CREATE OR REPLACE FUNCTION check_surgery_overlap()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM SURGERIES
+        WHERE theater_id = NEW.theater_id
+          AND surgery_date = NEW.surgery_date
+          AND id &lt;&gt; COALESCE(NEW.id, -1)
+          AND (
+            (NEW.start_time BETWEEN start_time AND end_time)
+            OR (NEW.end_time BETWEEN start_time AND end_time)
+            OR (start_time BETWEEN NEW.start_time AND NEW.end_time)
+          )
+    ) THEN
+        RAISE EXCEPTION 'El quir&ograve;fan % ja est&agrave; reservat per a % entre % i %',
+            NEW.theater_id, NEW.surgery_date, NEW.start_time, NEW.end_time;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;</code></pre>
+
+<h3 id="funcionalitats-implementades">Funcionalitats implementades</h3>
+<ul>
+<li>&#x2705; Alta de personal (metge/ssa, infermer/a, administratiu)</li>
+<li>&#x2705; Alta de nous pacients</li>
+<li>&#x2705; Assignaci&oacute; d'infermeres a metge o planta</li>
+<li>&#x2705; Consulta d'operacions per quir&ograve;fan en un dia</li>
+<li>&#x2705; Consulta de visites planificades per dia</li>
+<li>&#x2705; Historial complet de pacient (visites, diagn&ograve;stics, medicaments, ingressos, quir&ograve;fan)</li>
+<li>&#x2705; Dispositius m&egrave;dics per quir&ograve;fan</li>
+</ul>
+
+<blockquote><p>&#x1F4C4; Document complet: <a href="./05_prg_maintenance.md">05_prg_maintenance.md</a></p></blockquote>
+</div>
+
+<div class="page-break"></div>
+
+<div class="part">
+<h2 id="6-bd--esquema-dalta-disponibilitat">6. BD — Esquema d'Alta Disponibilitat</h2>
+
+<h3 id="resum-6">Resum</h3>
+<p>Arquitectura de dos nodes amb replicaci&oacute; <em>streaming</em> as&iacute;ncrona de PostgreSQL, LVM per a snapshots i backups, sistema de backup de 3 capes, i procediment de failover documentat.</p>
+
+<h3 id="nodes">Nodes</h3>
+<table>
+<thead>
+<tr><th>Node</th><th>CPU</th><th>RAM</th><th>Disc</th><th>IP LAN</th><th>Tailscale IP</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Briar</strong></td><td>Xeon E-2336 (6C)</td><td>16 GB</td><td>NVMe 240GB + SSD 480GB</td><td>192.168.4.254</td><td>100.78.155.2</td></tr>
+<tr><td><strong>Sion</strong></td><td>AWS t3.medium (2vCPU)</td><td>4 GB</td><td>100 GB gp3 EBS</td><td>—</td><td>100.98.214.53</td></tr>
+</tbody>
+</table>
+
+<h3 id="partions-lvm-briar">Partions LVM (Briar)</h3>
+<pre><code>Disc 2 — /dev/sdb (480 GB SATA SSD)
+└── vg_postgres
+    ├── lv_pgdata    350 GB   /var/lib/postgresql/16/main
+    └── lv_pgwal      80 GB   /var/lib/postgresql/16/wal
+    (25 GB reserva per a snapshots LVM)</code></pre>
+
+<h3 id="topologia-de-replicacio">Topologia de replicaci&oacute;</h3>
+<pre><code>BRIAR (PRIMARY) ──── WAL streaming ────► SION (STANDBY read-only)
+     │                                        │
+  LAN: 192.168.4.254                     AWS EC2 (eu-west-3)
+  TS:  100.78.155.2                     TS:  100.98.214.53</code></pre>
+
+<h3 id="configuracio-del-primari-postgresqlconf">Configuraci&oacute; del primari (postgresql.conf)</h3>
+<pre><code class="language-ini">wal_level = replica
+max_wal_senders = 5
+wal_keep_size = 1024
+max_replication_slots = 2
+hot_standby = on
+shared_buffers = 4GB
+effective_cache_size = 8GB</code></pre>
+
+<h3 id="script-de-backup-3-capes">Script de backup (3 capes)</h3>
+<pre><code class="language-python">def backup_physical(tag=""):
+    """Backup f&iacute;sic consistent amb pg_basebackup."""
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"physical_{tag}{ts}.tar.gz"
+    subprocess.run(["pg_basebackup", "-D", "-", "-Ft", "-z", "-P", "-X", "fetch"],
+                   stdout=open(os.path.join(BACKUP_DIR, filename), "wb"), check=True)
+    return filename
+
+def backup_logical(tag=""):
+    """Dump l&ograve;gic del schema complet."""
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"hsp_db_{tag}{ts}.dump"
+    subprocess.run(["pg_dump", "--format=custom", "--compress=9",
+                    "--dbname=hospital_db", f"--file={os.path.join(BACKUP_DIR, filename)}"], check=True)
+    return filename</code></pre>
+
+<h3 id="programacio-de-backups-cron">Programaci&oacute; de backups (cron)</h3>
+<pre><code>0 2 * * *     Backup complet (l&ograve;gic + config) diari
+0 3 * * *     Backup f&iacute;sic PGDATA diari
+*/15 * * * *  Backup l&ograve;gic freq&uuml;ent (RPO de 15 minuts)</code></pre>
+
+<h3 id="failover">Failover</h3>
+<pre><code class="language-bash"># Promocionar Sion a primari
+sudo -u postgres pg_ctl promote -D /var/lib/postgresql/16/main</code></pre>
+
+<h3 id="verificacio">Verificaci&oacute;</h3>
+<table>
+<thead>
+<tr><th>Test</th><th>Comanda</th></tr>
+</thead>
+<tbody>
+<tr><td>API funciona</td><td><code>curl http://192.168.4.254:5000/health</code></td></tr>
+<tr><td>Replicaci&oacute; activa</td><td><code>psql -c \"SELECT state FROM pg_stat_replication;\"</code></td></tr>
+<tr><td>Lag de replicaci&oacute;</td><td><code>psql -c \"SELECT now() - pg_last_xact_replay_timestamp() AS lag;\"</code></td></tr>
+</tbody>
+</table>
+
+<blockquote><p>&#x1F4C4; Document complet: <a href="./06_bd_high_availability.md">06_bd_high_availability.md</a></p></blockquote>
+</div>
+
+<div class="page-break"></div>
+
+<div class="part">
+<h2 id="7-prg--bloc-de-consultes">7. PRG — Bloc de Consultes</h2>
+
+<h3 id="resum-7">Resum</h3>
+<p>Sistema d'informes obligatoris, opcionals i top accessibles des del client d'escriptori i via API REST. Inclou dashboard amb estad&iacute;stiques en temps real i exportaci&oacute; PDF.</p>
+
+<h3 id="informes-obligatoris">Informes obligatoris</h3>
+<table>
+<thead>
+<tr><th>Informe</th><th>Endpoint API</th><th>Descripci&oacute;</th></tr>
+</thead>
+<tbody>
+<tr><td>Dades d'una planta</td><td><code>GET /api/reports/summary?floor_id=X</code></td><td>Habitacions, quir&ograve;fans i infermeres</td></tr>
+<tr><td>Tot el personal</td><td><code>GET /api/reports/summary?report=staff</code></td><td>Llistat complet de treballadors</td></tr>
+<tr><td>Visites per dia</td><td><code>GET /api/reports/visits?start_date=X&amp;end_date=Y</code></td><td>Nombre de visites ateses per dia</td></tr>
+</tbody>
+</table>
+
+<h3 id="sql-visites-per-dia">SQL: Visites per dia</h3>
+<pre><code class="language-sql">SELECT
+    DATE(v.visit_date) AS day,
+    COUNT(*) AS total_visits,
+    COUNT(DISTINCT v.patient_id) AS unique_patients,
+    COUNT(DISTINCT v.doctor_id) AS active_doctors
+FROM VISITS v
+WHERE v.visit_date BETWEEN :start_date AND :end_date
+GROUP BY DATE(v.visit_date)
+ORDER BY day;</code></pre>
+
+<h3 id="informe-opcional-ranking-de-metges">Informe opcional: Ranking de metges</h3>
+<pre><code class="language-sql">SELECT ms.id, CONCAT(ms.first_name, ' ', ms.last_name) AS doctor_name,
+       ms.specialty, COUNT(v.id) AS total_visits,
+       RANK() OVER (ORDER BY COUNT(v.id) DESC) AS ranking
+FROM MEDICAL_STAFF ms
+LEFT JOIN VISITS v ON v.doctor_id = ms.id
+    AND v.visit_date BETWEEN :start_date AND :end_date
+GROUP BY ms.id
+ORDER BY total_visits DESC LIMIT 10;</code></pre>
+
+<h3 id="informe-top-malalties-mes-comunes">Informe top: Malalties m&eacute;s comunes</h3>
+<pre><code class="language-json">{
+  "diseases": [
+    { "diagnosis": "Hipertensi&oacute; arterial", "occurrences": 215, "percentage": 8.24 },
+    { "diagnosis": "Infecci&oacute; respirat&ograve;ria aguda", "occurrences": 198, "percentage": 7.59 },
+    { "diagnosis": "Diabetes tipus 2", "occurrences": 167, "percentage": 6.40 }
+  ]
+}</code></pre>
+
+<h3 id="reports-complets-via-api">Reports complets via API</h3>
+<table>
+<thead>
+<tr><th>Report</th><th>Endpoint</th><th>Filtres</th></tr>
+</thead>
+<tbody>
+<tr><td>Summary</td><td><code>GET /api/reports/summary</code></td><td>start_date, end_date</td></tr>
+<tr><td>Visites</td><td><code>GET /api/reports/visits</code></td><td>start_date, end_date, specialty, doctor_id</td></tr>
+<tr><td>Cirurgies</td><td><code>GET /api/reports/surgeries</code></td><td>start_date, end_date, procedure_type, surgeon_id</td></tr>
+<tr><td>Admissions</td><td><code>GET /api/reports/admissions</code></td><td>start_date, end_date, floor_id</td></tr>
+</tbody>
+</table>
+
+<h3 id="dashboard-api">Dashboard API</h3>
+<p><code>GET /api/dashboard/stats</code> retorna: visites avui, cirurgies avui, admissions actives, totals de pacients/personal, visites per especialitat, tend&egrave;ncia 7 dies, top 5 metges.</p>
+
+<h3 id="exportacio-pdf-fpdf2">Exportaci&oacute; PDF (fpdf2)</h3>
+<pre><code class="language-python">class HospitalPDF(FPDF):
+    def header(self):
+        self.set_font("Arial", "B", 16)
+        self.cell(0, 10, "Hospital de Blanes - Informe de Sumari", ln=True, align="C")
+
+@app.get("/api/reports/summary/pdf")
+def generate_summary_pdf(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    pdf = HospitalPDF()
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    # ... dades ...
+    return Response(pdf.output(dest="S").encode("latin-1"), media_type="application/pdf")</code></pre>
+
+<blockquote><p>&#x1F4C4; Document complet: <a href="./07_prg_queries.md">07_prg_queries.md</a></p></blockquote>
+</div>
+
+<div class="page-break"></div>
+
+<div class="part">
+<h2 id="8-bd--dummy-data">8. BD — Dummy Data</h2>
+
+<h3 id="resum-8">Resum</h3>
+<p>Generaci&oacute; de ~325.000 registres de prova amb Faker (locale <code>es_ES</code> i <code>ru_RU</code>), optimitzada de 20 minuts a ~5 minuts mitjan&ccedil;ant insercions per lots i SQL directe.</p>
+
+<h3 id="volums-de-dades">Volums de dades</h3>
+<table>
+<thead>
+<tr><th>Entitat</th><th>Registres</th><th>Mida estimada</th></tr>
+</thead>
+<tbody>
+<tr><td>Pacients</td><td>50.000</td><td>~25 MB</td></tr>
+<tr><td>Visites</td><td>100.000</td><td>~80 MB</td></tr>
+<tr><td>Metges</td><td>100</td><td>~80 KB</td></tr>
+<tr><td>Infermeres</td><td>200</td><td>~120 KB</td></tr>
+<tr><td>Cirurgies</td><td>25.000</td><td>~45 MB</td></tr>
+<tr><td>Admissions</td><td>25.000</td><td>~40 MB</td></tr>
+<tr><td>Prescripcions</td><td>80.000</td><td>~35 MB</td></tr>
+</tbody>
+</table>
+
+<h3 id="implementacio-amb-faker">Implementaci&oacute; amb Faker</h3>
+<pre><code class="language-python">fake_es = Faker('es_ES')
+fake_ru = Faker('ru_RU')   # 5% en cir&iacute;l&middot;lic
+
+def generate_patients(count: int, batch_size: int = 20, commit_every: int = 400):
+    patients = []
+    for i in range(1, count + 1):
+        faker = fake_ru if i % 20 == 0 else fake_es
+        patient = Patient(
+            first_name=faker.first_name(),
+            last_name=faker.last_name(),
+            date_of_birth=faker.date_of_birth(minimum_age=0, maximum_age=95),
+            phone=faker.phone_number(),
+            email=faker.email(),
+            address=faker.address().replace('\n', ', ')
+        )
+        db.add(patient)
+        patients.append(patient)
+        if i % batch_size == 0:
+            db.flush()
+        if i % commit_every == 0:
+            db.commit()
+    db.commit()
+    return patients</code></pre>
+
+<h3 id="dades-en-cirilic">Dades en cir&iacute;l&middot;lic</h3>
+<p>5% dels pacients amb noms en alfabet cir&iacute;l&middot;lic (Faker locale <code>ru_RU</code>):</p>
+<table>
+<thead>
+<tr><th>Locale</th><th>First Name</th><th>Last Name</th><th>Alfabet</th></tr>
+</thead>
+<tbody>
+<tr><td><code>es_ES</code></td><td>Mar&iacute;a</td><td>Garc&iacute;a L&oacute;pez</td><td>Llat&iacute;</td></tr>
+<tr><td><code>ru_RU</code></td><td>Екатерина</td><td>Иванова</td><td>Cir&iacute;l&middot;lic</td></tr>
+<tr><td><code>ru_RU</code></td><td>Дмитрий</td><td>Соколов</td><td>Cir&iacute;l&middot;lic</td></tr>
+</tbody>
+</table>
+
+<h3 id="optimitzacio-de-rendiment">Optimitzaci&oacute; de rendiment</h3>
+<table>
+<thead>
+<tr><th>T&egrave;cnica</th><th>Millora</th></tr>
+</thead>
+<tbody>
+<tr><td>Insercions per lots</td><td>~3x</td></tr>
+<tr><td>Pools de diagn&ograve;stics</td><td>~2x</td></tr>
+<tr><td>Batch insert amb SQL</td><td>~2x</td></tr>
+<tr><td>Desactivar &iacute;ndexs</td><td>~1.5x</td></tr>
+</tbody>
+</table>
+
+<h3 id="neteja">Neteja</h3>
+<p>Taula <code>DUMMY_REGISTRY</code> rastreja tots els registres generats. L'opci&oacute; <strong>Cleanup dummy data</strong> elimina en ordre invers de depend&egrave;ncies.</p>
+
+<blockquote><p>&#x1F4C4; Document complet: <a href="./08_bd_dummy_data.md">08_bd_dummy_data.md</a></p></blockquote>
+</div>
+
+<div class="page-break"></div>
+
+<div class="part">
+<h2 id="9-prg--bloc-dexportacio-de-dades">9. PRG — Bloc d'Exportaci&oacute; de Dades</h2>
+
+<h3 id="resum-9">Resum</h3>
+<p>Exportaci&oacute; de visites en XML/JSON amb validaci&oacute; XSD/JSON Schema, enviament autom&agrave;tic a l'API de la Seguretat Social, i dashboard web amb Chart.js.</p>
+
+<h3 id="endpoints-dexportacio">Endpoints d'exportaci&oacute;</h3>
+<pre><code class="language-bash"># Exportaci&oacute; XML
+GET /api/export/visits?start_date=2026-05-01&amp;end_date=2026-05-20&amp;format=xml
+
+# Exportaci&oacute; JSON
+GET /api/export/visits?start_date=2026-05-01&amp;end_date=2026-05-20&amp;format=json</code></pre>
+
+<h3 id="exemple-de-sortida-xml">Exemple de sortida XML</h3>
+<pre><code class="language-xml">&lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+&lt;visits&gt;
+    &lt;visit&gt;
+        &lt;visit_id&gt;1&lt;/visit_id&gt;
+        &lt;visit_date&gt;2026-05-15&lt;/visit_date&gt;
+        &lt;doctor&gt;
+            &lt;name&gt;Dr. Mart&iacute;nez&lt;/name&gt;
+            &lt;license_number&gt;12345&lt;/license_number&gt;
+        &lt;/doctor&gt;
+        &lt;patient&gt;
+            &lt;dni&gt;12345678A&lt;/dni&gt;
+            &lt;first_name&gt;Joan&lt;/first_name&gt;
+            &lt;last_name&gt;Garcia&lt;/last_name&gt;
+            &lt;health_card&gt;CAT123456789&lt;/health_card&gt;
+        &lt;/patient&gt;
+    &lt;/visit&gt;
+&lt;/visits&gt;</code></pre>
+
+<h3 id="validacio-xsd-i-json-schema">Validaci&oacute; XSD i JSON Schema</h3>
+<pre><code class="language-python">def validate_xml(xml_string: str, xsd_path: str) -&gt; bool:
+    xsd_doc = etree.parse(xsd_path)
+    xsd_schema = etree.XMLSchema(xsd_doc)
+    xml_doc = etree.fromstring(xml_string.encode("utf-8"))
+    return xsd_schema.validate(xml_doc)
+
+def validate_json(json_string: str, schema_path: str) -&gt; bool:
+    with open(schema_path) as f:
+        schema = json.load(f)
+    data = json.loads(json_string)
+    try:
+        validate(instance=data, schema=schema)
+        return True
+    except ValidationError:
+        return False</code></pre>
+
+<h3 id="api-seguretat-social">API Seguretat Social</h3>
+<p>Enviament autom&agrave;tic a API externa amb autenticaci&oacute; Basic Auth:</p>
+<pre><code class="language-python">def send_to_external_api(export_data: str, file_format: str) -&gt; dict:
+    url = os.getenv("EXTERNAL_API_URL")
+    auth = HTTPBasicAuth(os.getenv("EXTERNAL_API_USERNAME"), os.getenv("EXTERNAL_API_PASSWORD"))
+    response = requests.post(url, data=export_data,
+        headers={"Content-Type": f"application/{file_format}"},
+        auth=auth, timeout=30)
+    return {"status_code": response.status_code, "success": response.ok}</code></pre>
+
+<h3 id="dashboard-chartjs">Dashboard Chart.js</h3>
+<table>
+<thead>
+<tr><th>Gr&agrave;fic</th><th>Tipus</th><th>Dades</th></tr>
+</thead>
+<tbody>
+<tr><td>Visites avui</td><td>M&egrave;trica</td><td><code>visits_today</code></td></tr>
+<tr><td>Cirurgies avui</td><td>M&egrave;trica</td><td><code>surgeries_today</code></td></tr>
+<tr><td>Visites per especialitat</td><td>Barres</td><td><code>by_specialty</code></td></tr>
+<tr><td>Tend&egrave;ncia 7 dies</td><td>L&iacute;nies</td><td><code>visits_trend</code></td></tr>
+<tr><td>Top 5 metges</td><td>Barres hor.</td><td><code>top_doctors</code></td></tr>
+</tbody>
+</table>
+
+<h3 id="connectivitat-powerbi">Connectivitat PowerBI</h3>
+<p>URL per a PowerBI Desktop: <code>http://192.168.4.254:5000/api/dashboard/stats</code></p>
+
+<blockquote><p>&#x1F4C4; Document complet: <a href="./09_prg_export.md">09_prg_export.md</a></p></blockquote>
+</div>
+
+<div class="page-break"></div>
+
+<div class="part">
+<h2 id="10-manual-dinstal-lacio">10. Manual d'Instal&middot;laci&oacute;</h2>
+
+<h3 id="resum-10">Resum</h3>
+<p>Guia completa d'instal&middot;laci&oacute; pas a pas: des de la instal&middot;laci&oacute; d'Ubuntu Server 24.04 en ambd&oacute;s nodes fins a la configuraci&oacute; de Tailscale, PostgreSQL 16 amb replicaci&oacute;, SSL, firewall, desplegament de l'API com a servei systemd, client d'escriptori, backups automatitzats i procediments de failover.</p>
+
+<h3 id="prerequisits">Prerequisits</h3>
+<ul>
+<li>Dos servidors Ubuntu 24.04 LTS (Briar i Sion) amb acc&eacute;s root</li>
+<li>Compte de Tailscale per a la xarxa mesh VPN</li>
+<li>Python 3.12, PostgreSQL 16, Git</li>
+</ul>
+
+<h3 id="passos-principals">Passos principals</h3>
+<ol>
+<li>Instal&middot;laci&oacute; d'Ubuntu Server 24.04 amb LVM</li>
+<li>Configuraci&oacute; de Tailscale entre nodes</li>
+<li>Configuraci&oacute; del firewall (UFW)</li>
+<li>Instal&middot;laci&oacute; de PostgreSQL 16</li>
+<li>Generaci&oacute; de certificats TLS</li>
+<li>Configuraci&oacute; de replicaci&oacute; primari-standby</li>
+<li>Clonaci&oacute; del repositori i entorn Python</li>
+<li>Variables d'entorn (<code>/etc/hms.env</code>)</li>
+<li>Creaci&oacute; de la BD i c&agrave;rrega d'esquemes</li>
+<li>Servei systemd per a l'API</li>
+<li>Client d'escriptori Tkinter</li>
+<li>Backups automatitzats amb cron</li>
+<li>Procediment de failover</li>
+</ol>
+
+<h3 id="credencials-per-defecte">Credencials per defecte</h3>
+<table>
+<thead>
+<tr><th>Username</th><th>Password</th></tr>
+</thead>
+<tbody>
+<tr><td><code>yossef</code></td><td><code>ChangeMePleaseChange!</code></td></tr>
+</tbody>
+</table>
+
+<h3 id="systemd-unit">Systemd unit</h3>
+<pre><code class="language-ini">[Unit]
+Description=Hospital Management System API
+After=network.target postgresql-16.service
+Requires=postgresql-16.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/hms/current/server/src
+EnvironmentFile=/opt/hms/current/server/src/.env
+ExecStart=/opt/hms/current/server/src/.venv/bin/python run.py
+Restart=always
+RestartSec=5</code></pre>
+
+<h3 id="verificacio-10">Verificaci&oacute;</h3>
+<pre><code class="language-bash">curl http://192.168.4.254:5000/health
+# {"status":"healthy","database":"connected","timestamp":"..."}</code></pre>
+
+<blockquote><p>&#x1F4C4; Document complet: <a href="./10_installation_manual.md">10_installation_manual.md</a></p></blockquote>
+</div>
+
+<div class="page-break"></div>
+
+<div class="part">
 <h2 id="11-manual-dusuari">11. Manual d'Usuari</h2>
-<blockquote>
-<p><strong>Nota:</strong> Aquest manual està redactat en anglès a l'original.</p>
-</blockquote>
-<p><strong>Primers passos:</strong>
-1. Iniciar el servidor API
-2. Executar l'aplicació d'escriptori: <code>python desktop/src/main.py</code>
-3. Iniciar sessió amb les credencials</p>
-<p><strong>Seccions principals (barra lateral):</strong>
-- <strong>Dashboard</strong> — Resum del dia: visites, cirurgies, admissions actives
-- <strong>Maintenance</strong> — Alta de personal i pacients, gestió d'assignacions
-- <strong>Data Workspace</strong> — Explorador de recursos: visualitzar, editar o eliminar qualsevol registre
-- <strong>Operational Reports</strong> — Visites i cirurgies programades per data
-- <strong>Statistics</strong> — Resum de planta, directori de personal, visites per dia, ranking de metges, malalties
-- <strong>Advanced Reports</strong> — Visor multi-pestanya amb 8 categories i descàrrega PDF
-- <strong>Dummy Data</strong> — Generar dades de prova (fins a 50.000 pacients)
-- <strong>User Management</strong> (admin) — Crear usuaris, restablir contrasenyes
-- <strong>Audit Logs</strong> (admin) — Visor de registres d'auditoria
-- <strong>Change Password</strong> — Canviar contrasenya
-- <strong>Logout</strong> — Tancar sessió</p>
+
+<h3 id="resum-11">Resum</h3>
+<p>Guia d'&uacute;s de l'aplicaci&oacute; d'escriptori: login, dashboard, manteniment de personal i pacients, Data Workspace, informes operatius i estad&iacute;stiques, generaci&oacute; de dades de prova, i gesti&oacute; de contrasenya.</p>
+
+<h3 id="seccions-de-laplicacio">Seccions de l'aplicaci&oacute;</h3>
+<table>
+<thead>
+<tr><th>Secci&oacute;</th><th>Descripci&oacute;</th></tr>
+</thead>
+<tbody>
+<tr><td>Dashboard</td><td>Resum de l'activitat hospital&agrave;ria del dia</td></tr>
+<tr><td>Maintenance</td><td>Alta i gesti&oacute; de personal i pacients</td></tr>
+<tr><td>Data Workspace</td><td>Navegaci&oacute; i edici&oacute; directa de totes les taules</td></tr>
+<tr><td>Operational Reports</td><td>Visites i cirurgies programades per data</td></tr>
+<tr><td>Statistics</td><td>Visi&oacute; anal&iacute;tica: planta, personal, rankings</td></tr>
+<tr><td>Advanced Reports</td><td>Visor multi-pestanya amb filtres i exportaci&oacute; PDF</td></tr>
+<tr><td>Dummy Data</td><td>Generaci&oacute; de dades de prova</td></tr>
+<tr><td>User Management</td><td>Gesti&oacute; d'usuaris (nom&eacute;s ADMIN)</td></tr>
+<tr><td>Audit Logs</td><td>Registre d'auditoria (nom&eacute;s ADMIN)</td></tr>
+</tbody>
+</table>
+
+<h3 id="tasques-comunes">Tasques comunes</h3>
+<p><strong>Donar d'alta un pacient:</strong></p>
+<ol>
+<li>Maintenance &rarr; Add Patient</li>
+<li>Omplir DNI, nom, cognoms, data naixement, g&egrave;nere</li>
+<li>Afegir tel&egrave;fon, adre&ccedil;a, email</li>
+<li>Seleccionar grup sanguini i al&middot;l&egrave;rgies</li>
+<li>Save</li>
+</ol>
+<p><strong>Programar una visita:</strong></p>
+<ol>
+<li>Data Workspace &rarr; Visits &rarr; Add</li>
+<li>Seleccionar pacient, metge, data i motiu</li>
+<li>Save</li>
+</ol>
+<p><strong>Generar informe mensual:</strong></p>
+<ol>
+<li>Advanced Reports &rarr; Visit Summary + Surgery Log</li>
+<li>Seleccionar rang de dates</li>
+<li>Generate &rarr; Export PDF</li>
+</ol>
+
+<blockquote><p>&#x1F4C4; Document complet: <a href="./11_user_manual.md">11_user_manual.md</a></p></blockquote>
+</div>
+
+<div class="page-break"></div>
+
+<div class="part">
 <h2 id="12-manual-dadministrador">12. Manual d'Administrador</h2>
-<p><strong>Rols del sistema:</strong></p>
+
+<h3 id="resum-12">Resum</h3>
+<p>Guia per a administradors del sistema: gesti&oacute; d'usuaris i rols, revisi&oacute; de logs d'auditoria, backups i restauraci&oacute;, monitoritzaci&oacute;, checklists de manteniment i millors pr&agrave;ctiques de seguretat.</p>
+
+<h3 id="matriu-de-rols-12">Matriu de rols</h3>
 <table>
 <thead>
-<tr>
-<th>Rol</th>
-<th>Permisos</th>
-</tr>
+<tr><th>Rol</th><th>Pacients</th><th>Visites</th><th>Cirurgies</th><th>Admissions</th><th>Reports</th><th>User Mgmt</th></tr>
 </thead>
 <tbody>
-<tr>
-<td>ADMIN</td>
-<td>Accés complet, gestió d'usuaris i logs d'auditoria</td>
-</tr>
-<tr>
-<td>DOCTOR</td>
-<td>CRUD pacients, visites, tractaments, cirurgies</td>
-</tr>
-<tr>
-<td>NURSE</td>
-<td>Veure/editar pacients de la seva planta, admissions, assistir cirurgies</td>
-</tr>
-<tr>
-<td>RECEPTIONIST</td>
-<td>Registrar pacients, programar visites</td>
-</tr>
-<tr>
-<td>STAFF</td>
-<td>Només lectura: nom del pacient + habitació</td>
-</tr>
+<tr><td><strong>ADMIN</strong></td><td>CRUD</td><td>CRUD</td><td>CRUD</td><td>CRUD</td><td>View</td><td>Full</td></tr>
+<tr><td><strong>DOCTOR</strong></td><td>CRUD</td><td>CRUD</td><td>CRUD</td><td>View</td><td>View</td><td>—</td></tr>
+<tr><td><strong>NURSE</strong></td><td>View/Edit</td><td>View</td><td>Assist</td><td>Manage</td><td>View</td><td>—</td></tr>
+<tr><td><strong>RECEPTIONIST</strong></td><td>Create</td><td>Create</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td><strong>STAFF</strong></td><td>Read-only (nom + habitaci&oacute;)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
 </tbody>
 </table>
-<p><strong>Estratègia de backup (3 capes):</strong>
-- <strong>Física:</strong> PGDATA sencer (<code>/var/lib/postgresql/</code>)
-- <strong>Lògica:</strong> <code>pg_dump -Fc</code> (schema + dades)
-- <strong>Config:</strong> <code>.env</code>, systemd, logrotate, <code>postgresql.conf</code>, <code>pg_hba.conf</code></p>
-<p><strong>Programació automàtica:</strong>
-| Hora | Tipus | Retenció |
-|------|-------|-----------|
-| 02:00 diari | Logical dump + config | 5 dies |
-| 03:00 diari | Physical PGDATA | 5 dies |
-| Cada 15 min | Frequent logical | 24 hores |</p>
-<p><strong>Monitorització:</strong> Comprovar regularment l'estat de la replicació, la caducitat del certificat SSL, la salut de l'API i l'espai en disc.</p>
-<div style="page-break-before: always;"></div>
 
+<h3 id="procediments-dusuari">Procediments d'usuari</h3>
+<ul>
+<li><strong>Crear usuari:</strong> User Management &rarr; Create User &rarr; username, password, staff_id, role</li>
+<li><strong>Desactivar compte:</strong> Toggle Active (preserva audit trail)</li>
+<li><strong>Reset password:</strong> El sistema obliga a canviar-la al proper login</li>
+</ul>
+
+<h3 id="auditoria">Auditoria</h3>
+<table>
+<thead>
+<tr><th>Camp</th><th>Descripci&oacute;</th></tr>
+</thead>
+<tbody>
+<tr><td>Timestamp</td><td>Data i hora de l'acci&oacute;</td></tr>
+<tr><td>User</td><td>Usuari que va realitzar l'acci&oacute;</td></tr>
+<tr><td>Action</td><td>INSERT / UPDATE / DELETE</td></tr>
+<tr><td>Old Values</td><td>Valors previs (JSONB)</td></tr>
+<tr><td>New Values</td><td>Valors nous (JSONB)</td></tr>
+</tbody>
+</table>
+
+<h3 id="retencio-de-logs-dauditoria">Retenci&oacute; de logs d'auditoria</h3>
+<table>
+<thead>
+<tr><th>Per&iacute;ode</th><th>Emmagatzematge</th><th>Acci&oacute;</th></tr>
+</thead>
+<tbody>
+<tr><td>0–2 anys</td><td>BD (actiu)</td><td>Disponible al UI</td></tr>
+<tr><td>2–7 anys</td><td>Arxiu comprimit</td><td>Exportat a <code>/backups/audit/</code></td></tr>
+<tr><td>7+ anys</td><td>Eliminat</td><td>Purgat despr&eacute;s de retenci&oacute; legal</td></tr>
+</tbody>
+</table>
+
+<h3 id="backups">Backups</h3>
+<table>
+<thead>
+<tr><th>Capa</th><th>RPO</th><th>RTO</th></tr>
+</thead>
+<tbody>
+<tr><td>F&iacute;sica</td><td>24 hores</td><td>30 min</td></tr>
+<tr><td>L&ograve;gica</td><td>15 minuts</td><td>15–60 min</td></tr>
+<tr><td>Configuraci&oacute;</td><td>24 hores</td><td>5 min</td></tr>
+</tbody>
+</table>
+
+<h3 id="llindars-de-monitoritzacio">Llindars de monitoritzaci&oacute;</h3>
+<table>
+<thead>
+<tr><th>M&egrave;trica</th><th>Warning</th><th>Critical</th></tr>
+</thead>
+<tbody>
+<tr><td>Replication lag</td><td>&gt; 10 MB</td><td>&gt; 100 MB</td></tr>
+<tr><td>Disk usage</td><td>&gt; 80%</td><td>&gt; 95%</td></tr>
+<tr><td>SSL certificate</td><td>&lt; 30 dies</td><td>&lt; 7 dies</td></tr>
+<tr><td>Failed backups</td><td>1 failure</td><td>3 consec.</td></tr>
+</tbody>
+</table>
+
+<blockquote><p>&#x1F4C4; Document complet: <a href="./12_administrator_manual.md">12_administrator_manual.md</a></p></blockquote>
+</div>
+
+<div class="page-break"></div>
+
+<!-- PART III -->
+<div class="part">
 <h1 id="part-iii-technical-documentation">Part III: Technical Documentation</h1>
-<p><em>This section is written in English.</em></p>
-<h2 id="1-project-overview">1. Project Overview</h2>
-<p><strong>Architecture:</strong> Three-tier system for Hospital de Blanes: Tkinter Desktop Client → Flask REST API → PostgreSQL 16.</p>
-<p><strong>What we built:</strong>
-- 24 database tables with full referential integrity
-- REST API with 24 endpoint groups (CRUD, reports, export, admin, audit, health)
-- Tkinter desktop client with 12+ views
-- RBAC with 5 roles (ADMIN, DOCTOR, NURSE, STAFF, RECEPTIONIST)
-- Audit logging via PostgreSQL triggers (8 tables)
-- SSL-secured connections
-- Active-passive streaming replication (primary + cloud standby)
-- Automated daily backups with 5-day retention
-- XML/JSON export with XSD and JSON Schema validation
-- Social Security API integration
-- Chart.js web dashboard
-- Dummy data generator with Faker (Cyrillic support, 50k patients, 100k visits)
-- Health check endpoint (<code>GET /health</code>)</p>
-<p><strong>Problems solved:</strong>
-- Replication: pgpool-II was unstable, switched to native streaming replication
-- Batch inserts: periodic commits fixed the 100k visit generation crash
-- Audit triggers: SECURITY DEFINER was needed on helper functions
-- RLS policies: nurses couldn't see their patients until floor assignment logic was fixed</p>
-<h2 id="2-system-context">2. System Context</h2>
-<p><strong>Users and database role mapping:</strong>
-| Role | What they do | Database role |
-|------|-------------|---------------|
-| Administrator | Full access, user management, audit logs | <code>app_admin</code> |
-| Doctor | CRUD patients, visits, prescriptions, surgeries | <code>app_doctor</code> |
-| Nurse | Manage admissions, assist surgeries, view patients on their floor | <code>app_nurse</code> |
-| Receptionist | Register patients, schedule appointments | <code>app_receptionist</code> |
-| General staff | Read-only: patient name and room | <code>app_staff</code> |</p>
-<p><strong>External systems:</strong>
-- Social Security API — receives monthly XML visit exports via HTTP POST (Basic Auth)
-- AWS EC2 (standby) — hosts the standby PostgreSQL replica (Sion)</p>
-<h2 id="3-er-relational-model">3. ER / Relational Model</h2>
-<p>The database has <strong>24 tables</strong> with full referential integrity. The schema is defined in <code>scripts/sql/schema.sql</code>.</p>
-<p><strong>Design patterns used:</strong> Base + subtype (STAFF → MEDICAL_STAFF / NURSING_STAFF / GENERAL_STAFF), junction tables, audit table, reference tables, header-detail.</p>
-<p><strong>Naming conventions:</strong> Tables in uppercase snake case, columns in lowercase snake case, PK <code>&lt;entity&gt;_id</code>, FK same as referenced PK.</p>
-<p><strong>Indexes:</strong> 85+ indexes on all foreign keys and frequently filtered columns (FKs, status, dates, timestamps).</p>
-<p><strong>Data dictionary main tables:</strong> PATIENTS (patient_id, national_id, names, birth_date, gender, contact, blood_type, allergies, health_card), STAFF (staff_id, national_id, names, staff_type, credentials), VISITS (visit_id, patient_id FK, doctor_id FK, visit_timestamp, diagnosis, notes).</p>
-<h2 id="4-security-and-compliance">4. Security and Compliance</h2>
-<p><strong>RBAC:</strong> 5 PostgreSQL roles with granular table/column permissions defined in <code>scripts/sql/security.sql</code>.</p>
-<p><strong>Row-Level Security:</strong> Enabled on PATIENTS and ADMISSIONS. Nurses only see patients on their assigned floor. Session variables set via <code>SET_CONFIG</code> in Flask login handler.</p>
-<p><strong>SSL:</strong> Self-signed certificates with OpenSSL, 1-year validity, auto-renewal check script (<code>check_cert_expiry.sh</code>). All remote connections use <code>hostssl</code>.</p>
-<p><strong>Data masking:</strong> Column-level grants restrict sensitive data per role. Doctors see all, nurses see limited columns (no national_id), general staff see only name + room via <code>patient_directory</code> view.</p>
-<p><strong>Audit logging:</strong> 8 triggers on sensitive tables log to AUDIT_LOGS with user, timestamp, action, old/new data (JSON).</p>
-<p><strong>Initial issues:</strong> Forgot <code>SECURITY DEFINER</code> on audit helpers, nurse RLS was too restrictive initially.</p>
-<h2 id="5-agpd-compliance">5. AGPD Compliance</h2>
-<p><strong>Data Controller:</strong> Hospital de Blanes, Blanes (Girona). Legal basis: LOPDGDD 3/2018 + GDPR (EU) 2016/679.</p>
-<p><strong>Risk classification:</strong>
-- <strong>HIGH (critical):</strong> Health data (diagnoses, surgeries, prescriptions, test results), genetic/biometric data
-- <strong>MEDIUM:</strong> Identity data (DNI/NIE, names, birth date), contact data, employment data, financial data
-- <strong>LOW:</strong> Internal user data (username, role), audit metadata</p>
-<p><strong>Technical measures:</strong> RBAC, bcrypt authentication, TLS encryption, RLS, data minimisation (views), audit triggers, concurrency control (surgery overlap check), encrypted backups, secret isolation (environment variables).</p>
-<p><strong>ARSULIPO rights:</strong> Access (patient history queries), Rectification (CRUD maintenance), Erasure (logical deletion), Restriction (RLS), Portability (XML/JSON export), Objection (administrative request).</p>
-<p><strong>Retention policy:</strong> Clinical history 15 years, employment 7 years, audit logs 2 years active + 7 compressed, backups 5 rotating daily + 12 weekly + 12 monthly.</p>
-<h2 id="6-high-availability-and-disaster-recovery">6. High Availability and Disaster Recovery</h2>
-<p><strong>Two-node setup:</strong>
-- <strong>Briar</strong> (on-premise): Intel Xeon E-2336, 16 GB RAM, 240 GB NVMe + 480 GB SATA SSD, LVM partitioned
-- <strong>Sion</strong> (AWS EC2): t3.medium, 2 vCPU, 4 GB RAM, 80 GB gp3</p>
-<p><strong>Replication:</strong> Native PostgreSQL streaming replication via WAL. Active-passive (Briar = primary r/w, Sion = standby read-only). Connected through Tailscale VPN.</p>
-<p><strong>Backup strategy (3 layers):</strong>
-1. <strong>Physical</strong> - PGDATA via pg_basebackup (<code>physical_*.tar.gz</code>)
-2. <strong>Logical</strong> - pg_dump -Fc (<code>hsp_db_*.dump</code>)
-3. <strong>Config</strong> - .env, systemd, postgresql.conf, pg_hba.conf, logrotate (<code>config_*.tar.gz</code>)</p>
-<p><strong>Automated schedule:</strong> Daily logical + config at 02:00, physical at 03:00, frequent every 15 min. Retention: 5 days local + optional rsync to Sion.</p>
-<p><strong>Restore operations:</strong> Logical restore (<code>--restore latest</code>), config restore (<code>--config-restore</code>), physical restore (<code>--physical-restore</code>), full bare-metal (<code>--full-restore</code>), and disaster recovery script (<code>restore_service.sh</code>).</p>
-<p><strong>Failover:</strong> Promote Sion with <code>pg_ctl promote</code>, then reconfigure API DATABASE_URL. Rebuild standby with pg_basebackup.</p>
-<p><strong>Monitoring:</strong> Replication lag (<code>check_replication.sh</code>), SSL cert expiry (<code>check_cert_expiry.sh</code>), disk space, audit logs, PostgreSQL logs.</p>
-<h2 id="7-test-data-generation">7. Test Data Generation</h2>
-<p>Generated with <strong>Faker</strong> (es_ES locale, ru_RU for 5% Cyrillic). Generator in <code>server/src/app/services/dummy_service.py</code>.</p>
-<p><strong>Target volumes:</strong> 50,000 patients, 100,000+ visits, 100 doctors, 200 nurses, 100 general staff, ~25,000 surgeries, ~25,000 admissions.</p>
-<p><strong>Process:</strong> Support data → Staff → Patients → Visits (60-day distribution) → Surgeries, admissions, prescriptions, dispensations, radiology.</p>
-<p><strong>Performance optimisation:</strong> Batch inserts with flush/commit, pre-computed diagnosis pools, random sampling. Cleanup via DummyRegistry table in reverse dependency order.</p>
-<h2 id="8-authentication">8. Authentication</h2>
-<p><strong>Login flow:</strong>
-1. User enters credentials in Tkinter client
-2. Client sends <code>POST /api/auth/login</code>
-3. Server validates against APP_USERS (bcrypt-hashed passwords)
-4. On success: returns JWT token with role and staff_id
-5. Token stored in memory session singleton
-6. All subsequent requests include <code>Authorization: Bearer &lt;token&gt;</code></p>
-<p><strong>Roles:</strong> ADMIN, DOCTOR, NURSE, STAFF, RECEPTIONIST</p>
-<p><strong>User management endpoints:</strong> List, register, change password, reset password (admin), toggle active (admin). All passwords hashed with bcrypt, never stored in plaintext.</p>
-<h2 id="9-maintenance-operations">9. Maintenance Operations</h2>
-<p>CRUD operations from the Maintenance tab: register medical/nursing/general staff, register patients, assign nurse to doctor/floor, view surgeries and visits by date, view medical devices by theater.</p>
-<p><strong>PL/pgSQL functions (5):</strong> check_surgery_overlap() trigger, validate_nurse_assignment() trigger, audit_trigger_function(), get_current_app_user_id(), get_current_staff_id().</p>
-<h2 id="10-queries-and-reports">10. Queries and Reports</h2>
-<p><strong>Available reports (via API):</strong> Summary, Visits, Surgeries, Admissions, Medications, Financial, Radiology, Doctor Workload.</p>
-<p><strong>PDF export:</strong> Summary report via <code>GET /api/reports/summary/pdf</code> (fpdf2). Requires JWT with ADMIN, DOCTOR, or NURSE role.</p>
-<p><strong>Desktop views:</strong> Operational Reports (daily visits/surgeries), Statistics (floor overview, staff directory, trends, rankings), Advanced Reports (multi-tab with 8 categories, filters, PDF download).</p>
-<h2 id="11-data-export-and-dashboard">11. Data Export and Dashboard</h2>
-<p><strong>XML/JSON export:</strong> Visits between dates via <code>GET /api/export/visits</code>. Includes visit ID, date, doctor name + license, patient DNI + name + health card. Validated against XSD and JSON Schema.</p>
-<p><strong>Social Security API:</strong> <code>POST /api/export/send</code> generates XML/JSON, sends with Basic Auth to external API.</p>
-<p><strong>Chart.js Dashboard:</strong> <code>http://localhost:5000/api/dashboard/view</code> with visits today, surgeries today, active admissions, totals, specialty breakdown, 7-day trend, top doctors, recent admissions.</p>
-<p><strong>PowerBI (optional):</strong> Connect via <code>http://localhost:5000/api/dashboard/stats</code> JSON endpoint.</p>
-<h2 id="12-installation-guide">12. Installation Guide</h2>
-<p><strong>Requirements:</strong> Two Ubuntu 24.04 LTS servers, Tailscale account, Python 3.12, PostgreSQL 16, Git.</p>
-<p><strong>Step-by-step summary:</strong>
-1. <strong>Install Ubuntu</strong> with LVM partitioning (separate volumes for /, /var, /var/log, /tmp, PGDATA, WAL)
-2. <strong>Tailscale VPN</strong> - connect Briar and Sion via mesh VPN
-3. <strong>Firewall</strong> - UFW with port restrictions (22, 5000, 5432, Tailscale)
-4. <strong>PostgreSQL 16</strong> - install from official PostgreSQL APT repo
-5. <strong>TLS certificates</strong> - generate CA + server certs with OpenSSL
-6. <strong>Configure primary</strong> (Briar) - postgresql.conf with replication settings + pg_hba.conf with SSL
-7. <strong>Configure standby</strong> (Sion) - postgresql.conf with primary_conninfo + standby.signal
-8. <strong>Set up replication</strong> - create replicator user + slot on Briar, pg_basebackup on Sion
-9. <strong>Clone repository</strong> - versioned deploy structure under /opt/hms
-10. <strong>Environment variables</strong> - DATABASE_URL, JWT_SECRET_KEY, etc. in /etc/hms.env
-11. <strong>Create database</strong> - run schema.sql, security.sql, initial_script.sql
-12. <strong>systemd service</strong> - deploy_primary.sh + deploy.sh for production setup
-13. <strong>Desktop client</strong> - install with Inno Setup or run from source</p>
-<p><strong>Verification checklist:</strong> API health endpoint, login, tables, replication, dashboard.</p>
-<h2 id="13-configuration">13. Configuration</h2>
-<p><strong>Server environment variables (on Briar):</strong> DATABASE_URL, JWT_SECRET_KEY, DB_NAME, EXTERNAL_API_URL/USERNAME/PASSWORD.</p>
-<p><strong>Desktop client:</strong> API_BASE_URL (default http://192.168.4.254:5000/api).</p>
-<p><strong>Ports:</strong> Flask API 5000, PostgreSQL 5432, Tailscale UDP 41641.</p>
-<p><strong>Production:</strong> Gunicorn (4 workers) behind systemd, logrotate, versioned deploy with automatic rollback.</p>
-<h2 id="14-user-manual">14. User Manual</h2>
-<p><strong>Getting started:</strong> Start API server, launch desktop app with <code>python desktop/src/main.py</code>, log in with credentials.</p>
-<p><strong>Sidebar sections:</strong> Dashboard (summary), Maintenance (staff/patient registration), Data Workspace (record browser), Operational Reports (daily visits/surgeries), Statistics (floor/trends/rankings), Advanced Reports (multi-tab viewer), Dummy Data (generate test data), User Management (admin only), Audit Logs (admin only).</p>
-<p><strong>Password:</strong> Change via sidebar. <strong>Logout:</strong> Click Logout in sidebar.</p>
-<h2 id="15-administrator-manual">15. Administrator Manual</h2>
-<p><strong>Roles:</strong> ADMIN (full access), DOCTOR (CRUD patients/visits), NURSE (floor-limited), RECEPTIONIST (register patients), STAFF (read-only).</p>
-<p><strong>Creating users:</strong> User Management → Create User (username, password, staff_id, role). Toggle Active to disable, Reset Password for any user.</p>
-<p><strong>Backup strategy:</strong> 3 layers with automated schedule (daily logical, daily physical, frequent every 15min). Restore via <code>backup_database.py</code> commands.</p>
-<p><strong>Monitoring:</strong> Replication status, SSL cert expiry, API health, disk space on both nodes.</p>
-<p><strong>Maintenance tasks:</strong> Rotate passwords periodically, check backup completion, review audit logs, archive old logs.</p>
-<div style="page-break-before: always;"></div>
 
+<h2 id="project-overview-iii">Project Overview</h2>
+<p>The <strong>Hospital Management System</strong> is a comprehensive hospital management platform developed for Hospital de Blanes, Girona. It provides end-to-end management of patient records, medical staff, clinical visits, surgeries, admissions, prescriptions, and radiology exams. The system is built with a Python/Flask REST API backend, PostgreSQL 16 database, Tkinter desktop client, and Chart.js web dashboard.</p>
+<p>The project was developed as a cross-module project for the ASIX program (Administraci&oacute; de Sistemes Inform&agrave;tics en Xarxa) at Institut Sa Palomera during the 2025–2026 academic year.</p>
+
+<h2 id="system-context">System Context</h2>
+<p>The system operates across two physical nodes:</p>
+<ul>
+<li><strong>Briar</strong> (on-premise at the hospital) — hosts both the Flask API and the PostgreSQL primary database</li>
+<li><strong>Sion</strong> (AWS EC2, eu-west-3 Paris) — hosts a PostgreSQL standby for disaster recovery</li>
+</ul>
+<p>Hospital users (doctors, nurses, receptionists, admin staff) connect to Briar over the hospital LAN (192.168.4.0/24). The two nodes communicate over a Tailscale encrypted mesh VPN. All inter-node traffic is doubly encrypted (Tailscale WireGuard + PostgreSQL SSL).</p>
+
+<h2 id="er-relational-model">ER / Relational Model</h2>
+<p>The database consists of <strong>24 tables</strong> designed in Third Normal Form (3NF). Key patterns include:</p>
+<ul>
+<li><strong>Generalization/Specialization:</strong> <code>STAFF</code> &rarr; <code>MEDICAL_STAFF</code>, <code>NURSING_STAFF</code>, <code>GENERAL_STAFF</code></li>
+<li><strong>Junction tables:</strong> <code>MEDICAL_STAFF_SPECIALTIES</code>, <code>SURGERY_ASSISTANTS</code></li>
+<li><strong>Header-detail:</strong> <code>PHARMACY_DISPENSATIONS</code> &rarr; <code>DISPENSATION_ITEMS</code></li>
+<li><strong>Audit trail:</strong> <code>AUDIT_LOGS</code> with before/after JSONB snapshots</li>
+</ul>
+
+<h2 id="security-and-compliance">Security and Compliance</h2>
+
+<h3 id="rbac-role-based-access-control">RBAC (Role-Based Access Control)</h3>
+<p>Five PostgreSQL roles with granular table/column-level permissions:</p>
+<table>
+<thead>
+<tr><th>Role</th><th>Connections</th><th>Scope</th></tr>
+</thead>
+<tbody>
+<tr><td><code>app_admin</code></td><td>5</td><td>Full access</td></tr>
+<tr><td><code>app_doctor</code></td><td>50</td><td>CRUD on patients, visits, prescriptions, surgeries</td></tr>
+<tr><td><code>app_nurse</code></td><td>100</td><td>Limited read on patients, manage admissions on own floor</td></tr>
+<tr><td><code>app_receptionist</code></td><td>10</td><td>CRUD on patients, schedule appointments</td></tr>
+<tr><td><code>app_staff</code></td><td>30</td><td>Read-only (name + room via <code>patient_directory</code> view)</td></tr>
+</tbody>
+</table>
+
+<h3 id="row-level-security-rls">Row-Level Security (RLS)</h3>
+<p>RLS policies ensure nurses only see patients on their assigned floor. Session variables (<code>app.current_user</code>, <code>app.current_staff_id</code>) are set at login via PostgreSQL <code>SET_CONFIG</code>.</p>
+
+<h3 id="ssltls">SSL/TLS</h3>
+<p>PostgreSQL uses self-signed SSL certificates (OpenSSL) with <code>hostssl</code> required for all remote connections in <code>pg_hba.conf</code>.</p>
+
+<h3 id="data-masking-iii">Data Masking</h3>
+<p>Column-level access control restricts sensitive data by role. The <code>patient_directory</code> view exposes only name and room to non-medical staff.</p>
+
+<h2 id="agpd-compliance">AGPD Compliance</h2>
+<p>The system aligns with Spanish data protection law (LOPDGDD) and GDPR requirements:</p>
+<table>
+<thead>
+<tr><th>Requirement</th><th>Implementation</th></tr>
+</thead>
+<tbody>
+<tr><td>Explicit consent</td><td>User registration with acceptance</td></tr>
+<tr><td>Right to erasure</td><td><code>anonymize_patient()</code> function</td></tr>
+<tr><td>Data minimization</td><td><code>patient_directory</code> view limits exposure</td></tr>
+<tr><td>Limited retention</td><td>5-day cyclic backup rotation</td></tr>
+<tr><td>Technical security</td><td>RBAC + RLS + SSL + bcrypt + JWT</td></tr>
+<tr><td>Audit trail</td><td>8 automatic triggers on sensitive tables</td></tr>
+</tbody>
+</table>
+
+<h2 id="high-availability-and-disaster-recovery">High Availability and Disaster Recovery</h2>
+
+<h3 id="replication-topology">Replication Topology</h3>
+<ul>
+<li><strong>Method:</strong> PostgreSQL native streaming replication (asynchronous WAL shipping)</li>
+<li><strong>Role:</strong> Active-passive (Briar = primary R/W, Sion = standby read-only)</li>
+<li><strong>Network:</strong> Tailscale overlay network + hospital LAN</li>
+<li><strong>Replication user:</strong> <code>replicator</code></li>
+</ul>
+
+<h3 id="backup-strategy-three-layers">Backup Strategy (Three Layers)</h3>
+<table>
+<thead>
+<tr><th>Layer</th><th>Type</th><th>RPO</th><th>RTO</th></tr>
+</thead>
+<tbody>
+<tr><td>Physical</td><td><code>pg_basebackup</code> (PGDATA)</td><td>24 hours</td><td>30 minutes</td></tr>
+<tr><td>Logical</td><td><code>pg_dump -Fc</code> (full DB)</td><td>15 minutes</td><td>15–60 minutes</td></tr>
+<tr><td>Config</td><td><code>.env</code>, systemd, conf files</td><td>24 hours</td><td>5 minutes</td></tr>
+</tbody>
+</table>
+
+<h3 id="failover-procedure">Failover Procedure</h3>
+<pre><code class="language-bash"># Promote Sion to primary
+sudo -u postgres pg_ctl promote -D /var/lib/postgresql/16/main
+# Reconfigure .env to point to Sion
+# DATABASE_URL=postgresql://postgres:password@100.98.214.53:5432/hsp_db</code></pre>
+
+<h2 id="test-data-generation">Test Data Generation</h2>
+<p>The system generates ~325,000 records across 12 tables using Faker:</p>
+<ul>
+<li>50,000 patients (5% with Cyrillic names via <code>ru_RU</code> locale)</li>
+<li>100,000 visits (80% past, 20% future for scheduling)</li>
+<li>25,000 surgeries, 25,000 admissions, 80,000 prescriptions</li>
+</ul>
+<p>Optimizations (batch inserts, SQL direct inserts, index disabling) reduced generation time from ~20 to ~5 minutes.</p>
+
+<h2 id="authentication">Authentication</h2>
+<p>JWT-based authentication with bcrypt password hashing:</p>
+<ol>
+<li>Client sends <code>POST /api/auth/login</code> with credentials</li>
+<li>Server validates bcrypt hash against <code>APP_USERS</code> table</li>
+<li>Returns signed JWT (1-hour expiry) containing <code>sub</code>, <code>role</code>, <code>staff_id</code></li>
+<li>Client stores token in memory (singleton pattern)</li>
+<li>All subsequent requests include <code>Authorization: Bearer &lt;token&gt;</code></li>
+</ol>
+
+<h2 id="maintenance-operations">Maintenance Operations</h2>
+<p>Full CRUD operations via REST API:</p>
+<ul>
+<li>Staff management (medical, nursing, general)</li>
+<li>Patient registration</li>
+<li>Nurse-to-doctor/floor assignment</li>
+<li>Surgery scheduling with overlap prevention (PL/pgSQL trigger)</li>
+<li>Visit scheduling</li>
+<li>Medical device inventory per operating theater</li>
+</ul>
+
+<h2 id="queries-and-reports">Queries and Reports</h2>
+<p>Three mandatory reports, one optional, one top:</p>
+<table>
+<thead>
+<tr><th>Report</th><th>Endpoint</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Floor data</td><td><code>GET /api/reports/summary?floor_id=X</code></td><td>Rooms, theaters, nurses</td></tr>
+<tr><td>All staff</td><td><code>GET /api/reports/summary?report=staff</code></td><td>Complete personnel list</td></tr>
+<tr><td>Visits per day</td><td><code>GET /api/reports/visits</code></td><td>Daily visit counts</td></tr>
+<tr><td>Doctor ranking</td><td><code>GET /api/reports/doctor-workload</code></td><td>Top doctors by volume</td></tr>
+<tr><td>Common diseases</td><td><code>GET /api/reports/summary?report=diseases</code></td><td>Most frequent diagnoses</td></tr>
+</tbody>
+</table>
+
+<h2 id="data-export-and-dashboard">Data Export and Dashboard</h2>
+
+<h3 id="export-formats">Export Formats</h3>
+<ul>
+<li><strong>XML:</strong> Pretty-printed with <code>xml.dom.minidom.toprettyxml()</code> (2-space indent)</li>
+<li><strong>JSON:</strong> Formatted with <code>json.dumps(data, indent=2)</code></li>
+<li><strong>Validation:</strong> XSD and JSON Schema validation before transmission</li>
+<li><strong>External API:</strong> Automatic submission to Social Security API (Basic Auth)</li>
+</ul>
+
+<h3 id="dashboard">Dashboard</h3>
+<p>Built with <strong>Chart.js</strong> (free alternative to PowerBI), accessible at <code>http://192.168.4.254:5000/api/dashboard/view</code>.</p>
+<table>
+<thead>
+<tr><th>Chart</th><th>Type</th><th>Data Source</th></tr>
+</thead>
+<tbody>
+<tr><td>Visits today</td><td>Metric</td><td><code>visits_today</code></td></tr>
+<tr><td>Surgeries today</td><td>Metric</td><td><code>surgeries_today</code></td></tr>
+<tr><td>Active admissions</td><td>Metric</td><td><code>active_admissions</code></td></tr>
+<tr><td>Visits by specialty</td><td>Bar chart</td><td><code>by_specialty</code></td></tr>
+<tr><td>7-day trend</td><td>Line chart</td><td><code>visits_trend</code></td></tr>
+<tr><td>Top 5 doctors</td><td>Horizontal bar</td><td><code>top_doctors</code></td></tr>
+</tbody>
+</table>
+<p>PowerBI Desktop can also consume the JSON endpoint at <code>http://192.168.4.254:5000/api/dashboard/stats</code>.</p>
+
+<h2 id="installation-guide">Installation Guide</h2>
+<p>Complete steps documented in <a href="./10_installation_manual.md">10_installation_manual.md</a>. Summary:</p>
+<ol>
+<li>Install Ubuntu Server 24.04 on both nodes with LVM partitioning</li>
+<li>Install and configure Tailscale</li>
+<li>Configure UFW firewall</li>
+<li>Install PostgreSQL 16 on both nodes</li>
+<li>Generate TLS certificates</li>
+<li>Configure primary (Briar) and standby (Sion) replication</li>
+<li>Clone repository at <code>/opt/hms/releases/v1.0</code> with symlink at <code>/opt/hms/current</code></li>
+<li>Create Python virtual environment and install dependencies</li>
+<li>Configure environment variables in <code>/etc/hms.env</code></li>
+<li>Create database and load schemas</li>
+<li>Run API as systemd service (<code>hms-api.service</code>)</li>
+<li>Deploy desktop client on LAN workstations</li>
+</ol>
+
+<h2 id="configuration">Configuration</h2>
+<p>Key configuration files:</p>
+<ul>
+<li><code>/opt/hms/current/server/src/.env</code> — Database URL, JWT secret, external API credentials</li>
+<li><code>/etc/hms.env</code> — System-wide environment variables (root:root, permissions 600)</li>
+<li><code>/etc/postgresql/16/main/postgresql.conf</code> — PostgreSQL configuration</li>
+<li><code>/etc/postgresql/16/main/pg_hba.conf</code> — Access control rules</li>
+<li><code>/etc/systemd/system/hms-api.service</code> — systemd unit for Flask API</li>
+</ul>
+
+<h2 id="user-manual">User Manual</h2>
+<p>Full user guide in <a href="./11_user_manual.md">11_user_manual.md</a>. Covers:</p>
+<ul>
+<li>Login and session management</li>
+<li>Dashboard overview</li>
+<li>Maintenance operations (staff, patients, assignments)</li>
+<li>Data Workspace (table browser with search, edit, delete)</li>
+<li>Operational Reports (daily visits and surgeries)</li>
+<li>Statistics (floor overview, staff directory, doctor/disease ranking)</li>
+<li>Advanced Reports (multi-tab with PDF export)</li>
+<li>Dummy Data generation</li>
+<li>Password change</li>
+<li>Common task walkthroughs</li>
+</ul>
+
+<h2 id="administrator-manual">Administrator Manual</h2>
+<p>Full administrator guide in <a href="./12_administrator_manual.md">12_administrator_manual.md</a>. Covers:</p>
+<ul>
+<li>User and role management (5 roles with distinct permissions)</li>
+<li>Audit log review and retention policy (2 years active, 7 years archive)</li>
+<li>Backup and recovery procedures (three-layer strategy)</li>
+<li>Monitoring setup with alert thresholds</li>
+<li>Daily/weekly/monthly/quarterly/annual maintenance checklists</li>
+<li>Security best practices (SSL, RBAC, firewalls, password policies)</li>
+<li>Incident response procedures</li>
+</ul>
+</div>
+
+<div class="page-break"></div>
+
+<!-- PART IV -->
+<div class="part">
 <h1 id="part-iv-final-summary">Part IV: Final Summary</h1>
-<h2 id="resum-summary">Resum / Summary</h2>
-<p><strong>CAT:</strong> El projecte <strong>Hospital Management System</strong> és un sistema complet de gestió hospitalària desenvolupat per a l'Hospital de Blanes. Consta d'un client d'escriptori Tkinter, una API REST amb Flask i una base de dades PostgreSQL 16 amb replicació en streaming. S'han implementat totes les funcionalitats obligatòries, opcionals i top del projecte, incloent-hi gestió de pacients i personal, programació de visites i cirurgies, farmàcia, radiologia, consultes avançades, exportació de dades, dashboard web i seguretat integral (RBAC, RLS, SSL, auditoria).</p>
-<p><strong>ENG:</strong> The <strong>Hospital Management System</strong> project is a complete hospital management system developed for Hospital de Blanes. It consists of a Tkinter desktop client, a Flask REST API, and a PostgreSQL 16 database with streaming replication. All mandatory, optional, and top features have been implemented, including patient and staff management, visit and surgery scheduling, pharmacy, radiology, advanced queries, data export, web dashboard, and comprehensive security (RBAC, RLS, SSL, audit).</p>
-<h2 id="tecnologies-technologies">Tecnologies / Technologies</h2>
+
+<h2 id="technologies-used">Technologies Used</h2>
 <table>
 <thead>
-<tr>
-<th>Tecnologia</th>
-<th>Versió</th>
-<th>Propòsit</th>
-</tr>
+<tr><th>Category</th><th>Technology</th><th>Version</th><th>Purpose</th></tr>
 </thead>
 <tbody>
-<tr>
-<td>Python</td>
-<td>3.13</td>
-<td>Backend</td>
-</tr>
-<tr>
-<td>Flask</td>
-<td>3.1</td>
-<td>Web framework</td>
-</tr>
-<tr>
-<td>Gunicorn</td>
-<td>23.0</td>
-<td>Production WSGI server</td>
-</tr>
-<tr>
-<td>PostgreSQL</td>
-<td>16</td>
-<td>Database</td>
-</tr>
-<tr>
-<td>SQLAlchemy</td>
-<td>2.0</td>
-<td>ORM</td>
-</tr>
-<tr>
-<td>Tkinter</td>
-<td>—</td>
-<td>Desktop client</td>
-</tr>
-<tr>
-<td>Chart.js</td>
-<td>—</td>
-<td>Web dashboard</td>
-</tr>
-<tr>
-<td>Faker</td>
-<td>40.15</td>
-<td>Test data generation</td>
-</tr>
-<tr>
-<td>Tailscale</td>
-<td>—</td>
-<td>VPN</td>
-</tr>
-<tr>
-<td>JWT</td>
-<td>4.7</td>
-<td>Authentication</td>
-</tr>
-<tr>
-<td>bcrypt</td>
-<td>5.0</td>
-<td>Password hashing</td>
-</tr>
+<tr><td>Backend Framework</td><td>Python / Flask</td><td>3.12 / 3.1</td><td>REST API</td></tr>
+<tr><td>Database</td><td>PostgreSQL</td><td>16</td><td>Relational storage</td></tr>
+<tr><td>ORM</td><td>SQLAlchemy</td><td>2.0</td><td>Data abstraction</td></tr>
+<tr><td>Desktop Client</td><td>Tkinter</td><td>(built-in)</td><td>GUI</td></tr>
+<tr><td>Dashboard</td><td>Chart.js</td><td>4.x</td><td>Web charts</td></tr>
+<tr><td>Auth</td><td>JWT + bcrypt</td><td>—</td><td>Authentication</td></tr>
+<tr><td>VPN</td><td>Tailscale</td><td>—</td><td>Secure networking</td></tr>
+<tr><td>PDF Library</td><td>fpdf2</td><td>—</td><td>Report export</td></tr>
+<tr><td>Test Data</td><td>Faker</td><td>22.x</td><td>Dummy generation</td></tr>
+<tr><td>Cloud</td><td>AWS EC2</td><td>t3.medium</td><td>Standby node</td></tr>
 </tbody>
 </table>
-<h2 id="assoliments-achievements">Assoliments / Achievements</h2>
+
+<h2 id="achievements">Achievements</h2>
 <table>
 <thead>
-<tr>
-<th>Àrea / Area</th>
-<th>Assoliment / Achievement</th>
-</tr>
+<tr><th>Area</th><th>Achievement</th></tr>
 </thead>
 <tbody>
-<tr>
-<td>Base de dades</td>
-<td>24 taules, 85+ índexs, integritat referencial</td>
-</tr>
-<tr>
-<td>API REST</td>
-<td>24 grups d'endpoints</td>
-</tr>
-<tr>
-<td>Client escriptori</td>
-<td>12+ vistes d'usuari</td>
-</tr>
-<tr>
-<td>Seguretat</td>
-<td>RBAC (5 rols), RLS, SSL, bcrypt, JWT</td>
-</tr>
-<tr>
-<td>Auditoria</td>
-<td>8 triggers automàtics</td>
-</tr>
-<tr>
-<td>Alta disponibilitat</td>
-<td>Replicació streaming, failover, 3 capes de backup</td>
-</tr>
-<tr>
-<td>Dades</td>
-<td>50.000 pacients, 100.000 visites, 5% ciríl·lic</td>
-</tr>
-<tr>
-<td>Exportació</td>
-<td>XML/JSON, XSD/JSON Schema, API Seguretat Social</td>
-</tr>
-<tr>
-<td>Dashboard</td>
-<td>Chart.js, PowerBI opcional</td>
-</tr>
-<tr>
-<td>Documentació</td>
-<td>Guies d'instal·lació, usuari, administrador, AGPD</td>
-</tr>
+<tr><td><strong>Database</strong></td><td>24-table relational model in 3NF, supporting patients, staff, visits, surgeries, admissions, pharmacy, radiology, and audit</td></tr>
+<tr><td><strong>Security</strong></td><td>5-role RBAC, RLS on sensitive tables, SSL encryption, bcrypt hashing, audit triggers on 8 tables</td></tr>
+<tr><td><strong>High Availability</strong></td><td>Streaming replication between Briar (primary) and Sion (standby), 3-layer backup strategy, documented failover</td></tr>
+<tr><td><strong>Data Volume</strong></td><td>325,000 test records generated in ~5 minutes with Cyrillic support</td></tr>
+<tr><td><strong>Export</strong></td><td>XML/JSON export with XSD/JSON Schema validation, Social Security API integration</td></tr>
+<tr><td><strong>Dashboard</strong></td><td>Real-time Chart.js dashboard with 6 visualizations, PowerBI-compatible endpoint</td></tr>
+<tr><td><strong>DevOps</strong></td><td>systemd service, automated deployment script, cron-based backups, monitoring scripts</td></tr>
+<tr><td><strong>Documentation</strong></td><td>12 delivery documents + this final document covering installation, user, and admin manuals</td></tr>
+<tr><td><strong>Project Management</strong></td><td>91 hours of work, 60+ atomic commits, Conventional Commits convention</td></tr>
+<tr><td><strong>Compliance</strong></td><td>AGPD/LOPDGDD alignment with data minimization, audit trail, consent, and retention policies</td></tr>
 </tbody>
 </table>
+
+<h2 id="conclusio-cat">Conclusi&oacute; (CAT)</h2>
+<p>El <strong>Hospital Management System</strong> compleix tots els requisits funcionals i t&egrave;cnics establerts per al projecte intermodular ASIX 2025–2026. El sistema ofereix una soluci&oacute; completa de gesti&oacute; hospital&agrave;ria amb un backend escalable, una base de dades segura i normalitzada, alta disponibilitat mitjan&ccedil;ant replicaci&oacute;, i eines de visualitzaci&oacute; i exportaci&oacute; de dades.</p>
+<p>Les principals fortaleses del projecte s&oacute;n la seguretat multicapa (RBAC + RLS + SSL + bcrypt), l'arquitectura d'alta disponibilitat amb dos nodes, la generaci&oacute; massiva de dades de prova, i la documentaci&oacute; exhaustiva de tot el sistema.</p>
+
+<h2 id="conclusion-eng">Conclusion (ENG)</h2>
+<p>The <strong>Hospital Management System</strong> meets all functional and technical requirements established for the ASIX 2025–2026 cross-module project. The system delivers a complete hospital management solution with a scalable backend, a secure and normalized database, high availability through replication, and data visualization and export tools.</p>
+<p>The project's main strengths are its multi-layer security (RBAC + RLS + SSL + bcrypt), the two-node high-availability architecture, massive test data generation, and comprehensive documentation covering the entire system.</p>
+</div>
+
+<hr>
+
+<div class="cover-part">
+  <hr>
+  <p><em>Document generated on May 2026</em></p>
+  <p><em>Yossef Errazik &middot; ASIX &middot; Institut Sa Palomera &middot; Hospital de Blanes</em></p>
+  <p><a href="https://github.com/yosseferrazik/hospital-management-project">github.com/yosseferrazik/hospital-management-project</a></p>
+</div>
+
 </body>
 </html>

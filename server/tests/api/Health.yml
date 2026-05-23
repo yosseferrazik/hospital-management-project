@@ -1,11 +1,11 @@
 info:
-  name: Social Security API
+  name: Health
   type: http
   seq: 1
 
 http:
-  method: POST
-  url: http://100.78.155.2:5000/api/export/send
+  method: GET
+  url: http://192.168.4.254:5000/health
   auth: inherit
 
 settings:

@@ -229,7 +229,7 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
     pdf.set_text_color(*WHITE)
     pdf.cell(0, 12, "Sa Palomera Hospital", align="C", ln=True)
     pdf.set_font("Helvetica", "", FONT_MD)
-    pdf.cell(0, 7, f"{ps}  –  {pe}", align="C", ln=True)
+    pdf.cell(0, 7, f"{ps}  -  {pe}", align="C", ln=True)
     pdf.set_font("Helvetica", "", FONT_XS)
     pdf.set_text_color(190, 200, 210)
     pdf.cell(0, 5, f"Generated {generated}", align="C", ln=True)
@@ -238,7 +238,7 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
     pdf.set_y(66)
     pdf.section("Executive Summary")
     overview = (
-        f"Hospital activity for the period {ps} – {pe}: "
+        f"Hospital activity for the period {ps} - {pe}: "
         f"{activity.get('visits', 0)} visits, {activity.get('surgeries', 0)} surgeries, "
         f"{activity.get('admissions', 0)} admissions. "
         f"Patient base: {totals.get('patients', 0)}. "
@@ -363,7 +363,7 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
     pdf.set_text_color(*GREEN)
     pdf.cell(
         0, 7,
-        f"Total: ${total_cost:,.2f}  –  {fin.get('total', 0)} dispensation(s)",
+        f"Total: ${total_cost:,.2f}  -  {fin.get('total', 0)} dispensation(s)",
         ln=True,
     )
     pdf.ln(3)
@@ -391,9 +391,9 @@ def make_summary_pdf(start_date=None, end_date=None) -> bytes:
     pdf.cell(
         0, 6,
         (
-            f"Period: {adm.get('total', 0)}  –  "
-            f"Active: {active_count}  –  "
-            f"Discharged: {discharged_count}  –  "
+            f"Period: {adm.get('total', 0)}  -  "
+            f"Active: {active_count}  -  "
+            f"Discharged: {discharged_count}  -  "
             f"Avg stay: {avg_stay} d"
         ),
         ln=True,
