@@ -1,3 +1,5 @@
+"""Blueprint imports — centralises all route blueprint references."""
+
 from .auth import auth_bp
 from .maintenance import maintenance_bp
 from .dummy import dummy_bp

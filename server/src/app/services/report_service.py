@@ -1,3 +1,5 @@
+"""Report service — build structured data for operational and summary reports."""
+
 from datetime import datetime, date, timedelta, time
 
 from app.models import db, Patient, Staff, MedicalStaff, NursingStaff, Visit
@@ -7,6 +9,7 @@ from app.models import RadiologyExam, OperatingTheater
 
 
 def _date_range(start_str, end_str):
+    """Parse or default date range (last 30 days if not provided)."""
     today = date.today()
     start = datetime.strptime(start_str, "%Y-%m-%d") if start_str else datetime.combine(today - timedelta(days=30), time.min)
     end = datetime.strptime(end_str, "%Y-%m-%d") if end_str else datetime.combine(today, time.max)
@@ -14,6 +17,7 @@ def _date_range(start_str, end_str):
 
 
 def visits_report(start_date=None, end_date=None, specialty=None, doctor_id=None):
+    """Return visit records filtered by date range, specialty, and/or doctor."""
     start, end = _date_range(start_date, end_date)
     q = (
         db.session.query(
@@ -63,6 +67,7 @@ def visits_report(start_date=None, end_date=None, specialty=None, doctor_id=None
 
 
 def surgeries_report(start_date=None, end_date=None, procedure_type=None, surgeon_id=None):
+    """Return surgery records with duration, filtered by date/procedure/surgeon."""
     start, end = _date_range(start_date, end_date)
     q = (
         db.session.query(
@@ -124,6 +129,7 @@ def surgeries_report(start_date=None, end_date=None, procedure_type=None, surgeo
 
 
 def admissions_report(start_date=None, end_date=None, floor_id=None):
+    """Return admission records with stay duration, filtered by date/floor."""
     start, end = _date_range(start_date, end_date)
     q = (
         db.session.query(
@@ -174,6 +180,7 @@ def admissions_report(start_date=None, end_date=None, floor_id=None):
 
 
 def medications_report(start_date=None, end_date=None):
+    """Return medication prescription counts grouped by medication name."""
     start, end = _date_range(start_date, end_date)
     rows = (
         db.session.query(
@@ -206,6 +213,7 @@ def medications_report(start_date=None, end_date=None):
 
 
 def financial_report(start_date=None, end_date=None):
+    """Return pharmacy dispensation costs within the given date range."""
     start, end = _date_range(start_date, end_date)
     rows = (
         db.session.query(
@@ -245,6 +253,7 @@ def financial_report(start_date=None, end_date=None):
 
 
 def radiology_report(start_date=None, end_date=None, status=None):
+    """Return radiology exam records filtered by date range and status."""
     start, end = _date_range(start_date, end_date)
     q = (
         db.session.query(
@@ -291,6 +300,7 @@ def radiology_report(start_date=None, end_date=None, status=None):
 
 
 def doctor_workload_report(start_date=None, end_date=None):
+    """Return doctor visit/surgery counts and unique patient counts."""
     start, end = _date_range(start_date, end_date)
     visit_subq = (
         db.session.query(
@@ -346,6 +356,7 @@ def doctor_workload_report(start_date=None, end_date=None):
 
 
 def summary_report(start_date=None, end_date=None):
+    """Return a high-level summary of hospital activity and occupancy."""
     start, end = _date_range(start_date, end_date)
     total_patients = Patient.query.count()
     total_staff = Staff.query.count()

@@ -1,3 +1,5 @@
+"""Pharmacy dispensation CRUD routes."""
+
 from app.routes.base import make_crud_blueprint
 from app.services.pharmacy_dispensation_service import create_pharmacy_dispensation, get_pharmacy_dispensations, get_pharmacy_dispensation, update_pharmacy_dispensation, delete_pharmacy_dispensation
 

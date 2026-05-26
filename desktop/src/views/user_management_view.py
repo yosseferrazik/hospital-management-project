@@ -1,3 +1,5 @@
+﻿"""User management view for admin — create, toggle, reset passwords."""
+
 import threading
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -8,7 +10,10 @@ from utils.ui_style import UIStyle
 
 
 class UserManagementView:
+    """Admin panel for managing system users — create, toggle active status, reset passwords."""
+
     def __init__(self, parent, app):
+        """Initialize user management view, build widgets, and load user list."""
         self.parent = parent
         self.app = app
         self.session = Session()
@@ -19,6 +24,7 @@ class UserManagementView:
         self.load_users()
 
     def create_widgets(self):
+        """Build user list panel, create user form, and manage selected user panel."""
         self.page = UIStyle.page(self.parent)
         UIStyle.configure_ttk(self.page)
         self.page.grid_rowconfigure(1, weight=1)
@@ -117,6 +123,7 @@ class UserManagementView:
         self.reset_pw_btn.config(state="disabled")
 
     def _on_user_select(self, _event=None):
+        """Handle user selection in the treeview and enable management buttons."""
         selection = self.user_tree.selection()
         if not selection:
             self.toggle_btn.config(state="disabled")
@@ -127,12 +134,13 @@ class UserManagementView:
         if not values:
             return
         active_text = "Yes" if values[3] == "Yes" else "No"
-        self.selected_user_label.config(text=f"User #{values[0]}: {values[1]} ({values[2]}) - Active: {active_text}")
+        self.selected_user_label.config(text="User #" + str(values[0]) + ": " + values[1] + " (" + values[2] + ") - Active: " + active_text)
         self.toggle_btn.config(state="normal")
         self.reset_pw_btn.config(state="normal")
         self._selected_user_id = int(values[0])
 
     def _toggle_active(self):
+        """Toggle the active status of the selected user."""
         if not hasattr(self, "_selected_user_id"):
             return
         def worker():
@@ -143,13 +151,15 @@ class UserManagementView:
         threading.Thread(target=worker, daemon=True).start()
 
     def _finish_toggle(self, response, error):
+        """Show toggle result message and reload user list."""
         if error:
-            messagebox.showerror("Error", f"Failed to toggle: {error}")
+            messagebox.showerror("Error", "Failed to toggle: " + error)
             return
         messagebox.showinfo("Success", response.get("message", "Account toggled"))
         self.load_users()
 
     def _reset_password(self):
+        """Prompt for new password and send reset request for the selected user."""
         if not hasattr(self, "_selected_user_id"):
             return
         new_pw = simpledialog.askstring("Reset Password", "Enter new password:", parent=self.page, show="*")
@@ -163,12 +173,14 @@ class UserManagementView:
         threading.Thread(target=worker, daemon=True).start()
 
     def _finish_reset_pw(self, response, error):
+        """Show password reset result message."""
         if error:
-            messagebox.showerror("Error", f"Failed to reset password: {error}")
+            messagebox.showerror("Error", "Failed to reset password: " + error)
             return
         messagebox.showinfo("Success", "Password reset successfully")
 
     def load_users(self):
+        """Fetch all users from the API in a background thread."""
         def worker():
             response, error = self.api_client.get_users()
             if self._is_destroyed:
@@ -177,6 +189,7 @@ class UserManagementView:
         threading.Thread(target=worker, daemon=True).start()
 
     def _display_users(self, response, error):
+        """Populate the user treeview with fetched user data."""
         if error:
             return
         for item in self.user_tree.get_children():
@@ -187,6 +200,7 @@ class UserManagementView:
             self.user_tree.insert("", "end", values=(u.get("user_id"), u.get("username"), u.get("role"), active))
 
     def create_user(self):
+        """Validate and send new user registration request to the API."""
         username = self.username_var.get().strip()
         password = self.password_var.get()
         role = self.role_var.get()
@@ -202,16 +216,18 @@ class UserManagementView:
         threading.Thread(target=worker, daemon=True).start()
 
     def _finish_create(self, response, error):
+        """Show create result, clear form, and reload user list."""
         if error:
-            messagebox.showerror("Error", f"Failed to create user: {error}")
+            messagebox.showerror("Error", "Failed to create user: " + error)
             return
-        messagebox.showinfo("Success", f"User '{self.username_var.get()}' created successfully.")
+        messagebox.showinfo("Success", "User '" + self.username_var.get() + "' created successfully.")
         self.username_var.set("")
         self.password_var.set("")
         self.staff_id_var.set("")
         self.load_users()
 
     def destroy(self):
+        """Clean up user management view resources."""
         self._is_destroyed = True
         if hasattr(self, "page") and self.page.winfo_exists():
             self.page.destroy()

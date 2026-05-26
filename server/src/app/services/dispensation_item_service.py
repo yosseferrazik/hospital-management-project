@@ -1,3 +1,5 @@
+"""Dispensation item service — CRUD delegation for DispensationItem."""
+
 from app.models import DispensationItem
 from app.services.base import create_record, get_all, get_by_id, update_record, delete_record
 

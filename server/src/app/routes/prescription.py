@@ -1,3 +1,5 @@
+"""Prescription CRUD routes."""
+
 from app.routes.base import make_crud_blueprint
 from app.services.prescription_service import create_prescription, get_prescriptions, get_prescription, update_prescription, delete_prescription
 

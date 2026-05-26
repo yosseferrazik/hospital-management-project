@@ -1,3 +1,5 @@
+﻿"""Audit log viewer with filtering, pagination, and purge controls."""
+
 import threading
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -8,9 +10,12 @@ from utils.ui_style import UIStyle
 
 
 class AuditLogView:
+    """Paginated audit log browser with table/action/user/date filters and admin purge."""
+
     PER_PAGE = 50
 
     def __init__(self, parent, app):
+        """Initialize audit log view, build widgets, and load initial data."""
         self.parent = parent
         self.app = app
         self.session = Session()
@@ -24,6 +29,7 @@ class AuditLogView:
         self.page.after(100, self._initial_load)
 
     def create_widgets(self):
+        """Build filter row, log table, pagination footer, and purge button."""
         self.page = UIStyle.page(self.parent)
         UIStyle.configure_ttk(self.page)
         self.page.grid_rowconfigure(2, weight=1)
@@ -109,6 +115,7 @@ class AuditLogView:
         self.purge_btn.pack(side="left", padx=(12, 0))
 
     def _rebuild_page_nav(self):
+        """Rebuild the page navigation buttons based on current page and total."""
         for widget in self.page_btn_frame.winfo_children():
             widget.destroy()
         total_pages = max(1, (self._total + self.PER_PAGE - 1) // self.PER_PAGE)
@@ -158,14 +165,17 @@ class AuditLogView:
             btn.pack(side="left", padx=1)
 
     def _update_pagination(self):
-        self.total_label.config(text=f"Total: {self._total}")
+        """Update the total count label and rebuild page navigation."""
+        self.total_label.config(text="Total: " + str(self._total))
         self._rebuild_page_nav()
 
     def apply_filters(self):
+        """Apply current filter values and reload logs from page 1."""
         self._current_page = 1
         self.load_logs()
 
     def clear_filters(self):
+        """Reset all filters to empty and reload logs from page 1."""
         self.table_var.set("")
         self.action_var.set("")
         self.user_var.set("")
@@ -175,11 +185,13 @@ class AuditLogView:
         self.load_logs()
 
     def refresh(self):
+        """Reload logs, retention info, and diagnostics."""
         self.load_logs()
         self.load_retention()
         self.load_diagnostics()
 
     def load_retention(self):
+        """Fetch audit retention policy from the API."""
         def worker():
             try:
                 data, error = self.api_client.get_audit_retention()
@@ -190,6 +202,7 @@ class AuditLogView:
         threading.Thread(target=worker, daemon=True).start()
 
     def _display_retention(self, data):
+        """Update the retention info label with fetched data."""
         total = data.get("total_logs", 0)
         days = data.get("retention_days", 90)
         oldest = data.get("oldest", "N/A") or "N/A"
@@ -198,9 +211,10 @@ class AuditLogView:
             oldest = oldest[:10]
         if newest != "N/A":
             newest = newest[:10]
-        self.retention_label.config(text=f"Retention: {days}d | Range: {oldest} ~ {newest}")
+        self.retention_label.config(text="Retention: " + str(days) + "d | Range: " + oldest + " ~ " + newest)
 
     def load_logs(self):
+        """Fetch paginated audit logs from the API with current filters."""
         if self._loading:
             return
         self._loading = True
@@ -231,11 +245,13 @@ class AuditLogView:
         threading.Thread(target=worker, args=(params,), daemon=True).start()
 
     def _initial_load(self):
+        """Load diagnostics, retention, and logs on startup."""
         self.load_diagnostics()
         self.load_retention()
         self.load_logs()
 
     def load_diagnostics(self):
+        """Fetch audit diagnostics from the API."""
         def worker():
             try:
                 data, error = self.api_client.get_audit_diagnostics()
@@ -246,11 +262,12 @@ class AuditLogView:
         threading.Thread(target=worker, daemon=True).start()
 
     def _display_diagnostics(self, data):
+        """Update the UI with fetched diagnostic information."""
         msg = data.get("message", "")
         total = data.get("total_logs", 0)
         has_triggers = data.get("triggers_installed", False)
         if total == 0 and msg:
-            self.total_label.config(text=f"Diagnostic: {msg}")
+            self.total_label.config(text="Diagnostic: " + msg)
             self.total_label.config(fg=UIStyle.WARNING_ORANGE)
             if not has_triggers:
                 self.purge_btn.config(state="disabled")
@@ -258,9 +275,10 @@ class AuditLogView:
             self.total_label.config(fg=UIStyle.TEXT_LIGHT)
 
     def _display_logs(self, response, error):
+        """Populate the treeview with fetched audit log entries."""
         self._loading = False
         if error:
-            self.total_label.config(text=f"Error: {error}")
+            self.total_label.config(text="Error: " + error)
             self.total_label.config(fg=UIStyle.ERROR_RED)
             return
         for item in self.tree.get_children():
@@ -284,6 +302,7 @@ class AuditLogView:
         self._update_pagination()
 
     def purge_old_logs(self):
+        """Prompt for days and purge old logs via the API."""
         if self.session.role != "ADMIN":
             messagebox.showerror("Access Denied", "Only administrators can purge audit logs.")
             return
@@ -295,7 +314,7 @@ class AuditLogView:
         )
         if days is None:
             return
-        if not messagebox.askyesno("Confirm Purge", f"Delete all audit logs older than {days} days?\nThis action cannot be undone."):
+        if not messagebox.askyesno("Confirm Purge", "Delete all audit logs older than " + str(days) + " days?\nThis action cannot be undone."):
             return
 
         def worker():
@@ -304,7 +323,7 @@ class AuditLogView:
                 if self._is_destroyed:
                     return
                 if error:
-                    self.page.after(0, lambda: messagebox.showerror("Error", f"Purge failed: {error}"))
+                    self.page.after(0, lambda: messagebox.showerror("Error", "Purge failed: " + error))
                 else:
                     self.page.after(0, lambda: self._purge_done(data.get("deleted", 0)))
             except Exception as e:
@@ -312,11 +331,13 @@ class AuditLogView:
         threading.Thread(target=worker, daemon=True).start()
 
     def _purge_done(self, deleted):
-        messagebox.showinfo("Purge Complete", f"Deleted {deleted} old audit log(s).")
+        """Show purge completion message and reload logs and retention."""
+        messagebox.showinfo("Purge Complete", "Deleted " + str(deleted) + " old audit log(s).")
         self.load_logs()
         self.load_retention()
 
     def destroy(self):
+        """Clean up audit log view resources."""
         self._is_destroyed = True
         if hasattr(self, "page") and self.page.winfo_exists():
             self.page.destroy()

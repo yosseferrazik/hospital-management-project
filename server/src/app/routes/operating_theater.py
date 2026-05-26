@@ -1,3 +1,5 @@
+"""Operating theater CRUD routes."""
+
 from app.routes.base import make_crud_blueprint
 from app.services.operating_theater_service import create_operating_theater, get_operating_theaters, get_operating_theater, update_operating_theater, delete_operating_theater
 

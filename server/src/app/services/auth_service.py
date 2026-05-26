@@ -1,3 +1,5 @@
+"""Authentication service — user registration, login, password management."""
+
 from datetime import datetime, timezone
 
 import bcrypt
@@ -7,6 +9,7 @@ from sqlalchemy import text
 
 
 def register_user(username, password, staff_id, role):
+    """Create a new app user linked to an existing staff member."""
     if AppUser.query.filter_by(username=username).first():
         return None, "Username already exists"
     staff = Staff.query.get(staff_id)
@@ -22,7 +25,7 @@ def register_user(username, password, staff_id, role):
 
 
 def login_user(username, password):
-    user = AppUser.query.filter_by(username=username).first()
+    """Authenticate a user and return a JWT token with role and staff_id claims."""
     if not user:
         return None, None, None, "Invalid credentials"
     if not user.is_active:
@@ -44,7 +47,7 @@ def login_user(username, password):
 
 
 def change_password(user_id, old_password, new_password):
-    user = AppUser.query.get(user_id)
+    """Verify old password and update to a new one for the current user."""
     if not user:
         return "User not found"
     if not bcrypt.checkpw(old_password.encode(), user.password_hash.encode()):
@@ -56,7 +59,7 @@ def change_password(user_id, old_password, new_password):
 
 
 def admin_set_password(user_id, new_password):
-    user = AppUser.query.get(user_id)
+    """Admin forcibly sets a new password for any user (no old password check)."""
     if not user:
         return "User not found"
     hashed = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
@@ -66,7 +69,7 @@ def admin_set_password(user_id, new_password):
 
 
 def admin_toggle_active(user_id):
-    user = AppUser.query.get(user_id)
+    """Enable or disable a user account."""
     if not user:
         return "User not found", None
     user.is_active = not user.is_active

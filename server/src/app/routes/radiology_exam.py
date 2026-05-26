@@ -1,3 +1,5 @@
+"""Radiology exam CRUD routes."""
+
 from app.routes.base import make_crud_blueprint
 from app.services.radiology_exam_service import create_radiology_exam, get_radiology_exams, get_radiology_exam, update_radiology_exam, delete_radiology_exam
 

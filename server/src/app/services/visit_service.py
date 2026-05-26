@@ -1,3 +1,5 @@
+"""Visit service — CRUD delegation with scheduled visit lookup."""
+
 from app.models import db, ScheduledAppointment, Visit
 from app.services.base import parse_date, create_record, get_all, get_by_id, update_record, delete_record
 
@@ -37,6 +39,7 @@ def delete_visit(visit_id):
 
 
 def get_scheduled_visits_by_date(date):
+    """Return scheduled appointments for a given date with patient/doctor details."""
     appointments = (
         db.session.query(ScheduledAppointment)
         .filter(ScheduledAppointment.appointment_date == date)

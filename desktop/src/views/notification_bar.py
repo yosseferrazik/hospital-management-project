@@ -1,10 +1,15 @@
+﻿"""Status notification bar showing background process state."""
+
 import tkinter as tk
 from services.process_tracker import ProcessTracker
 from utils.ui_style import UIStyle
 
 
 class NotificationBar:
+    """Bottom status bar that polls the process tracker and displays running/completed tasks."""
+
     def __init__(self, parent):
+        """Initialize notification bar and start polling."""
         self.parent = parent
         self.tracker = ProcessTracker()
 
@@ -26,13 +31,14 @@ class NotificationBar:
         self._poll()
 
     def _poll(self):
+        """Poll the process tracker for running and completed processes, updating the label."""
         try:
             running = self.tracker.running()
             self.tracker.clean_old()
 
             if running:
                 names = ", ".join(p["name"] for p in running)
-                self.label.config(text=f"Running: {names}")
+                self.label.config(text="Running: " + names)
                 if self._clear_after:
                     self.frame.after_cancel(self._clear_after)
                     self._clear_after = None
@@ -46,7 +52,7 @@ class NotificationBar:
                     if c["started"] != self._last_shown:
                         msg = c.get("message") or c["name"]
                         icon = "OK" if c["status"] == "success" else "FAIL"
-                        self.label.config(text=f"{icon} {msg}")
+                        self.label.config(text=icon + " " + msg)
                         self._last_shown = c["started"]
                         self._clear_after = self.frame.after(5000, self._clear)
                         self.frame.after(500, self._poll)
@@ -57,5 +63,6 @@ class NotificationBar:
             self.frame.after(2000, self._poll)
 
     def _clear(self):
+        """Clear the notification label and restart polling."""
         self._clear_after = None
         self._poll()

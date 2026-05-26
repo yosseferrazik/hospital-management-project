@@ -1,3 +1,5 @@
+"""Dummy data service — generate and clean up realistic test data."""
+
 import random
 import math
 from datetime import datetime, timedelta, timezone
@@ -15,6 +17,8 @@ from app.models import (
 fake = Faker("es_ES")
 fake_ru = Faker("ru_RU")
 BATCH = 1000
+
+# --- Reference data pools (Spanish, matching the hospital's locale) ---
 
 MEDICAL_SPECIALTIES = [
     ("Cardiologia", "Diagnostico y tratamiento de enfermedades del corazon y el sistema circulatorio"),
@@ -35,6 +39,7 @@ MEDICAL_SPECIALTIES = [
     ("Psiquiatria", "Trastornos de la salud mental y del comportamiento"),
 ]
 
+# Medications with name and description
 MEDICATIONS = [
     ("Paracetamol 650mg", "Analgesico y antipiretico de uso frecuente"),
     ("Ibuprofeno 600mg", "Antiinflamatorio no esteroideo para dolor y fiebre"),
@@ -63,6 +68,7 @@ MEDICATIONS = [
     ("Pantoprazol 40mg", "Inhibidor de bomba de protones intravenoso"),
 ]
 
+# Diagnosis templates grouped by medical specialty
 DIAGNOSES_BY_SPECIALTY = {
     "Cardiologia": [
         "Insuficiencia cardiaca congestiva descompensada",
@@ -258,6 +264,7 @@ DIAGNOSES_BY_SPECIALTY = {
     ],
 }
 
+# Surgery procedure descriptions
 SURGERY_PROCEDURES = [
     "Revascularizacion miocardica con injerto",
     "Reemplazo valvular aortico mecanico",
@@ -287,6 +294,7 @@ SURGERY_PROCEDURES = [
     "Trabeculectomia con mitomicina C",
 ]
 
+# Radiology exam types
 RADIOLOGY_EXAMS = [
     "Radiografia de torax PA y lateral",
     "Radiografia de columna lumbar AP y lateral",
@@ -314,6 +322,7 @@ RADIOLOGY_EXAMS = [
     "PET-TC con FDG para estadificacion oncologica",
 ]
 
+# Radiology report templates
 RADIOLOGY_FINDINGS = [
     "Sin hallazgos patologicos significativos",
     "Engrosamiento intersticial bilateral basal sugestivo de fibrosis",
@@ -337,6 +346,7 @@ RADIOLOGY_FINDINGS = [
     "Reflujo vesicoureteral bilateral grado II",
 ]
 
+# Common admission reasons
 ADMISSION_REASONS = [
     "Dolor toracico con sospecha de sindrome coronario agudo",
     "Disnea progresiva con signos de insuficiencia cardiaca",
@@ -356,6 +366,7 @@ ADMISSION_REASONS = [
     "Fiebre sin foco de origen en paciente inmunodeprimido",
 ]
 
+# Patient allergy options (empty strings = no allergy)
 ALLERGIES_LIST = [
     "", "", "", "",
     "Penicilinas (amoxicilina, ampicilina)",
@@ -373,30 +384,38 @@ ALLERGIES_LIST = [
 ]
 
 
+# --- Helper functions ---
+
 def _register(table_name, record_id):
+    """Track a created record in DummyRegistry for later cleanup."""
     db.session.add(DummyRegistry(table_name=table_name, record_id=record_id))
 
 
 def _random_birth_date(min_age=22, max_age=85):
+    """Generate a random birth date within the given age range."""
     age = random.randint(min_age, max_age)
     return datetime.now(timezone.utc).date() - timedelta(days=age * 365 + random.randint(0, 300))
 
 
 def _unique_email(prefix):
+    """Generate a unique email address for the given prefix."""
     return f"{prefix}.{fake.unique.lexify(text='??????')}@salutpalomera.test"
 
 
 def _cyrillic_name():
+    """Return a random name, occasionally using Cyrillic characters."""
     if random.random() < 0.05:
         return fake_ru.first_name(), fake_ru.last_name()
     return fake.first_name(), fake.last_name()
 
 def _cyrillic_word():
+    """Return a random Cyrillic word occasionally for realistic multilingual data."""
     if random.random() < 0.05:
         return fake_ru.text(max_nb_chars=80)
     return ""
 
 def _flush_batch(committed=0):
+    """Flush and periodically commit the session to avoid large transactions."""
     db.session.flush()
     committed += 1
     if committed % 500 == 0:
@@ -405,6 +424,7 @@ def _flush_batch(committed=0):
 
 
 def _ensure_support_data():
+    """Create reference data (specialties, floors, rooms, theaters, devices, medications) if not present."""
     specialty_map = {}
     for name, desc in MEDICAL_SPECIALTIES:
         existing = MedicalSpecialty.query.filter_by(name=name).first()
@@ -473,7 +493,7 @@ def _ensure_support_data():
 
 
 def _create_staff_batch(specialty_map, patient_count, floors):
-    factor = max(1, math.ceil(patient_count / 1000))
+    """Create doctors, nurses, and general staff proportional to patient count."""
     all_specialties = list(specialty_map.values())
     batch_committed = 0
 
@@ -558,7 +578,7 @@ def _create_staff_batch(specialty_map, patient_count, floors):
 
 
 def _create_patients(count):
-    patient_ids = []
+    """Create N patient records with realistic random data and return their IDs."""
     batch_committed = 0
     for _ in range(count):
         first_name, last_name = _cyrillic_name()
@@ -586,6 +606,7 @@ def _create_patients(count):
     return patient_ids
 
 
+# Tables whose audit triggers must be suppressed during bulk generation
 AUDIT_TRIGGER_TABLES = [
     "patients", "visits", "prescriptions", "admissions",
     "surgeries", "radiology_exams", "pharmacy_dispensations",
@@ -593,6 +614,7 @@ AUDIT_TRIGGER_TABLES = [
 ]
 
 def _suppress_audit_triggers():
+    """Disable audit triggers on tracked tables for faster bulk generation."""
     for table in AUDIT_TRIGGER_TABLES:
         try:
             db.session.execute(db.text(f"ALTER TABLE {table} DISABLE TRIGGER audit_{table}"))
@@ -600,6 +622,7 @@ def _suppress_audit_triggers():
             pass
 
 def _restore_audit_triggers():
+    """Re-enable audit triggers after bulk generation."""
     for table in AUDIT_TRIGGER_TABLES:
         try:
             db.session.execute(db.text(f"ALTER TABLE {table} ENABLE TRIGGER audit_{table}"))
@@ -608,6 +631,7 @@ def _restore_audit_triggers():
 
 
 def generate_dummy_data(patient_count=20):
+    """Generate complete test data: patients, staff, visits, surgeries, etc."""
     patient_count = max(1, min(patient_count, 50000))
     _suppress_audit_triggers()
     try:
@@ -622,8 +646,10 @@ def generate_dummy_data(patient_count=20):
 
 
 def _generate_all(patient_count, floors, rooms, theaters, medications, doctors, nurses, patients):
+    """Generate visits, appointments, surgeries, admissions, prescriptions, dispensation, and exams."""
     specialty_names = {s.specialty_id: s.name for s in MedicalSpecialty.query.all()}
 
+    # --- Generate visits ---
     visit_count = max(patient_count * 2, 30)
     visits = []
     batch = 0
@@ -652,6 +678,7 @@ def _generate_all(patient_count, floors, rooms, theaters, medications, doctors, 
             db.session.commit()
     db.session.commit()
 
+    # --- Generate scheduled appointments ---
     batch = 0
     for visit_id, visit_ts in visits[:max(10, len(visits) // 2)]:
         appt = ScheduledAppointment(
@@ -673,6 +700,7 @@ def _generate_all(patient_count, floors, rooms, theaters, medications, doctors, 
             db.session.commit()
     db.session.commit()
 
+    # --- Generate surgeries ---
     surgery_count = max(patient_count // 2, 10)
     surgeries = []
     batch = 0
@@ -710,6 +738,7 @@ def _generate_all(patient_count, floors, rooms, theaters, medications, doctors, 
             db.session.commit()
     db.session.commit()
 
+    # --- Generate surgery assistants ---
     batch = 0
     for surgery_id in surgeries:
         for nurse in random.sample(nurses, k=min(2, len(nurses))):
@@ -726,6 +755,7 @@ def _generate_all(patient_count, floors, rooms, theaters, medications, doctors, 
                 db.session.commit()
     db.session.commit()
 
+    # --- Generate admissions ---
     admission_count = max(patient_count // 2, 10)
     admissions = []
     batch = 0
@@ -745,6 +775,7 @@ def _generate_all(patient_count, floors, rooms, theaters, medications, doctors, 
             db.session.commit()
     db.session.commit()
 
+    # --- Generate prescriptions ---
     batch = 0
     for visit_id, _ in visits[:min(visit_count, len(visits))]:
         med = random.choice(medications)
@@ -792,6 +823,7 @@ def _generate_all(patient_count, floors, rooms, theaters, medications, doctors, 
             db.session.commit()
     db.session.commit()
 
+    # --- Generate pharmacy dispensations and items ---
     batch = 0
     for admission_id in admissions:
         disp = PharmacyDispensation(
@@ -822,6 +854,7 @@ def _generate_all(patient_count, floors, rooms, theaters, medications, doctors, 
             db.session.commit()
     db.session.commit()
 
+    # --- Generate radiology exams ---
     exam_count = max(patient_count, 15)
     batch = 0
     for patient_id in patients[:exam_count]:
@@ -844,6 +877,7 @@ def _generate_all(patient_count, floors, rooms, theaters, medications, doctors, 
             db.session.commit()
     db.session.commit()
 
+    # --- Backfill discharge dates for older admissions ---
     older = Admission.query.filter(
         Admission.admission_date < (datetime.now(timezone.utc) - timedelta(days=3))
     ).all()
@@ -856,6 +890,7 @@ def _generate_all(patient_count, floors, rooms, theaters, medications, doctors, 
 
 
 def cleanup_dummy():
+    """Remove all records previously created by generate_dummy_data()."""
     registry_rows = DummyRegistry.query.order_by(DummyRegistry.id.desc()).all()
     if not registry_rows:
         return

@@ -1,3 +1,5 @@
+"""Dispensation item CRUD routes."""
+
 from app.routes.base import make_crud_blueprint
 from app.services.dispensation_item_service import create_dispensation_item, get_dispensation_items, get_dispensation_item, update_dispensation_item, delete_dispensation_item
 

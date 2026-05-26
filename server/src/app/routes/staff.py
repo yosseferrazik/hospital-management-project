@@ -1,9 +1,12 @@
+"""Staff routes — CRUD with type-specific creation and nurse assignment."""
+
 from flask import Blueprint, request, jsonify
 from app.services.staff_service import get_staff, get_staff_member, update_staff, delete_staff, create_medical_staff, create_nursing_staff, create_general_staff, assign_nursing_to_doctor, assign_nursing_to_floor
 
 staff_bp = Blueprint("staff", __name__, url_prefix="/api/staff")
 
 
+# --- GET /api/staff — list all staff ---
 @staff_bp.route("", methods=["GET"])
 def list_staff():
     staff = get_staff()
@@ -16,6 +19,7 @@ def list_staff():
     } for s in staff])
 
 
+# --- GET /api/staff/<id> — get single staff member ---
 @staff_bp.route("/<int:staff_id>", methods=["GET"])
 def get(staff_id):
     staff = get_staff_member(staff_id)
@@ -30,6 +34,7 @@ def get(staff_id):
     })
 
 
+# --- PUT /api/staff/<id> — update staff member ---
 @staff_bp.route("/<int:staff_id>", methods=["PUT"])
 def update(staff_id):
     data = request.get_json()
@@ -44,6 +49,7 @@ def update(staff_id):
         return jsonify({"error": str(e)}), 400
 
 
+# --- DELETE /api/staff/<id> — remove staff member ---
 @staff_bp.route("/<int:staff_id>", methods=["DELETE"])
 def delete(staff_id):
     try:
@@ -55,6 +61,7 @@ def delete(staff_id):
         return jsonify({"error": str(e)}), 400
 
 
+# --- POST /api/staff/medical — create doctor ---
 @staff_bp.route("/medical", methods=["POST"])
 def create_medical():
     data = request.get_json()
@@ -67,6 +74,7 @@ def create_medical():
         return jsonify({"error": str(e)}), 400
 
 
+# --- POST /api/staff/nursing — create nurse ---
 @staff_bp.route("/nursing", methods=["POST"])
 def create_nursing():
     data = request.get_json()
@@ -79,6 +87,7 @@ def create_nursing():
         return jsonify({"error": str(e)}), 400
 
 
+# --- POST /api/staff/general — create general/administrative staff ---
 @staff_bp.route("/general", methods=["POST"])
 def create_general():
     data = request.get_json()
@@ -91,6 +100,7 @@ def create_general():
         return jsonify({"error": str(e)}), 400
 
 
+# --- PUT /api/staff/nursing/<id>/assign_doctor/<id> — assign nurse to doctor ---
 @staff_bp.route("/nursing/<int:nurse_id>/assign_doctor/<int:doctor_id>", methods=["PUT"])
 def assign_doctor(nurse_id, doctor_id):
     try:
@@ -102,6 +112,7 @@ def assign_doctor(nurse_id, doctor_id):
         return jsonify({"error": str(e)}), 400
 
 
+# --- PUT /api/staff/nursing/<id>/assign_floor/<id> — assign nurse to floor ---
 @staff_bp.route("/nursing/<int:nurse_id>/assign_floor/<int:floor_id>", methods=["PUT"])
 def assign_floor(nurse_id, floor_id):
     try:

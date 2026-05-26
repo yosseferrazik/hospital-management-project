@@ -1,3 +1,5 @@
+"""Admission CRUD routes."""
+
 from app.routes.base import make_crud_blueprint
 from app.services.admission_service import create_admission, get_admissions, get_admission, update_admission, delete_admission
 

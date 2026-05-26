@@ -1,3 +1,5 @@
+"""Application factory — creates and configures the Flask app with all blueprints."""
+
 from datetime import datetime, timezone
 
 from flask import Flask, jsonify, redirect
@@ -36,6 +38,7 @@ from app.routes import (
 
 
 def _register_health_endpoint(app):
+    """Add a /health endpoint that checks database connectivity."""
     @app.route("/health", methods=["GET"])
     def health():
         db_ok = False
@@ -55,6 +58,7 @@ def _register_health_endpoint(app):
 
 
 def _set_session_vars():
+    """Inject current user/staff IDs into PostgreSQL session variables for audit triggers."""
     from flask import g
     try:
         claims = get_jwt()
@@ -70,22 +74,26 @@ def _set_session_vars():
 
 
 def create_app():
+    """Create and return a fully configured Flask application instance."""
     app = Flask(__name__)
     app.config.from_object(Config)
     db.init_app(app)
     jwt = JWTManager(app)
     CORS(app)
 
+    # Redirect root to the dashboard view
     @app.route("/")
     def index():
         return redirect("/api/dashboard/view")
 
+    # Set session variables before each request for audit logging
     @app.before_request
     def before_request():
         _set_session_vars()
 
     _register_health_endpoint(app)
 
+    # Register all API blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(maintenance_bp)
     app.register_blueprint(dummy_bp)
@@ -111,6 +119,7 @@ def create_app():
     app.register_blueprint(audit_bp)
     app.register_blueprint(reports_bp)
 
+    # Create all tables if they don't exist
     with app.app_context():
         db.create_all()
 

@@ -1,3 +1,5 @@
+"""Radiology exam service — CRUD delegation for RadiologyExam model."""
+
 from app.models import RadiologyExam
 from app.services.base import parse_date, create_record, get_all, get_by_id, update_record, delete_record
 

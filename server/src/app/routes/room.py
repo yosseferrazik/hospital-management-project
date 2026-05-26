@@ -1,3 +1,5 @@
+"""Room CRUD routes."""
+
 from app.routes.base import make_crud_blueprint
 from app.services.room_service import create_room, get_rooms, get_room, update_room, delete_room
 

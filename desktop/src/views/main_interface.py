@@ -1,3 +1,5 @@
+"""Main application window with tabbed navigation."""
+
 import os
 import threading
 import tkinter as tk
@@ -25,7 +27,10 @@ from views.notification_bar import NotificationBar
 
 
 class MainInterface:
+    """Primary application shell with sidebar navigation and content area."""
+
     def __init__(self, parent, app):
+        """Initialize main interface with navigation and content views."""
         self.parent = parent
         self.app = app
         self.session = Session()
@@ -37,6 +42,7 @@ class MainInterface:
         self.navigate("dashboard")
 
     def create_widgets(self):
+        """Build the sidebar, top bar, content area, and notification bar."""
         self.frame = tk.Frame(self.parent, bg=UIStyle.BG)
         self.frame.pack(fill="both", expand=True)
         UIStyle.configure_ttk(self.frame)
@@ -150,6 +156,7 @@ class MainInterface:
         self.notification_bar.frame.grid(row=2, column=1, sticky="ew")
 
     def _add_nav_button(self, parent, text, key, admin=False):
+        """Create a sidebar navigation button for a given section key."""
         fg_color = "#fbbf24" if admin else UIStyle.HEADER_TEXT
         button = tk.Button(
             parent,
@@ -170,6 +177,7 @@ class MainInterface:
         self.nav_buttons[key] = button
 
     def navigate(self, section):
+        """Switch the main content area to the selected view section."""
         if self.current_section == section:
             return
 
@@ -233,12 +241,14 @@ class MainInterface:
         self._switch_view(view_class)
 
     def _switch_view(self, view_class):
+        """Destroy current view and instantiate the new view class."""
         if self.current_view:
             self.current_view.destroy()
             self.current_view = None
         self.current_view = view_class(self.content, self.app)
 
     def _change_password(self):
+        """Prompt for old/new password and send change request."""
         from tkinter import simpledialog
         old = simpledialog.askstring("Change Password", "Current password:", parent=self.frame, show="*")
         if not old:
@@ -257,17 +267,20 @@ class MainInterface:
         threading.Thread(target=worker, daemon=True).start()
 
     def _finish_change_pw(self, response, error):
+        """Show success or error message after password change."""
         if error:
             messagebox.showerror("Error", f"Failed to change password: {error}")
             return
         messagebox.showinfo("Success", "Password changed successfully")
 
     def logout(self):
+        """Confirm logout, clear session, and return to login screen."""
         if messagebox.askyesno("Logout", "Are you sure you want to logout?"):
             self.session.clear()
             self.app.show_login()
 
     def destroy(self):
+        """Cleanly destroy the main interface and all child views."""
         if self._is_destroyed:
             return
         self._is_destroyed = True

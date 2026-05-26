@@ -1,3 +1,5 @@
+"""View for searching surgeries by date."""
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from services.api_client import APIClient
@@ -5,7 +7,10 @@ from utils.session import Session
 
 
 class SurgeriesView:
+    """Surgery search view with date filter and results table."""
+
     def __init__(self, parent, app):
+        """Initialize surgeries view and build widgets."""
         self.parent = parent
         self.app = app
         self.api_client = APIClient(Session())
@@ -13,6 +18,7 @@ class SurgeriesView:
         self.create_widgets()
 
     def create_widgets(self):
+        """Build date filter input and surgeries treeview."""
         filter_frame = ttk.Frame(self.parent)
         filter_frame.pack(fill="x", padx=10, pady=10)
 
@@ -58,6 +64,7 @@ class SurgeriesView:
         self.tree.configure(yscrollcommand=scrollbar.set)
 
     def search(self):
+        """Fetch surgeries by date from the API and populate the results table."""
         date = self.date_entry.get().strip()
         if not date:
             messagebox.showerror("Error", "Please enter a date")

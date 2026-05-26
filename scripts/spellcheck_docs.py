@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-# Spellcheck documentation files.
-# Usage: python3 scripts/spellcheck_docs.py
+"""Spellcheck all markdown documentation files and report unknown words."""
 
 import re
 import os

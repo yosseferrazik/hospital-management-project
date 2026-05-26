@@ -1,8 +1,12 @@
+"""UI style constants and reusable widget factories for the Tkinter client."""
+
 import tkinter as tk
 from tkinter import ttk
 
 
 class UIStyle:
+    """Centralised color palette, fonts, and common widget builders."""
+
     BG = "#edf3f8"
     SURFACE = "#f7fafc"
     CARD_BG = "#ffffff"

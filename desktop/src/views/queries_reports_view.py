@@ -1,3 +1,5 @@
+"""Operational reports for visits and surgeries by date."""
+
 import threading
 import tkinter as tk
 from datetime import date
@@ -9,7 +11,10 @@ from utils.ui_style import UIStyle
 
 
 class QueriesReportsView:
+    """Side-by-side operational reports showing visits and surgeries for a selected date."""
+
     def __init__(self, parent, app):
+        """Initialize reports view, build widgets, and load today's data."""
         self.parent = parent
         self.app = app
         self.session = Session()
@@ -21,6 +26,7 @@ class QueriesReportsView:
         self.run_reports()
 
     def create_widgets(self):
+        """Build date filter and side-by-side visits and surgeries panels."""
         self.page = UIStyle.page(self.parent)
         UIStyle.configure_ttk(self.page)
 
@@ -124,6 +130,7 @@ class QueriesReportsView:
         )
 
     def _build_tree(self, parent, columns):
+        """Create a Treeview widget with specified columns and scrollbar."""
         frame = tk.Frame(parent, bg=UIStyle.CARD_BG)
         frame.pack(fill="both", expand=True)
         tree = ttk.Treeview(
@@ -139,11 +146,13 @@ class QueriesReportsView:
         return tree
 
     def load_today(self):
+        """Reset date entry to today and reload reports."""
         self.date_entry.delete(0, tk.END)
         self.date_entry.insert(0, date.today().isoformat())
         self.run_reports()
 
     def run_reports(self):
+        """Fetch visits and surgeries data for the selected date."""
         selected_date = self.date_entry.get().strip()
         if not selected_date:
             messagebox.showerror("Error", "Please enter a date in YYYY-MM-DD format")
@@ -169,6 +178,7 @@ class QueriesReportsView:
     def _render_reports(
         self, selected_date, visits, visits_error, surgeries, surgeries_error
     ):
+        """Populate the visits and surgeries trees with fetched data."""
         self._fill_tree(
             self.visits_tree,
             visits or [],
@@ -199,6 +209,7 @@ class QueriesReportsView:
         )
 
     def _fill_tree(self, tree, rows, columns):
+        """Populate a Treeview with rows from API response data."""
         for item in tree.get_children():
             tree.delete(item)
         if not rows:
@@ -208,6 +219,7 @@ class QueriesReportsView:
             tree.insert("", "end", values=[row.get(column, "") for column in columns])
 
     def destroy(self):
+        """Clean up reports view resources."""
         self._is_destroyed = True
         if hasattr(self, "page") and self.page.winfo_exists():
             self.page.destroy()

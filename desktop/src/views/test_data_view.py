@@ -1,3 +1,5 @@
+﻿"""Dummy data generation and cleanup tools."""
+
 import threading
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -9,7 +11,10 @@ from utils.ui_style import UIStyle
 
 
 class TestDataView:
+    """View for generating and cleaning up sample/dummy hospital data."""
+
     def __init__(self, parent, app):
+        """Initialize test data view and build widgets."""
         self.parent = parent
         self.app = app
         self.session = Session()
@@ -20,6 +25,7 @@ class TestDataView:
         self.create_widgets()
 
     def create_widgets(self):
+        """Build the UI with count selector, action buttons, progress bar, and log area."""
         self.page = UIStyle.page(self.parent)
         UIStyle.configure_ttk(self.page)
         UIStyle.section_header(
@@ -118,20 +124,22 @@ class TestDataView:
         self.log_text.pack(fill="both", expand=True)
 
     def generate_data(self):
+        """Generate dummy patient data with the specified count via the API."""
         try:
             count = int(self.count_var.get())
             count = max(1, min(count, 50000))
         except ValueError:
             count = 14
-        proc = self.tracker.start(f"Generating {count} patients")
+        proc = self.tracker.start("Generating " + str(count) + " patients")
         self._run_async(
             "Generating dummy data...",
             lambda: self.api_client.generate_dummy(count=count),
-            f"Dummy data generated successfully ({count} patients).",
+            "Dummy data generated successfully (" + str(count) + " patients).",
             proc,
         )
 
     def clear_data(self):
+        """Confirm and clean up all dummy data via the API."""
         if not messagebox.askyesno(
             "Confirm cleanup",
             "This will remove dummy records registered by the backend. Continue?",
@@ -146,6 +154,7 @@ class TestDataView:
         )
 
     def _run_async(self, start_message, action, success_message, proc):
+        """Run an API action in a background thread with progress indication."""
         self.log(start_message)
         self.progress.start()
 
@@ -160,10 +169,11 @@ class TestDataView:
         threading.Thread(target=worker, daemon=True).start()
 
     def _finish_async(self, response, error, success_message, proc):
+        """Handle the completion of an async API action — log result or error."""
         self.progress.stop()
         if error:
-            self.log(f"Error: {error}")
-            self.tracker.end(proc, "error", f"Error: {error}")
+            self.log("Error: " + error)
+            self.tracker.end(proc, "error", "Error: " + error)
             messagebox.showerror("Error", error)
             return
         payload_message = (
@@ -174,10 +184,12 @@ class TestDataView:
         self.tracker.end(proc, "success", msg)
 
     def log(self, message):
+        """Append a message to the execution log text widget."""
         self.log_text.insert("end", message + "\n")
         self.log_text.see("end")
 
     def destroy(self):
+        """Clean up test data view resources."""
         self._is_destroyed = True
         if hasattr(self, "page") and self.page.winfo_exists():
             self.page.destroy()

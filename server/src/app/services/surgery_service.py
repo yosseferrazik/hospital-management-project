@@ -1,3 +1,5 @@
+"""Surgery service — CRUD delegation with date-based lookup."""
+
 from app.models import db, Surgery, SurgeryAssistant
 from app.services.base import parse_date, parse_time, create_record, get_all, get_by_id, update_record, delete_record
 
@@ -43,6 +45,7 @@ def delete_surgery(surgery_id):
 
 
 def get_surgeries_by_date(date):
+    """Return surgeries scheduled on a given date, including patient/surgeon/assistant info."""
     surgeries = db.session.query(Surgery).filter(Surgery.surgery_date == date).all()
     result = []
     for s in surgeries:

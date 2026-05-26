@@ -1,3 +1,5 @@
+"""Maintenance workspace with registration forms for staff, patients, and assignments."""
+
 import tkinter as tk
 from tkinter import messagebox, ttk
 
@@ -7,7 +9,10 @@ from utils.ui_style import UIStyle
 
 
 class MaintenanceView:
+    """Tabbed form view for doctor, nursing, staff, patient registration, and nurse assignments."""
+
     def __init__(self, parent, app):
+        """Initialize maintenance view and build form tabs."""
         self.parent = parent
         self.app = app
         self.api_client = APIClient(Session())
@@ -16,6 +21,7 @@ class MaintenanceView:
         self.create_widgets()
 
     def create_widgets(self):
+        """Build notebook with registration and assignment tabs."""
         self.page = UIStyle.page(self.parent)
         UIStyle.configure_ttk(self.page)
         UIStyle.section_header(
@@ -57,6 +63,7 @@ class MaintenanceView:
         self.create_assign_form()
 
     def _build_form_shell(self, parent, title, subtitle):
+        """Create a scrollable form panel with title and subtitle."""
         scrollable, content = UIStyle.create_scrollable_area(parent, bg=UIStyle.BG)
 
         form_shell = tk.Frame(
@@ -88,6 +95,7 @@ class MaintenanceView:
         return form
 
     def _render_fields(self, form, fields):
+        """Render labeled form fields in a grid layout."""
         entries = {}
         for index, (label, key, field_type) in enumerate(fields, start=2):
             tk.Label(
@@ -107,6 +115,7 @@ class MaintenanceView:
         return entries
 
     def _collect(self, entries):
+        """Collect all form field values into a dictionary."""
         data = {}
         for key, (widget, field_type) in entries.items():
             if field_type == "text":
@@ -118,6 +127,7 @@ class MaintenanceView:
         return data
 
     def _clear(self, entries):
+        """Clear all form field values."""
         for widget, field_type in entries.values():
             if field_type == "text":
                 widget.delete("1.0", "end")
@@ -125,6 +135,7 @@ class MaintenanceView:
                 widget.delete(0, tk.END)
 
     def create_medical_form(self):
+        """Build the doctor registration form fields."""
         form = self._build_form_shell(
             self.medical_frame,
             "Doctor registration",
@@ -149,6 +160,7 @@ class MaintenanceView:
         )
 
     def submit_medical(self):
+        """Validate and send doctor registration data to the API."""
         data = self._collect(self.medical_entries)
         if not all(
             data.get(key)
@@ -176,6 +188,7 @@ class MaintenanceView:
         self._clear(self.medical_entries)
 
     def create_nursing_form(self):
+        """Build the nursing registration form fields."""
         form = self._build_form_shell(
             self.nursing_frame,
             "Nursing registration",
@@ -199,6 +212,7 @@ class MaintenanceView:
         )
 
     def submit_nursing(self):
+        """Validate and send nursing registration data to the API."""
         data = self._collect(self.nursing_entries)
         if not all(
             data.get(key)
@@ -225,6 +239,7 @@ class MaintenanceView:
         self._clear(self.nursing_entries)
 
     def create_general_form(self):
+        """Build the general staff registration form fields."""
         form = self._build_form_shell(
             self.general_frame,
             "General staff registration",
@@ -247,6 +262,7 @@ class MaintenanceView:
         )
 
     def submit_general(self):
+        """Validate and send general staff registration data to the API."""
         data = self._collect(self.general_entries)
         if not all(
             data.get(key)
@@ -273,6 +289,7 @@ class MaintenanceView:
         self._clear(self.general_entries)
 
     def create_patient_form(self):
+        """Build the patient registration form fields."""
         form = self._build_form_shell(
             self.patient_frame,
             "Patient registration",
@@ -298,6 +315,7 @@ class MaintenanceView:
         )
 
     def submit_patient(self):
+        """Validate and send patient registration data to the API."""
         data = self._collect(self.patient_entries)
         if not all(
             data.get(key)
@@ -318,6 +336,7 @@ class MaintenanceView:
         self._clear(self.patient_entries)
 
     def create_assign_form(self):
+        """Build the nurse assignment form with doctor/floor options."""
         form = self._build_form_shell(
             self.assign_frame,
             "Nursing assignments",
@@ -359,6 +378,7 @@ class MaintenanceView:
         )
 
     def assign(self):
+        """Validate and send nurse assignment request to the API."""
         nurse_id = self.nurse_id_entry.get().strip()
         doctor_id = self.doctor_id_entry.get().strip()
         floor_id = self.floor_id_entry.get().strip()
@@ -381,6 +401,7 @@ class MaintenanceView:
         self.floor_id_entry.delete(0, tk.END)
 
     def destroy(self):
+        """Clean up maintenance view resources."""
         self._is_destroyed = True
         if hasattr(self, "page") and self.page.winfo_exists():
             self.page.destroy()

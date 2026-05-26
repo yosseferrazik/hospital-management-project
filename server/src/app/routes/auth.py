@@ -1,3 +1,5 @@
+"""Authentication routes — register, login, password management, user admin."""
+
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
 from app.services.auth_service import register_user, login_user, change_password, admin_set_password, admin_toggle_active
@@ -6,6 +8,7 @@ from app.models import AppUser
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 
+# --- POST /api/auth/register — create a new app user ---
 @auth_bp.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
@@ -26,6 +29,7 @@ def register():
         return jsonify({"error": str(e)}), 400
 
 
+# --- GET /api/auth/users — list all registered users (admin) ---
 @auth_bp.route("/users", methods=["GET"])
 @jwt_required()
 def list_users():
@@ -44,6 +48,7 @@ def list_users():
     }), 200
 
 
+# --- POST /api/auth/login — authenticate and return JWT ---
 @auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -62,6 +67,7 @@ def login():
         return jsonify({"error": str(e)}), 400
 
 
+# --- PUT /api/auth/change-password — current user changes own password ---
 @auth_bp.route("/change-password", methods=["PUT"])
 @jwt_required()
 def self_change_password():
@@ -80,6 +86,7 @@ def self_change_password():
     return jsonify({"message": "Password changed successfully"}), 200
 
 
+# --- PUT /api/auth/users/<id>/password — admin resets another user's password ---
 @auth_bp.route("/users/<int:user_id>/password", methods=["PUT"])
 @jwt_required()
 def admin_reset_password(user_id):
@@ -95,6 +102,7 @@ def admin_reset_password(user_id):
     return jsonify({"message": "Password updated"}), 200
 
 
+# --- PUT /api/auth/users/<id>/toggle-active — enable or disable a user ---
 @auth_bp.route("/users/<int:user_id>/toggle-active", methods=["PUT"])
 @jwt_required()
 def toggle_active(user_id):

@@ -1,3 +1,5 @@
+"""Scheduled appointment CRUD routes."""
+
 from app.routes.base import make_crud_blueprint
 from app.services.scheduled_appointment_service import create_scheduled_appointment, get_scheduled_appointments, get_scheduled_appointment, update_scheduled_appointment, delete_scheduled_appointment
 

@@ -1,8 +1,11 @@
+"""External API client — forwards visit data to an external endpoint."""
+
 import requests
 from flask import current_app
 
 
 def send_visits(data, format="json"):
+    """POST visit data (JSON or XML) to the configured external API."""
     url = current_app.config.get("EXTERNAL_API_URL")
     username = current_app.config.get("EXTERNAL_API_USERNAME")
     password = current_app.config.get("EXTERNAL_API_PASSWORD")

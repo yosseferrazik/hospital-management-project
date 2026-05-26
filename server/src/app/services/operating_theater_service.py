@@ -1,3 +1,5 @@
+"""Operating theater service — CRUD delegation for OperatingTheater."""
+
 from app.models import OperatingTheater
 from app.services.base import create_record, get_all, get_by_id, update_record, delete_record
 

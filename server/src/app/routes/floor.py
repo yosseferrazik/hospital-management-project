@@ -1,3 +1,5 @@
+"""Floor CRUD routes."""
+
 from app.routes.base import make_crud_blueprint
 from app.services.floor_service import create_floor, get_floors, get_floor, update_floor, delete_floor
 

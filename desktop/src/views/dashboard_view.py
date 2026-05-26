@@ -1,3 +1,5 @@
+"""Dashboard overview with stat cards and today's agenda tables."""
+
 import threading
 import tkinter as tk
 from datetime import date
@@ -9,6 +11,8 @@ from utils.ui_style import UIStyle
 
 
 class DashboardView:
+    """Operations dashboard showing hospital capacity and today's schedule."""
+
     STAT_CARDS = [
         ("Patients", "/patients"),
         ("Staff", "/staff"),
@@ -17,6 +21,7 @@ class DashboardView:
     ]
 
     def __init__(self, parent, app):
+        """Initialize dashboard, build widgets, and load data."""
         self.parent = parent
         self.app = app
         self.session = Session()
@@ -28,6 +33,7 @@ class DashboardView:
         self.page.after(60, self.load_dashboard)
 
     def create_widgets(self):
+        """Build stat cards, visits tree, and surgeries tree panels."""
         self.page = UIStyle.page(self.parent)
         UIStyle.configure_ttk(self.page)
 
@@ -114,6 +120,7 @@ class DashboardView:
         )
 
     def _build_tree(self, parent, columns):
+        """Create a Treeview widget with columns and scrollbar."""
         frame = tk.Frame(parent, bg=UIStyle.CARD_BG)
         frame.pack(fill="both", expand=True)
         tree = ttk.Treeview(
@@ -129,6 +136,7 @@ class DashboardView:
         return tree
 
     def load_dashboard(self):
+        """Fetch stats and today's agenda from the API in a background thread."""
         today = date.today().isoformat()
 
         def worker():
@@ -151,6 +159,7 @@ class DashboardView:
     def _render_dashboard(
         self, stats, visits, visits_error, surgeries, surgeries_error
     ):
+        """Populate stat cards and tree views with fetched data."""
         if self._is_destroyed or not self.page.winfo_exists():
             return
 
@@ -171,6 +180,7 @@ class DashboardView:
         )
 
     def _fill_tree(self, tree, rows, columns):
+        """Populate a Treeview with rows from API response data."""
         for item in tree.get_children():
             tree.delete(item)
         if not rows:
@@ -180,6 +190,7 @@ class DashboardView:
             tree.insert("", "end", values=[row.get(column, "") for column in columns])
 
     def destroy(self):
+        """Clean up dashboard resources."""
         self._is_destroyed = True
         if hasattr(self, "page") and self.page.winfo_exists():
             self.page.destroy()

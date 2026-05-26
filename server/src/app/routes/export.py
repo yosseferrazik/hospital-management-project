@@ -1,3 +1,5 @@
+"""Export routes — download or send visit data as JSON/XML."""
+
 from datetime import datetime
 
 from flask import Blueprint, request, jsonify, Response
@@ -13,6 +15,7 @@ from app.utils.api_client import send_visits
 export_bp = Blueprint("export", __name__, url_prefix="/api/export")
 
 
+# --- GET /api/export/visits — download visits as JSON/XML file ---
 @export_bp.route("/visits", methods=["GET"])
 def download_visits():
     start_date = request.args.get("start_date")
@@ -46,6 +49,7 @@ def download_visits():
         return jsonify({"error": str(e)}), 500
 
 
+# --- POST /api/export/send — push visit data to external API ---
 @export_bp.route("/send", methods=["POST"])
 def send_export():
     body = request.get_json(force=True) or {}

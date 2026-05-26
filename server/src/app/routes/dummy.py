@@ -1,3 +1,5 @@
+"""Dummy data routes — generate or remove test data."""
+
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from app.services.dummy_service import generate_dummy_data, cleanup_dummy
@@ -5,6 +7,7 @@ from app.services.dummy_service import generate_dummy_data, cleanup_dummy
 dummy_bp = Blueprint("dummy", __name__, url_prefix="/api/dummy")
 
 
+# --- POST /api/dummy/generate — insert test data ---
 @dummy_bp.route("/generate", methods=["POST"])
 @jwt_required()
 def generate():
@@ -17,6 +20,7 @@ def generate():
         return jsonify({"error": str(e)}), 400
 
 
+# --- DELETE /api/dummy/cleanup — remove all test data ---
 @dummy_bp.route("/cleanup", methods=["DELETE"])
 @jwt_required()
 def cleanup():

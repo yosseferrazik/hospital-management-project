@@ -1,3 +1,5 @@
+"""Medical device CRUD routes."""
+
 from app.routes.base import make_crud_blueprint
 from app.services.medical_device_service import create_medical_device, get_medical_devices, get_medical_device, update_medical_device, delete_medical_device
 

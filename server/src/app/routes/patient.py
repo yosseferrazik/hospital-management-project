@@ -1,3 +1,5 @@
+"""Patient CRUD routes."""
+
 from app.routes.base import make_crud_blueprint
 from app.services.patient_service import create_patient, get_patients, get_patient, update_patient, delete_patient
 

@@ -1,3 +1,5 @@
+"""Medication service — CRUD delegation for Medication model."""
+
 from app.models import Medication
 from app.services.base import create_record, get_all, get_by_id, update_record, delete_record
 

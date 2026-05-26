@@ -1,3 +1,5 @@
+"""Login screen — username/password form."""
+
 import threading
 import tkinter as tk
 
@@ -7,7 +9,10 @@ from utils.ui_style import UIStyle
 
 
 class LoginView:
+    """Login form view with username, password, and sign-in logic."""
+
     def __init__(self, parent, app):
+        """Initialize login view with parent and app reference."""
         self.parent = parent
         self.app = app
         self.api_client = APIClient(Session())
@@ -17,6 +22,7 @@ class LoginView:
         self.create_widgets()
 
     def create_widgets(self):
+        """Build the login form UI with title, inputs, and sign-in button."""
         scrollable, scroll_content = UIStyle.create_scrollable_area(
             self.frame, bg=UIStyle.BG
         )
@@ -77,6 +83,7 @@ class LoginView:
         self.password_entry.bind("<Key>", lambda _e: self._clear_message())
 
     def _create_input_row(self, parent, label, placeholder):
+        """Create a labeled text entry with placeholder behavior."""
         tk.Label(
             parent,
             text=label,
@@ -105,6 +112,7 @@ class LoginView:
         return entry
 
     def _create_password_row(self, parent, label, placeholder):
+        """Create a password entry with show/hide toggle."""
         tk.Label(
             parent,
             text=label,
@@ -156,6 +164,7 @@ class LoginView:
         return entry
 
     def _toggle_password(self, entry, button, placeholder):
+        """Toggle password visibility between plain text and masked."""
         if entry.get() in ("", placeholder):
             return
         self.show_password = not self.show_password
@@ -163,10 +172,12 @@ class LoginView:
         button.config(text="Hide" if self.show_password else "Show")
 
     def _clear_message(self):
+        """Hide the error/success message label if visible."""
         if self.message_label.winfo_ismapped():
             self.message_label.pack_forget()
 
     def do_login(self):
+        """Validate credentials and send login request to the API."""
         username = self.username_entry.get().strip()
         password = self.password_entry.get()
         if username == "Enter your username":
@@ -186,6 +197,7 @@ class LoginView:
         threading.Thread(target=worker, daemon=True).start()
 
     def _finish_login(self, username, response, error):
+        """Handle API login response — navigate or show error."""
         self.login_btn.config(state="normal", text="Sign in")
         if error:
             self._show_message(f"Error: {error}", error=True)
@@ -199,6 +211,7 @@ class LoginView:
         self._show_message("Invalid credentials.", error=True)
 
     def _show_message(self, text, error=False, success=False):
+        """Display a status message with appropriate color."""
         color = (
             UIStyle.ERROR_RED
             if error
@@ -210,4 +223,5 @@ class LoginView:
         self.message_label.pack(pady=(8, 10), fill="x")
 
     def destroy(self):
+        """Remove the login frame from the parent."""
         self.frame.destroy()

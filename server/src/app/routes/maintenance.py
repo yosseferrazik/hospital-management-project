@@ -1,3 +1,5 @@
+"""Maintenance routes — staff/patient creation, nurse assignment, lookups."""
+
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from app.services import staff_service, patient_service, surgery_service, visit_service
@@ -5,6 +7,7 @@ from app.services import staff_service, patient_service, surgery_service, visit_
 maintenance_bp = Blueprint("maintenance", __name__, url_prefix="/api/maintenance")
 
 
+# --- POST /api/maintenance/staff/medical — create a doctor ---
 @maintenance_bp.route("/staff/medical", methods=["POST"])
 @jwt_required()
 def add_medical_staff():
@@ -16,6 +19,7 @@ def add_medical_staff():
         return jsonify({"error": str(e)}), 400
 
 
+# --- POST /api/maintenance/staff/nursing — create a nurse ---
 @maintenance_bp.route("/staff/nursing", methods=["POST"])
 @jwt_required()
 def add_nursing_staff():
@@ -27,6 +31,7 @@ def add_nursing_staff():
         return jsonify({"error": str(e)}), 400
 
 
+# --- POST /api/maintenance/staff/general — create general staff ---
 @maintenance_bp.route("/staff/general", methods=["POST"])
 @jwt_required()
 def add_general_staff():
@@ -38,6 +43,7 @@ def add_general_staff():
         return jsonify({"error": str(e)}), 400
 
 
+# --- POST /api/maintenance/patients — create a patient record ---
 @maintenance_bp.route("/patients", methods=["POST"])
 @jwt_required()
 def add_patient():
@@ -49,6 +55,7 @@ def add_patient():
         return jsonify({"error": str(e)}), 400
 
 
+# --- PUT /api/maintenance/nursing/assign — assign nurse to doctor or floor ---
 @maintenance_bp.route("/nursing/assign", methods=["PUT"])
 @jwt_required()
 def assign_nursing():
@@ -72,6 +79,7 @@ def assign_nursing():
         return jsonify({"error": str(e)}), 400
 
 
+# --- GET /api/maintenance/surgeries — get surgeries by date ---
 @maintenance_bp.route("/surgeries", methods=["GET"])
 @jwt_required()
 def get_surgeries():
@@ -82,6 +90,7 @@ def get_surgeries():
     return jsonify(surgeries), 200
 
 
+# --- GET /api/maintenance/visits/scheduled — get scheduled visits by date ---
 @maintenance_bp.route("/visits/scheduled", methods=["GET"])
 @jwt_required()
 def get_visits():

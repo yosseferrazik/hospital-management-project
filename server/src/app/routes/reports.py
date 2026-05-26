@@ -1,3 +1,5 @@
+"""Report routes — generate and download operational reports."""
+
 from io import BytesIO
 from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt
@@ -17,6 +19,7 @@ from app.services.pdf_service import make_summary_pdf
 reports_bp = Blueprint("reports", __name__, url_prefix="/api/reports")
 
 
+# Helper: extract date range params from query string
 def _date_params():
     return {
         "start_date": request.args.get("start_date"),
@@ -24,6 +27,7 @@ def _date_params():
     }
 
 
+# --- GET /api/reports/visits ---
 @reports_bp.route("/visits", methods=["GET"])
 def report_visits():
     try:
@@ -35,6 +39,7 @@ def report_visits():
         return jsonify({"error": str(e)}), 400
 
 
+# --- GET /api/reports/surgeries ---
 @reports_bp.route("/surgeries", methods=["GET"])
 def report_surgeries():
     try:
@@ -46,6 +51,7 @@ def report_surgeries():
         return jsonify({"error": str(e)}), 400
 
 
+# --- GET /api/reports/admissions ---
 @reports_bp.route("/admissions", methods=["GET"])
 def report_admissions():
     try:
@@ -56,6 +62,7 @@ def report_admissions():
         return jsonify({"error": str(e)}), 400
 
 
+# --- GET /api/reports/medications ---
 @reports_bp.route("/medications", methods=["GET"])
 def report_medications():
     try:
@@ -64,6 +71,7 @@ def report_medications():
         return jsonify({"error": str(e)}), 400
 
 
+# --- GET /api/reports/financial ---
 @reports_bp.route("/financial", methods=["GET"])
 def report_financial():
     try:
@@ -72,6 +80,7 @@ def report_financial():
         return jsonify({"error": str(e)}), 400
 
 
+# --- GET /api/reports/radiology ---
 @reports_bp.route("/radiology", methods=["GET"])
 def report_radiology():
     try:
@@ -82,6 +91,7 @@ def report_radiology():
         return jsonify({"error": str(e)}), 400
 
 
+# --- GET /api/reports/doctor-workload ---
 @reports_bp.route("/doctor-workload", methods=["GET"])
 def report_doctor_workload():
     try:
@@ -90,6 +100,7 @@ def report_doctor_workload():
         return jsonify({"error": str(e)}), 400
 
 
+# --- GET /api/reports/summary ---
 @reports_bp.route("/summary", methods=["GET"])
 def report_summary():
     try:
@@ -98,6 +109,7 @@ def report_summary():
         return jsonify({"error": str(e)}), 400
 
 
+# --- GET /api/reports/summary/pdf — download PDF summary (requires auth) ---
 @reports_bp.route("/summary/pdf", methods=["GET"])
 @jwt_required()
 def report_summary_pdf():

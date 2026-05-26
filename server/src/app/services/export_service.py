@@ -1,3 +1,5 @@
+"""Export service — query, serialize, validate, and dashboard stats."""
+
 import json
 import os
 from xml.etree.ElementTree import Element, SubElement, tostring
@@ -8,6 +10,7 @@ from datetime import datetime, date, timedelta
 
 
 def _visits_query(start_date, end_date):
+    """Query visits within a date range, joining doctor and patient info."""
     return (
         db.session.query(
             Visit.visit_id,
@@ -31,6 +34,7 @@ def _visits_query(start_date, end_date):
 
 
 def _row_to_dict(row):
+    """Convert a raw query row to a structured dict for export."""
     ts = row.visit_timestamp
     return {
         "visit_id": row.visit_id,
@@ -49,15 +53,18 @@ def _row_to_dict(row):
 
 
 def get_visits_data(start_date, end_date):
+    """Fetch visits data formatted for export."""
     rows = _visits_query(start_date, end_date)
     return [_row_to_dict(r) for r in rows]
 
 
 def generate_json(data):
+    """Serialize visit data to indented JSON."""
     return json.dumps({"visits": data}, indent=2, ensure_ascii=False)
 
 
 def _build_xml_doc(data):
+    """Build an ElementTree XML document from visit data."""
     root = Element("visits")
     for item in data:
         visit_el = SubElement(root, "visit")
@@ -101,6 +108,7 @@ def validate_xml(data_str):
 
 
 def get_dashboard_stats():
+    """Aggregate today's stats and trends for the dashboard view."""
     today = date.today()
     start = datetime(today.year, today.month, today.day)
 

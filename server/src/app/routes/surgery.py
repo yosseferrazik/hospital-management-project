@@ -1,3 +1,5 @@
+"""Surgery CRUD routes with date-based lookup."""
+
 from flask import jsonify
 from app.routes.base import make_crud_blueprint
 from app.services.surgery_service import create_surgery, get_surgeries, get_surgery, update_surgery, delete_surgery, get_surgeries_by_date
@@ -17,6 +19,7 @@ surgery_bp = make_crud_blueprint(
 )
 
 
+# --- GET /api/surgeries/by_date/<date> — lookup surgeries by date ---
 @surgery_bp.route("/by_date/<date>", methods=["GET"])
 def get_by_date(date):
     surgeries = get_surgeries_by_date(date)

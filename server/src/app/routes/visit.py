@@ -1,3 +1,5 @@
+"""Visit CRUD routes with date-based scheduled lookup."""
+
 from flask import jsonify
 from app.routes.base import make_crud_blueprint
 from app.services.visit_service import create_visit, get_visits, get_visit, update_visit, delete_visit, get_scheduled_visits_by_date
@@ -16,6 +18,7 @@ visit_bp = make_crud_blueprint(
 )
 
 
+# --- GET /api/visits/scheduled/<date> — lookup scheduled visits by date ---
 @visit_bp.route("/scheduled/<date>", methods=["GET"])
 def get_scheduled(date):
     visits = get_scheduled_visits_by_date(date)

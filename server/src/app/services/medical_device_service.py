@@ -1,3 +1,5 @@
+"""Medical device service — CRUD delegation for MedicalDevice."""
+
 from app.models import MedicalDevice
 from app.services.base import create_record, get_all, get_by_id, update_record, delete_record
 

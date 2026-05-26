@@ -1,16 +1,21 @@
+"""Staff service — CRUD, type-specific creation, and nurse assignment."""
+
 from app.models import db, Staff, MedicalStaff, NursingStaff, GeneralStaff
 from app.services.base import parse_date, get_all, get_by_id, update_record, delete_record
 
 
 def get_staff():
+    """Return all staff records."""
     return get_all(Staff)
 
 
 def get_staff_member(staff_id):
+    """Return a single staff record by ID."""
     return get_by_id(Staff, staff_id)
 
 
 def update_staff(staff_id, data):
+    """Update base staff fields."""
     staff = get_by_id(Staff, staff_id)
     return update_record(staff,
         national_id=data["national_id"],
@@ -26,11 +31,13 @@ def update_staff(staff_id, data):
 
 
 def delete_staff(staff_id):
+    """Delete a staff record."""
     staff = get_by_id(Staff, staff_id)
     return delete_record(staff)
 
 
 def _commit():
+    """Commit the current DB session, rolling back on failure."""
     try:
         db.session.commit()
     except Exception:
@@ -39,6 +46,7 @@ def _commit():
 
 
 def create_medical_staff(data):
+    """Create a Staff record + associated MedicalStaff row."""
     staff = Staff(
         national_id=data["national_id"],
         first_name=data["first_name"],
@@ -64,6 +72,7 @@ def create_medical_staff(data):
 
 
 def create_nursing_staff(data):
+    """Create a Staff record + associated NursingStaff row."""
     staff = Staff(
         national_id=data["national_id"],
         first_name=data["first_name"],
@@ -90,6 +99,7 @@ def create_nursing_staff(data):
 
 
 def create_general_staff(data):
+    """Create a Staff record + associated GeneralStaff row."""
     staff = Staff(
         national_id=data["national_id"],
         first_name=data["first_name"],
@@ -110,6 +120,7 @@ def create_general_staff(data):
 
 
 def assign_nursing_to_doctor(nurse_id, doctor_id):
+    """Assign a nurse to a specific doctor (removes floor assignment)."""
     nurse = get_by_id(NursingStaff, nurse_id)
     if not nurse:
         raise ValueError("Nurse not found")
@@ -120,6 +131,7 @@ def assign_nursing_to_doctor(nurse_id, doctor_id):
 
 
 def assign_nursing_to_floor(nurse_id, floor_id):
+    """Assign a nurse to a specific floor (removes doctor assignment)."""
     nurse = get_by_id(NursingStaff, nurse_id)
     if not nurse:
         raise ValueError("Nurse not found")

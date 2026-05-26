@@ -1,3 +1,5 @@
+"""Audit log routes — query, test, and clean up audit trail entries."""
+
 from datetime import datetime
 
 from flask import Blueprint, request, jsonify
@@ -8,8 +10,10 @@ from app.services.audit_log_service import log_audit, trim_audit_logs, get_reten
 audit_bp = Blueprint("audit", __name__, url_prefix="/api/audit-logs")
 
 
+# --- GET /api/audit-logs — list audit logs with filters ---
 @audit_bp.route("", methods=["GET"])
 def list_audit_logs():
+    # Parse optional query filters
     table = request.args.get("table")
     action = request.args.get("action")
     user_id = request.args.get("user_id")
@@ -18,6 +22,7 @@ def list_audit_logs():
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 50, type=int)
 
+    # Build query joining AuditLog with AppUser for username
     query = db.session.query(
         AuditLog.log_id,
         AuditLog.user_id,
@@ -29,6 +34,7 @@ def list_audit_logs():
         AuditLog.notes,
     ).outerjoin(AppUser, AppUser.user_id == AuditLog.user_id)
 
+    # Apply optional filters
     if table:
         query = query.filter(AuditLog.table_name == table)
     if action:
@@ -40,6 +46,7 @@ def list_audit_logs():
     if end:
         query = query.filter(AuditLog.action_timestamp <= datetime.fromisoformat(end))
 
+    # Paginate results
     total = query.count()
     rows = query.order_by(AuditLog.log_id.desc()).offset((page - 1) * per_page).limit(per_page).all()
 
@@ -63,12 +70,14 @@ def list_audit_logs():
     }), 200
 
 
+# --- GET /api/audit-logs/diagnostics — check audit trigger status ---
 @audit_bp.route("/diagnostics", methods=["GET"])
 def diagnostics():
     try:
         total_logs = AuditLog.query.count()
         triggers_installed = False
         try:
+            # Check if PostgreSQL audit triggers exist
             result = db.session.execute(db.text(
                 "SELECT COUNT(*) FROM pg_trigger "
                 "WHERE tgname LIKE 'audit_%'"
@@ -91,6 +100,7 @@ def diagnostics():
         return jsonify({"error": str(e)}), 400
 
 
+# --- GET /api/audit-logs/retention — view retention configuration ---
 @audit_bp.route("/retention", methods=["GET"])
 def retention_info():
     try:
@@ -99,6 +109,7 @@ def retention_info():
         return jsonify({"error": str(e)}), 400
 
 
+# --- POST /api/audit-logs/test — create a test audit entry ---
 @audit_bp.route("/test", methods=["POST"])
 def test_audit():
     try:
@@ -115,6 +126,7 @@ def test_audit():
         return jsonify({"error": str(e)}), 400
 
 
+# --- DELETE /api/audit-logs/cleanup — remove entries older than N days ---
 @audit_bp.route("/cleanup", methods=["DELETE"])
 @jwt_required()
 def cleanup():

@@ -1,3 +1,5 @@
+"""Room service — CRUD delegation for Room model."""
+
 from app.models import Room
 from app.services.base import create_record, get_all, get_by_id, update_record, delete_record
 

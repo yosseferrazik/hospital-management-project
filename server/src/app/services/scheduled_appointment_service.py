@@ -1,3 +1,5 @@
+"""Scheduled appointment service — CRUD delegation for ScheduledAppointment."""
+
 from app.models import ScheduledAppointment
 from app.services.base import parse_date, parse_time, create_record, get_all, get_by_id, update_record, delete_record
 

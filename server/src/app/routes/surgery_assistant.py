@@ -1,9 +1,12 @@
+"""Surgery assistant (nurse) assignment routes — composite key CRUD."""
+
 from flask import Blueprint, request, jsonify
 from app.services.surgery_assistant_service import create_surgery_assistant, get_surgery_assistants, get_surgery_assistant, update_surgery_assistant, delete_surgery_assistant
 
 surgery_assistant_bp = Blueprint("surgery_assistant", __name__, url_prefix="/api/surgery_assistants")
 
 
+# --- POST /api/surgery_assistants — assign nurse to surgery ---
 @surgery_assistant_bp.route("", methods=["POST"])
 def create():
     data = request.get_json()
@@ -16,12 +19,14 @@ def create():
         return jsonify({"error": str(e)}), 400
 
 
+# --- GET /api/surgery_assistants — list all assignments ---
 @surgery_assistant_bp.route("", methods=["GET"])
 def list_surgery_assistants():
     assistants = get_surgery_assistants()
     return jsonify([{"surgery_id": a.surgery_id, "nurse_id": a.nurse_id, "role": a.role} for a in assistants])
 
 
+# --- GET /api/surgery_assistants/<surgery_id>/<nurse_id> — get assignment ---
 @surgery_assistant_bp.route("/<int:surgery_id>/<int:nurse_id>", methods=["GET"])
 def get(surgery_id, nurse_id):
     assistant = get_surgery_assistant(surgery_id, nurse_id)
@@ -30,6 +35,7 @@ def get(surgery_id, nurse_id):
     return jsonify({"surgery_id": assistant.surgery_id, "nurse_id": assistant.nurse_id, "role": assistant.role})
 
 
+# --- PUT /api/surgery_assistants/<surgery_id>/<nurse_id> — update role ---
 @surgery_assistant_bp.route("/<int:surgery_id>/<int:nurse_id>", methods=["PUT"])
 def update(surgery_id, nurse_id):
     data = request.get_json()
@@ -44,6 +50,7 @@ def update(surgery_id, nurse_id):
         return jsonify({"error": str(e)}), 400
 
 
+# --- DELETE /api/surgery_assistants/<surgery_id>/<nurse_id> — remove assignment ---
 @surgery_assistant_bp.route("/<int:surgery_id>/<int:nurse_id>", methods=["DELETE"])
 def delete(surgery_id, nurse_id):
     try:

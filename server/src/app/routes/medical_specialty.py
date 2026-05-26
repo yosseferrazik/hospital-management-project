@@ -1,3 +1,5 @@
+"""Medical specialty CRUD routes."""
+
 from app.routes.base import make_crud_blueprint
 from app.services.medical_specialty_service import create_medical_specialty, get_medical_specialties, get_medical_specialty, update_medical_specialty, delete_medical_specialty
 

@@ -1,11 +1,15 @@
+"""SQLAlchemy database models for the hospital management system."""
+
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import INET
 
+"""SQLAlchemy database instance."""
 db = SQLAlchemy()
 
 
 class AppUser(db.Model):
+    """Application user account with JWT authentication."""
     __tablename__ = "app_users"
     user_id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
@@ -20,6 +24,7 @@ class AppUser(db.Model):
 
 
 class Staff(db.Model):
+    """Hospital staff member base record."""
     __tablename__ = "staff"
     staff_id = db.Column(db.Integer, primary_key=True)
     national_id = db.Column(db.String(50), unique=True, nullable=False)
@@ -35,6 +40,7 @@ class Staff(db.Model):
 
 
 class MedicalSpecialty(db.Model):
+    """Medical specialty classification."""
     __tablename__ = "medical_specialties"
     specialty_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
@@ -48,6 +54,7 @@ class MedicalSpecialty(db.Model):
 
 
 class MedicalStaff(db.Model):
+    """Medical doctor or physician staff member."""
     __tablename__ = "medical_staff"
     staff_id = db.Column(db.Integer, db.ForeignKey("staff.staff_id"), primary_key=True)
     specialty_id = db.Column(
@@ -66,6 +73,7 @@ class MedicalStaff(db.Model):
 
 
 class MedicalStaffSpecialty(db.Model):
+    """Many-to-many link between medical staff and specialties."""
     __tablename__ = "medical_staff_specialties"
     medical_staff_specialty_id = db.Column(db.Integer, primary_key=True)
     staff_id = db.Column(
@@ -81,6 +89,7 @@ class MedicalStaffSpecialty(db.Model):
 
 
 class NursingStaff(db.Model):
+    """Nursing staff member record."""
     __tablename__ = "nursing_staff"
     staff_id = db.Column(db.Integer, db.ForeignKey("staff.staff_id"), primary_key=True)
     nursing_license = db.Column(db.String(50), unique=True, nullable=False)
@@ -92,6 +101,7 @@ class NursingStaff(db.Model):
 
 
 class GeneralStaff(db.Model):
+    """Non-medical hospital staff member."""
     __tablename__ = "general_staff"
     staff_id = db.Column(db.Integer, db.ForeignKey("staff.staff_id"), primary_key=True)
     job_type = db.Column(db.String(100), nullable=False)
@@ -100,12 +110,14 @@ class GeneralStaff(db.Model):
 
 
 class Floor(db.Model):
+    """Hospital floor level."""
     __tablename__ = "floors"
     floor_id = db.Column(db.Integer, primary_key=True)
     floor_number = db.Column(db.Integer, nullable=False, unique=True)
 
 
 class Room(db.Model):
+    """Patient room within a floor."""
     __tablename__ = "rooms"
     room_id = db.Column(db.Integer, primary_key=True)
     room_number = db.Column(db.String(20), nullable=False)
@@ -115,6 +127,7 @@ class Room(db.Model):
 
 
 class OperatingTheater(db.Model):
+    """Surgical operating theater room."""
     __tablename__ = "operating_theaters"
     theater_id = db.Column(db.Integer, primary_key=True)
     theater_code = db.Column(db.String(20), unique=True, nullable=False)
@@ -124,6 +137,7 @@ class OperatingTheater(db.Model):
 
 
 class MedicalDevice(db.Model):
+    """Medical equipment assigned to an operating theater."""
     __tablename__ = "medical_devices"
     device_id = db.Column(db.Integer, primary_key=True)
     device_type = db.Column(db.String(100), nullable=False)
@@ -136,6 +150,7 @@ class MedicalDevice(db.Model):
 
 
 class Patient(db.Model):
+    """Hospital patient personal and medical record."""
     __tablename__ = "patients"
     patient_id = db.Column(db.Integer, primary_key=True)
     national_id = db.Column(db.String(50), unique=True, nullable=False)
@@ -154,6 +169,7 @@ class Patient(db.Model):
 
 
 class Visit(db.Model):
+    """Patient clinical visit record."""
     __tablename__ = "visits"
     visit_id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(
@@ -171,6 +187,7 @@ class Visit(db.Model):
 
 
 class ScheduledAppointment(db.Model):
+    """Scheduled patient appointment linked to a visit."""
     __tablename__ = "scheduled_appointments"
     appointment_id = db.Column(db.Integer, primary_key=True)
     visit_id = db.Column(
@@ -184,6 +201,7 @@ class ScheduledAppointment(db.Model):
 
 
 class Surgery(db.Model):
+    """Surgical procedure record."""
     __tablename__ = "surgeries"
     surgery_id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(
@@ -207,6 +225,7 @@ class Surgery(db.Model):
 
 
 class SurgeryAssistant(db.Model):
+    """Nurse assisting in a surgery procedure."""
     __tablename__ = "surgery_assistants"
     surgery_id = db.Column(
         db.Integer, db.ForeignKey("surgeries.surgery_id"), primary_key=True
@@ -221,6 +240,7 @@ class SurgeryAssistant(db.Model):
 
 
 class Medication(db.Model):
+    """Medication catalog entry."""
     __tablename__ = "medications"
     medication_id = db.Column(db.Integer, primary_key=True)
     medication_name = db.Column(db.String(200), unique=True, nullable=False)
@@ -228,6 +248,7 @@ class Medication(db.Model):
 
 
 class Prescription(db.Model):
+    """Medication prescription issued during a visit."""
     __tablename__ = "prescriptions"
     prescription_id = db.Column(db.Integer, primary_key=True)
     visit_id = db.Column(db.Integer, db.ForeignKey("visits.visit_id"), nullable=False)
@@ -244,6 +265,7 @@ class Prescription(db.Model):
 
 
 class Admission(db.Model):
+    """Patient hospitalization admission record."""
     __tablename__ = "admissions"
     admission_id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(
@@ -259,6 +281,7 @@ class Admission(db.Model):
 
 
 class PharmacyDispensation(db.Model):
+    """Pharmacy medication dispensation batch."""
     __tablename__ = "pharmacy_dispensations"
     dispensation_id = db.Column(db.Integer, primary_key=True)
     admission_id = db.Column(
@@ -272,6 +295,7 @@ class PharmacyDispensation(db.Model):
 
 
 class DispensationItem(db.Model):
+    """Individual medication item within a dispensation."""
     __tablename__ = "dispensation_items"
     item_id = db.Column(db.Integer, primary_key=True)
     dispensation_id = db.Column(
@@ -290,6 +314,7 @@ class DispensationItem(db.Model):
 
 
 class RadiologyExam(db.Model):
+    """Radiology imaging exam request and results."""
     __tablename__ = "radiology_exams"
     exam_id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(
@@ -310,6 +335,7 @@ class RadiologyExam(db.Model):
 
 
 class AuditLog(db.Model):
+    """System audit trail for data changes."""
     __tablename__ = "audit_logs"
     log_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("app_users.user_id"))
@@ -326,6 +352,7 @@ class AuditLog(db.Model):
 
 
 class DummyRegistry(db.Model):
+    """Placeholder registry for dummy data tracking."""
     __tablename__ = "dummy_registry"
     id = db.Column(db.Integer, primary_key=True)
     table_name = db.Column(db.String(100), nullable=False)

@@ -1,3 +1,5 @@
+"""Unified CRUD browser for all database resources."""
+
 import threading
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -8,6 +10,8 @@ from utils.ui_style import UIStyle
 
 
 class ResourceBrowser:
+    """Generic data workspace for browsing, creating, updating, and deleting resources."""
+
     RESOURCE_DEFINITIONS = {
         "staff": {
             "label": "Staff",
@@ -313,6 +317,7 @@ class ResourceBrowser:
     }
 
     def __init__(self, parent, app):
+        """Initialize resource browser, build widgets, and load default resource."""
         self.parent = parent
         self.app = app
         self.session = Session()
@@ -329,6 +334,7 @@ class ResourceBrowser:
         self.load_resource()
 
     def create_widgets(self):
+        """Build resource selector, list panel, and form panel."""
         self.page = UIStyle.page(self.parent)
         UIStyle.configure_ttk(self.page)
         self.page.grid_rowconfigure(1, weight=1)
@@ -399,6 +405,7 @@ class ResourceBrowser:
         self._create_form_panel()
 
     def _create_list_panel(self):
+        """Build the tree list with filter, refresh, and selection support."""
         header_shell, header = UIStyle.panel(self.list_frame, padx=16, pady=14)
         header_shell.pack(fill="x", pady=(0, 12))
 
@@ -445,6 +452,7 @@ class ResourceBrowser:
         self.tree.configure(yscrollcommand=y_scroll.set)
 
     def _create_form_panel(self):
+        """Build the detail form with create, update, delete, and clear buttons."""
         title_row = tk.Frame(self.form_frame, bg=UIStyle.BG)
         title_row.pack(fill="x", pady=(0, 10))
         self.form_title = tk.Label(
@@ -494,11 +502,13 @@ class ResourceBrowser:
         self._set_editing(False)
 
     def _set_editing(self, editing):
+        """Toggle form mode between create and edit states."""
         self.mode_var.set("Edit mode" if editing else "Create mode")
         self.update_btn.config(state="normal" if editing else "disabled")
         self.delete_btn.config(state="normal" if editing else "disabled")
 
     def load_resource(self):
+        """Load the selected resource definition and build corresponding list and form."""
         resource_key = self.selected_resource.get()
         self.current_definition = self.RESOURCE_DEFINITIONS[resource_key]
         self.selected_keys = None
@@ -510,6 +520,7 @@ class ResourceBrowser:
         self.load_list(force_refresh=True)
 
     def _build_tree(self, columns):
+        """Configure Treeview columns for the current resource."""
         names = [name for name, _heading in columns]
         self.tree.config(columns=names)
         for col in names:
@@ -520,6 +531,7 @@ class ResourceBrowser:
             self.tree.column(col, width=145, anchor="w", stretch=True)
 
     def _build_form(self, fields):
+        """Dynamically generate form fields for the current resource."""
         for widget in self.form_body.winfo_children():
             widget.destroy()
 
@@ -551,6 +563,7 @@ class ResourceBrowser:
             self.field_widgets[field_name] = {"widget": widget, "type": field_type}
 
     def load_list(self, force_refresh=False):
+        """Fetch resource list from the API in a background thread."""
         definition = self.current_definition
         self.loading_var.set("Loading...")
 
@@ -566,6 +579,7 @@ class ResourceBrowser:
         threading.Thread(target=worker, daemon=True).start()
 
     def _render_list(self, response, error, definition):
+        """Display fetched resource records in the treeview with local filter support."""
         if self._is_destroyed or not self.page.winfo_exists():
             return
 
@@ -592,6 +606,7 @@ class ResourceBrowser:
         self._apply_local_filter()
 
     def _apply_local_filter(self):
+        """Filter displayed rows by the search query in the filter entry."""
         for row in self.tree.get_children():
             self.tree.delete(row)
         query = self.filter_var.get().strip().lower()
@@ -600,10 +615,12 @@ class ResourceBrowser:
                 self.tree.insert("", "end", values=values)
 
     def _clear_filter(self):
+        """Clear the filter text and reset the displayed list."""
         self.filter_var.set("")
         self._apply_local_filter()
 
     def on_select(self, _event=None):
+        """Handle treeview row selection and load detail data."""
         selection = self.tree.selection()
         if not selection:
             return
@@ -629,6 +646,7 @@ class ResourceBrowser:
         threading.Thread(target=worker, daemon=True).start()
 
     def _fetch_selected_detail(self):
+        """Fetch full detail for the selected record from the API."""
         endpoint = self.current_definition["endpoint"]
         key_fields = self.current_definition["key_fields"]
         if len(key_fields) == 1:
@@ -637,6 +655,7 @@ class ResourceBrowser:
         return self.api_client.request_path("GET", f"{endpoint}/{path_suffix}")
 
     def _render_detail(self, response, error):
+        """Display fetched detail data in the form and switch to edit mode."""
         self.loading_var.set("")
         if error:
             messagebox.showerror("Error", error)
@@ -647,6 +666,7 @@ class ResourceBrowser:
         self._set_editing(True)
 
     def _get_field_value(self, field_name):
+        """Get the current value of a form field by name."""
         info = self.field_widgets[field_name]
         widget = info["widget"]
         if info["type"] == "text":
@@ -656,6 +676,7 @@ class ResourceBrowser:
         return value
 
     def _set_field_value(self, field_name, value):
+        """Set the value of a form field by name."""
         info = self.field_widgets[field_name]
         widget = info["widget"]
         if info["type"] == "text":
@@ -668,9 +689,11 @@ class ResourceBrowser:
                 widget.insert(0, str(value))
 
     def _collect_form_data(self):
+        """Collect all form field values into a dictionary."""
         return {name: self._get_field_value(name) for name in self.field_widgets}
 
     def _sanitize_payload(self, data, *, fields=None):
+        """Filter payload to only accepted fields, converting empties to None."""
         payload = {}
         accepted = set(fields or data.keys())
         for key, value in data.items():
@@ -680,13 +703,16 @@ class ResourceBrowser:
         return payload
 
     def _path_suffix(self):
+        """Build URL path suffix from selected key fields."""
         return "/".join(str(value) for value in self.selected_keys)
 
     def fill_form(self, data):
+        """Populate form fields with data from a record."""
         for field_name in self.field_widgets:
             self._set_field_value(field_name, data.get(field_name, ""))
 
     def clear_form(self):
+        """Reset form fields and deselect the current record."""
         for field_name in self.field_widgets:
             self._set_field_value(field_name, "")
         self.selected_keys = None
@@ -694,6 +720,7 @@ class ResourceBrowser:
         self.tree.selection_remove(self.tree.selection())
 
     def create_item(self):
+        """Create a new resource record via the API."""
         definition = self.current_definition
         if definition.get("disable_create"):
             messagebox.showinfo(
@@ -717,6 +744,7 @@ class ResourceBrowser:
         self.load_list(force_refresh=True)
 
     def update_item(self):
+        """Update the selected resource record via the API."""
         if not self.selected_keys:
             messagebox.showinfo("Info", "Select a record first")
             return
@@ -743,6 +771,7 @@ class ResourceBrowser:
         self.load_list(force_refresh=True)
 
     def delete_selected(self):
+        """Delete the selected resource record after confirmation."""
         if not self.selected_keys:
             messagebox.showinfo("Info", "Select a record first")
             return
@@ -768,6 +797,7 @@ class ResourceBrowser:
         self.load_list(force_refresh=True)
 
     def destroy(self):
+        """Clean up resource browser resources."""
         self._is_destroyed = True
         if hasattr(self, "page") and self.page.winfo_exists():
             self.page.destroy()

@@ -1,3 +1,5 @@
+"""Prescription service — CRUD delegation for the Prescription model."""
+
 from app.models import Prescription
 from app.services.base import parse_date, create_record, get_all, get_by_id, update_record, delete_record
 

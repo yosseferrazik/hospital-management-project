@@ -1,3 +1,5 @@
+﻿"""Hospital statistics with floor overview, staff report, visits, and rankings."""
+
 import threading
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -10,7 +12,10 @@ from utils.ui_style import UIStyle
 
 
 class StatisticsView:
+    """Multi-tab statistics view showing floor data, staff directory, visit counts, and top rankings."""
+
     def __init__(self, parent, app):
+        """Initialize statistics view, build widgets, and load data."""
         self.parent = parent
         self.app = app
         self.api_client = APIClient(Session())
@@ -21,6 +26,7 @@ class StatisticsView:
         self.load_data()
 
     def create_widgets(self):
+        """Build notebook tabs for overview, staff, visits, and rankings."""
         self.page = UIStyle.page(self.parent)
         UIStyle.configure_ttk(self.page)
 
@@ -49,6 +55,7 @@ class StatisticsView:
         self.setup_rankings_tab()
 
     def setup_overview_tab(self):
+        """Build the floor overview tab with a scrollable area."""
         scrollable, content = UIStyle.create_scrollable_area(
             self.overview_frame, bg=UIStyle.BG
         )
@@ -65,6 +72,7 @@ class StatisticsView:
         self.overview_tree_frame.pack(fill="both", expand=True, padx=24, pady=(0, 24))
 
     def setup_staff_tab(self):
+        """Build the staff report tab with a scrollable area."""
         scrollable, content = UIStyle.create_scrollable_area(
             self.staff_frame, bg=UIStyle.BG
         )
@@ -81,6 +89,7 @@ class StatisticsView:
         self.staff_tree_frame.pack(fill="both", expand=True, padx=24, pady=(0, 24))
 
     def setup_visits_tab(self):
+        """Build the visits report tab with a scrollable area."""
         scrollable, content = UIStyle.create_scrollable_area(
             self.visits_frame, bg=UIStyle.BG
         )
@@ -97,6 +106,7 @@ class StatisticsView:
         self.visits_tree_frame.pack(fill="both", expand=True, padx=24, pady=(0, 24))
 
     def setup_rankings_tab(self):
+        """Build the rankings tab with top doctors and top diseases sections."""
         scrollable, content = UIStyle.create_scrollable_area(
             self.rankings_frame, bg=UIStyle.BG
         )
@@ -126,6 +136,7 @@ class StatisticsView:
         self.diseases_tree_frame.pack(fill="both", expand=True, padx=24, pady=(0, 24))
 
     def load_data(self):
+        """Fetch all statistics data from the API in a background thread."""
         def worker():
             try:
                 staffdata, error = self.api_client.get_all_staff(force_refresh=True)
@@ -163,6 +174,7 @@ class StatisticsView:
         threading.Thread(target=worker, daemon=True).start()
 
     def render_data(self):
+        """Render all loaded data into the respective tabs."""
         if not self.data:
             messagebox.showwarning("Data", "No data loaded from server")
             return
@@ -173,6 +185,7 @@ class StatisticsView:
         self.render_rankings()
 
     def render_overview(self):
+        """Render floor overview table with rooms, theaters, and nurse counts per floor."""
         for widget in self.overview_tree_frame.winfo_children():
             widget.destroy()
 
@@ -230,7 +243,7 @@ class StatisticsView:
                     nurses_by_floor[floor_id] += 1
 
         for floor_id, floor in sorted(floors_map.items()):
-            floor_num = floor.get("floor_number", f"Floor {floor_id}")
+            floor_num = floor.get("floor_number", "Floor " + str(floor_id))
             room_count = rooms_by_floor.get(floor_id, 0)
             theater_count = theaters_by_floor.get(floor_id, 0)
             nurse_count = nurses_by_floor.get(floor_id, 0)
@@ -244,6 +257,7 @@ class StatisticsView:
         tree.pack(fill="both", expand=True)
 
     def render_staff_report(self):
+        """Render the staff directory table sorted by name."""
         for widget in self.staff_tree_frame.winfo_children():
             widget.destroy()
 
@@ -276,7 +290,7 @@ class StatisticsView:
         tree.heading("Hire Date", text="Hire Date")
 
         for person in sorted(staff, key=lambda x: x.get("first_name", "")):
-            name = f"{person.get('first_name', '')} {person.get('last_name', '')}"
+            name = person.get("first_name", "") + " " + person.get("last_name", "")
             staff_type = person.get("staff_type", "UNKNOWN")
             contact = person.get("phone", "N/A")
             hire_date = (
@@ -290,6 +304,7 @@ class StatisticsView:
         tree.pack(fill="both", expand=True)
 
     def render_visits_report(self):
+        """Render the visits-by-day table grouped by date."""
         for widget in self.visits_tree_frame.winfo_children():
             widget.destroy()
 
@@ -331,6 +346,7 @@ class StatisticsView:
         tree.pack(fill="both", expand=True)
 
     def render_rankings(self):
+        """Render top doctors by patient count and top diseases by diagnosis frequency."""
         for widget in self.doctors_tree_frame.winfo_children():
             widget.destroy()
 
@@ -360,7 +376,7 @@ class StatisticsView:
         for doctor_id, count in doctor_visit_count.most_common(10):
             doctor = staff_by_id.get(doctor_id)
             if doctor:
-                name = f"{doctor.get('first_name', '')} {doctor.get('last_name', '')}"
+                name = doctor.get("first_name", "") + " " + doctor.get("last_name", "")
                 doctors_tree.insert("", "end", values=(name, count))
 
         doctors_tree.pack(fill="both", expand=False)
@@ -395,6 +411,7 @@ class StatisticsView:
         diseases_tree.pack(fill="both", expand=True)
 
     def destroy(self):
+        """Clean up statistics view resources."""
         self._is_destroyed = True
         if hasattr(self, "page") and self.page.winfo_exists():
             self.page.destroy()
